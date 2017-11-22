@@ -1,3 +1,5 @@
+import * as proto from './proto';
+
 import * as usb from 'usb';
 import * as async from 'async';
 
@@ -45,24 +47,6 @@ const USB_DEVICE_INFO = {
   }
 };
 
-// This function is used to wrap the internal implementation, which uses callbacks, into a Promise-
-// based interface exposed by the Device class
-function promisify(fn, ...fnArgs) {
-  return new Promise((resolve, reject) => {
-    fn(...fnArgs, (err, ...args) => {
-      if (!err) {
-        if (args.length > 1) {
-          resolve(args); // Pass the callback arguments as an array
-        } else {
-          resolve(...args);
-        }
-      } else {
-        reject(err);
-      }
-    });
-  });
-}
-
 // Predefined polling policies
 export const CheckInterval = {
   DEFAULT: n => { // Simple Fibonacci-alike backoff
@@ -101,7 +85,25 @@ const DEFAULT_LIST_OPTIONS = {
   includeDfu: true // Whether to include devices which are in the DFU mode
 };
 
-export default class Device {
+// Helper function which is used to wrap the internal callback-based implementation into a
+// Promise-based interface exposed by the Device class
+function promisify(fn, ...fnArgs) {
+  return new Promise((resolve, reject) => {
+    fn(...fnArgs, (err, ...args) => {
+      if (!err) {
+        if (args.length > 1) {
+          resolve(args); // Pass the callback arguments as an array
+        } else {
+          resolve(...args);
+        }
+      } else {
+        reject(err);
+      }
+    });
+  });
+}
+
+export class Device {
   constructor(usbDev, info) {
     this._usbDev = usbDev;
     this._info = info;
@@ -186,6 +188,10 @@ export default class Device {
     return this._info.dfu;
   }
 
+  inControlTransfer() {
+
+  }
+
   /**
    * Enumerates Particle USB devices connected to the host.
    * @param {Object} options Options.
@@ -239,6 +245,24 @@ export default class Device {
   _sendRequest(type, data, options, cb) {
   }
 
+  _inControlTransfer(data, cb) {
+    let dataOrLength = null;
+    if (setup.bmRequestType & BM_REQUEST_TYPE_DIRECTION_MASK) {
+      dataOrLength = setup.wLength; // IN transfer
+    } else if (_.isString(data)) {
+      dataOrLength = Buffer.from(data);
+    } else {
+      dataOrLength = data;
+    }
+    this._usbDev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, dataOrLength,
+        (err, data) => {
+      if (err) {
+        return reject(new UsbError(err));
+      }
+      resolve(data);
+    });
+  }
+
   static _list(options, cb) {
     const devs = []; // Particle devices
     let usbDevs = null; // Detected USB devices
@@ -268,7 +292,7 @@ export default class Device {
       },
       // Find a device with the specified ID
       (devs, cb) => {
-        let findErr = null;
+        let firstErr = null;
         async.detectLimit(devs, 5, (dev, cb) => { // Open up to 5 devices at once
           async.waterfall([
             // Open the device
@@ -281,8 +305,8 @@ export default class Device {
             }
           ], (err, devId) => { // async.waterfall()
             if (err || (devId != id)) {
-              if (err && !findErr) {
-                findErr = err; // Store the first encountered error
+              if (err && !firstErr) {
+                firstErr = err; // Store the first error
               }
               // Close the device
               return dev._close(DEFAULT_CLOSE_OPTIONS, () => {
@@ -292,9 +316,9 @@ export default class Device {
             cb(null, true); // Device is found
           });
         }, (err, dev) => { // async.detectLimit()
-          // Ignore errors if the device has been found
+          // Ignore encountered errors if the device has been found
           if (!dev) {
-            return cb(findErr ? findErr : new Error('Device is not found'));
+            return cb(firstErr ? firstErr : new Error('Device is not found'));
           }
           cb(null, dev);
         });

@@ -1,6 +1,6 @@
-import Device, { CheckInterval } from './device';
+import { Device, checkInterval } from './device';
 
 export {
   Device,
-  CheckInterval
+  checkInterval
 };
