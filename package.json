@@ -1,0 +1,20 @@
+{
+  "name": "particle-usb",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/particle-usb.js",
+  "scripts": {
+    "test": "mocha --require babel-register --require babel-polyfill"
+  },
+  "dependencies": {
+    "async": "^2.6.0",
+    "usb": "^1.2.0"
+  },
+  "devDependencies": {
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-register": "^6.26.0",
+    "chai": "^4.1.2",
+    "mocha": "^4.0.1"
+  }
+}
