@@ -1,6 +1,6 @@
-import { Device, checkInterval } from './device';
+import { DeviceBase, checkInterval } from './device-base';
 
 export {
-  Device,
+  DeviceBase,
   checkInterval
 };
