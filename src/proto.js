@@ -25,35 +25,38 @@ export const Status = {
   NOT_FOUND: 5
 };
 
-// Values of the `bmRequestType` field used by the protocol
+// Values of the bmRequestType field used by the protocol
 export const BmRequestType = {
   HOST_TO_DEVICE: 0x40, // 01000000b (direction: host-to-device; type: vendor; recipient: device)
   DEVICE_TO_HOST: 0xc0 // 11000000b (direction: device_to_host; type: vendor; recipient: device)
 };
 
+// Value of the bRequest field for Particle vendor requests
+export const PARTICLE_BREQUEST = 0x50; // ASCII code of the character 'P'
+
 // Minimum length of the data stage for high-speed USB devices
 export const MIN_WLENGTH = 64;
 
 // Misc. constraints defined by the protocol and the USB specification
-const MAX_REQUEST_ID = 0xffff;
-const MAX_REQUEST_TYPE = 0xffff;
-const MAX_PAYLOAD_SIZE = 0xffff;
+export const MAX_REQUEST_ID = 0xffff;
+export const MAX_REQUEST_TYPE = 0xffff;
+export const MAX_PAYLOAD_SIZE = 0xffff;
 
 function checkRequestId(id) {
   if (id < 0 || id > MAX_REQUEST_ID) {
-    throw new Error("Invalid request ID");
+    throw new RangeError("Invalid request ID");
   }
 }
 
 function checkRequestType(type) {
   if (type < 0 || type > MAX_REQUEST_TYPE) {
-    throw new Error("Invalid request type");
+    throw new RangeError("Invalid request type");
   }
 }
 
 function checkPayloadSize(size) {
   if (size < 0 || size > MAX_PAYLOAD_SIZE) {
-    throw new Error("Invalid size of the payload data");
+    throw new RangeError("Invalid size of the payload data");
   }
 }
 
@@ -123,32 +126,28 @@ export function resetRequest(reqId = 0) {
 
 // Parses service reply data
 export function parseReply(data) {
-  try {
-    const rep = {};
-    let offs = 0;
-    // Field flags (4 bytes)
-    rep.flags = data.readUInt32LE(offs);
-    offs += 4;
-    // Status code (2 bytes)
-    rep.status = data.readUInt16LE(offs);
+  const rep = {};
+  let offs = 0;
+  // Field flags (4 bytes)
+  rep.flags = data.readUInt32LE(offs);
+  offs += 4;
+  // Status code (2 bytes)
+  rep.status = data.readUInt16LE(offs);
+  offs += 2;
+  // Request ID (2 bytes, optional)
+  if (rep.flags & FieldFlag.ID) {
+    rep.id = data.readUInt16LE(offs);
     offs += 2;
-    // Request ID (2 bytes, optional)
-    if (rep.flags & FieldFlag.ID) {
-      rep.id = data.readUInt16LE(offs);
-      offs += 2;
-    }
-    // Payload size (4 bytes, optional)
-    if (rep.flags & FieldFlag.SIZE) {
-      rep.size = data.readUInt32LE(offs);
-      offs += 4;
-    }
-    // Result code (4 bytes, optional)
-    if (rep.flags & FieldFlag.RESULT) {
-      rep.result = data.readInt32LE(offs); // signed int
-      offs += 4;
-    }
-    return rep;
-  } catch (err) {
-    throw new Error('Unable to parse service reply');
   }
+  // Payload size (4 bytes, optional)
+  if (rep.flags & FieldFlag.SIZE) {
+    rep.size = data.readUInt32LE(offs);
+    offs += 4;
+  }
+  // Result code (4 bytes, optional)
+  if (rep.flags & FieldFlag.RESULT) {
+    rep.result = data.readInt32LE(offs); // signed int
+    offs += 4;
+  }
+  return rep;
 }

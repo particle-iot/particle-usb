@@ -9,7 +9,8 @@
   "dependencies": {
     "async": "^2.6.0",
     "lodash": "^4.17.4",
-    "usb": "^1.2.0"
+    "usb": "^1.2.0",
+    "verror": "^1.10.0"
   },
   "devDependencies": {
     "babel-polyfill": "^6.26.0",

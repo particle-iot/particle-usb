@@ -1,7 +1,6 @@
 import * as usb from '../../src/particle-usb';
 
 import chai from 'chai';
-import util from 'util';
 
 class Logger {
   trace(...args) {
@@ -21,22 +20,14 @@ class Logger {
   }
 }
 
-function dump(val) {
-  const opts = {
-    depth: null
-  };
-  console.log(util.inspect(val, opts));
-}
-
 const expect = chai.expect;
 
 usb.DeviceBase.config({
-  logger: new Logger()
+  log: new Logger()
 });
 
 export {
   usb,
   chai,
-  expect,
-  dump
+  expect
 };
