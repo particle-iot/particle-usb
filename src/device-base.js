@@ -496,11 +496,12 @@ export class DeviceBase extends EventEmitter {
     }
     this._reqs.set(req.id, req);
     this._reqQueue.push(req);
+    this._log.trace(`Request ${req.id}: Enqued`);
     this._process();
   }
 
   _cancelAllRequests(err) {
-    this._reqs.forEach((id, req) => {
+    this._reqs.forEach((req, id) => {
       this._finishRequest(req, err);
     });
     this._reqs.clear();
@@ -531,6 +532,7 @@ export class DeviceBase extends EventEmitter {
     req.data = null;
     req.state = RequestState.DONE;
     this._reqs.delete(req.id);
+    this._log.trace(`Request ${req.id}: Completed`);
     req.callback(...args);
   }
 
@@ -544,6 +546,7 @@ export class DeviceBase extends EventEmitter {
     }
     // Reset all requests
     if (this._resetAllReqs) {
+      this._log.trace('Sending RESET');
       const setup = proto.resetRequest();
       return this._sendServiceRequest(setup, () => { // Ignore result
         this._resetAllReqs = false;
@@ -552,6 +555,7 @@ export class DeviceBase extends EventEmitter {
     // Reset next request
     if (this._resetQueue.length > 0) {
       const protoId = this._resetQueue.shift();
+      this._log.trace('Sending RESET, protocol ID: ${protoId}');
       const setup = proto.resetRequest(protoId);
       return this._sendServiceRequest(setup, noop); // Ignore result
     }
@@ -561,11 +565,13 @@ export class DeviceBase extends EventEmitter {
       if (req.state == RequestState.DONE) {
         continue; // Cancelled request
       }
+      this._log.trace(`Request ${req.id}: Sending CHECK (${req.checkCount + 1})`);
       const setup = proto.checkRequest(req.protoId);
       return this._sendServiceRequest(setup, (err, srep) => {
         if (this._isRequestFailed(req, err)) {
           return;
         }
+        this._log.trace(`Request ${req.id}: Received service reply, status: ${srep.status}`);
         switch (srep.status) {
           case proto.Status.OK: {
             ++req.checkCount;
@@ -576,11 +582,13 @@ export class DeviceBase extends EventEmitter {
               };
               if (srep.size) {
                 // Receive payload data
+                this._log.trace(`Request ${req.id}: Sending RECV`);
                 const setup = proto.recvRequest(req.protoId, srep.size);
                 this._transferIn(setup, (err, data) => {
                   if (this._isRequestFailed(req, err)) {
                     return;
                   }
+                  this._log.trace(`Request ${req.id}: Received payload data`);
                   if (req.hasTextData) {
                     data = data.toString();
                   }
@@ -592,11 +600,13 @@ export class DeviceBase extends EventEmitter {
               }
             } else if (req.state == RequestState.ALLOC) {
               // Buffer allocation is completed, send payload data
+              this._log.trace(`Request ${req.id}: Sending SEND`);
               const setup = proto.sendRequest(req.protoId, req.data.length);
               this._transferOut(setup, req.data, (err) => {
                 if (this._isRequestFailed(req, err)) {
                   return;
                 }
+                this._log.trace(`Request ${req.id}: Sent payload data`);
                 // Update request state
                 req.state = RequestState.PENDING;
                 req.checkCount = 0; // Reset check counter
@@ -631,25 +641,31 @@ export class DeviceBase extends EventEmitter {
     // Send next request
     if (!this._maxActiveReqs || this._activeReqs < this._maxActiveReqs) {
       while (this._reqQueue.length > 0) {
-        const req = this._checkQueue.shift();
+        const req = this._reqQueue.shift();
         if (req.state == RequestState.DONE) {
           continue; // Cancelled request
         }
+        this._log.trace(`Request ${req.id}: Sending INIT`);
         const setup = proto.initRequest(req.type, req.data ? req.data.length : 0);
         return this._sendServiceRequest(setup, (err, srep) => {
           if (this._isRequestFailed(req, err)) {
             return;
           }
+          this._log.trace(`Request ${req.id}: Received service reply, status: ${srep.status}`);
           switch (srep.status) {
             case proto.Status.OK: {
+              ++this._activeReqs;
               req.protoId = srep.id;
+              this._log.trace(`Request ${req.id}: Protocol ID: ${req.protoId}`);
               if (req.data && req.data.length > 0) {
                 // Send payload data
+                this._log.trace(`Request ${req.id}: Sending SEND`);
                 const setup = proto.sendRequest(req.protoId, req.data.length);
                 this._transferOut(setup, req.data, (err) => {
                   if (this._isRequestFailed(req, err)) {
                     return;
                   }
+                  this._log.trace(`Request ${req.id}: Sent payload data`);
                   // Request processing is pending
                   req.state = RequestState.PENDING;
                   this._startCheckTimer(req);
@@ -662,7 +678,9 @@ export class DeviceBase extends EventEmitter {
               break;
             }
             case proto.Status.PENDING: {
+              ++this._activeReqs;
               req.protoId = srep.id;
+              this._log.trace(`Request ${req.id}: Protocol ID: ${req.protoId}`);
               if (req.data && req.data.length > 0) {
                 // Buffer allocation is pending
                 req.state = RequestState.ALLOC;
@@ -703,7 +721,10 @@ export class DeviceBase extends EventEmitter {
     if (_.isFunction(timeout)) {
       timeout = timeout(req.checkCount);
     }
-    setTimeout(() => this._checkQueue.push(req.protoId), timeout);
+    setTimeout(() => {
+      this._checkQueue.push(req);
+      this._process();
+    }, timeout);
   }
 
   _isRequestFailed(req, err) {

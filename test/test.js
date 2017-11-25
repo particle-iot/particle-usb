@@ -2,6 +2,12 @@ import { usb, expect } from './support/setup';
 
 // TODO: The tests below cover only basic functionality and require a real device connected to the host
 
+const RequestType = {
+  DIAGNOSTIC_INFO: 100
+};
+
+const DEVICE_ID = '2a0031000447343138333038';
+
 describe('DeviceBase', function() {
   this.timeout(3000);
   this.slow(2000);
@@ -15,8 +21,17 @@ describe('DeviceBase', function() {
 
   describe('openById()', () => {
     it('opens a device with the specified ID', async () => {
-      const dev = await usb.DeviceBase.openById('2a0031000447343138333038');
-      expect(dev.id).to.equal('2a0031000447343138333038');
+      const dev = await usb.DeviceBase.openById(DEVICE_ID);
+      expect(dev.id).to.equal(DEVICE_ID);
+      await dev.close(); // FIXME
+    });
+  });
+
+  describe('sendRequest()', () => {
+    it('sends a request', async () => {
+      const dev = await usb.DeviceBase.openById(DEVICE_ID);
+      const rep = await dev.sendRequest(RequestType.DIAGNOSTIC_INFO);
+      await dev.close(); // FIXME
     });
   });
 });
