@@ -1,18 +1,32 @@
 {
   "name": "particle-usb",
   "version": "0.1.0",
-  "private": true,
-  "main": "src/particle-usb.js",
+  "description": "A library to access Particle USB devices",
+  "main": "lib/particle-usb.js",
+  "keywords": [
+    "particle",
+    "usb"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sergeuz/particle-usb"
+  },
+  "author": "Sergey Polyakov <sergeuz@gmail.com>",
+  "license": "Apache-2.0",
   "scripts": {
+    "compile": "babel src -s -d lib",
     "test": "mocha --require babel-register --require babel-polyfill"
   },
   "dependencies": {
     "async": "^2.6.0",
+    "babel-runtime": "^6.26.0",
     "lodash": "^4.17.4",
     "usb": "^1.2.0",
     "verror": "^1.10.0"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "babel-register": "^6.26.0",
