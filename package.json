@@ -14,6 +14,7 @@
   "author": "Sergey Polyakov <sergeuz@gmail.com>",
   "license": "Apache-2.0",
   "scripts": {
+    "prepublish": "npm run compile",
     "compile": "babel src -s -d lib",
     "test": "mocha --require babel-register --require babel-polyfill"
   },
