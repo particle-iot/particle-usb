@@ -1,8 +1,8 @@
 import * as proto from './proto';
+import * as error from './error';
 
 import * as usb from 'usb';
 import * as async from 'async';
-import { VError } from 'verror';
 
 import EventEmitter from 'events';
 
@@ -127,46 +127,6 @@ const VendorRequest = {
 export const RequestResult = {
   OK: 0
 };
-
-/**
- * Base class for all errors reported by DeviceBase.
- */
-export class DeviceError extends VError {
-  constructor(...args) {
-    super(...args);
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
-
-/**
- * Timeout error.
- */
-export class TimeoutError extends DeviceError {
-  constructor(...args) {
-    super(...args);
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
-
-/**
- * Error reported when a device has no enough memory to process a request.
- */
-export class MemoryError extends DeviceError {
-  constructor(...args) {
-    super(...args);
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
-
-/**
- * Internal error.
- */
-export class InternalError extends DeviceError {
-  constructor(...args) {
-    super(...args);
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
 
 // Helper function which is used to wrap the internal callback-based implementation into a
 // Promise-based interface exposed by the DeviceBase class
@@ -369,7 +329,7 @@ export class DeviceBase extends EventEmitter {
   // Internal implementation
   _open(options, cb) {
     if (this._state != DeviceState.CLOSED) {
-      return cb(new DeviceError('Device is already open'));
+      return cb(new error.DeviceError('Device is already open'));
     }
     // Open USB device
     try {
@@ -385,7 +345,7 @@ export class DeviceBase extends EventEmitter {
       cb => this._getFirmwareVersion((err, ver) => cb(null, ver)) // Ignore error
     ], (err, result) => {
       if (err) {
-        this._closeNow(new DeviceError(err, 'Unable to open device'));
+        this._closeNow(new error.DeviceError(err, 'Unable to open device'));
         return cb(err);
       }
       this._id = result[0]; // Device ID
@@ -405,14 +365,14 @@ export class DeviceBase extends EventEmitter {
     }
     // Check if pending requests need to be processed before closing the device
     if (!options.processPendingRequests) {
-      this._cancelAllRequests(new DeviceError('Device is being closed'));
+      this._cancelAllRequests(new error.DeviceError('Device is being closed'));
       if (this._closeTimer) {
         clearTimeout(this._closeTimer);
         this._closeTimer = null;
       }
     } else if (options.timeout && !this._closeMe) { // Timeout value cannot be overriden
       this._closeTimer = setTimeout(() => {
-        this._cancelAllRequests(new DeviceError('Device is being closed'));
+        this._cancelAllRequests(new error.DeviceError('Device is being closed'));
         this._process();
       }, options.timeout);
     }
@@ -424,12 +384,12 @@ export class DeviceBase extends EventEmitter {
 
   _closeNow(err = null) {
     if (this._state != DeviceState.CLOSING && this._state != DeviceState.OPENING) {
-      throw new InternalError('Unexpected device state');
+      throw new error.InternalError('Unexpected device state');
     }
     // Cancel all requests
     if (this._reqs.size > 0) {
       if (!err) {
-        err = new DeviceError('Device has been closed');
+        err = new error.DeviceError('Device has been closed');
       }
       this._cancelAllRequests(err);
     }
@@ -454,20 +414,20 @@ export class DeviceBase extends EventEmitter {
 
   _sendRequest(type, data, options, cb) {
     if (this._state == DeviceState.CLOSED) {
-      return cb(new DeviceError('Device is not open'));
+      return cb(new error.DeviceError('Device is not open'));
     }
     if (this._state == DeviceState.CLOSING || this._closeMe) {
-      return cb(new DeviceError('Device is being closed'));
+      return cb(new error.DeviceError('Device is being closed'));
     }
     if (type < 0 || type > proto.MAX_REQUEST_TYPE) {
-      return cb(new DeviceError('Invalid request type'));
+      return cb(new error.DeviceError('Invalid request type'));
     }
     const dataIsStr = (typeof data == 'string');
     if (dataIsStr) {
       data = Buffer.from(data);
     }
     if (data && data.length > proto.MAX_PAYLOAD_SIZE) {
-      return cb(new DeviceError('Request data is too large'));
+      return cb(new error.DeviceError('Request data is too large'));
     }
     const req = {
       id: ++this._lastReqId, // Internal request ID
@@ -485,7 +445,7 @@ export class DeviceBase extends EventEmitter {
     if (options.timeout) {
       // Start request timer
       req.reqTimer = setTimeout(() => {
-        this._finishRequest(req, new TimeoutError('Request timeout'));
+        this._finishRequest(req, new error.TimeoutError('Request timeout'));
         if (req.protoId) {
           // Notify the device that the request has been cancelled
           this._resetQueue.push(req.protoId);
@@ -515,7 +475,7 @@ export class DeviceBase extends EventEmitter {
 
   _finishRequest(req, ...args) {
     if (req.state == RequestState.DONE) {
-      throw new InternalError('Unexpected request state');
+      throw new error.InternalError('Unexpected request state');
     }
     if (req.checkTimer) {
       clearTimeout(req.checkTimer);
@@ -526,7 +486,7 @@ export class DeviceBase extends EventEmitter {
       req.reqTimer = null;
     }
     if (req.protoId && --this._activeReqs < 0) {
-      throw new InternalError('Invalid number of active requests');
+      throw new error.InternalError('Invalid number of active requests');
     }
     req.data = null;
     req.state = RequestState.DONE;
@@ -612,7 +572,7 @@ export class DeviceBase extends EventEmitter {
                 this._startCheckTimer(req);
               });
             } else {
-              this._finishRequest(req, new InternalError('Unexpected request state'));
+              this._finishRequest(req, new error.InternalError('Unexpected request state'));
             }
             break;
           }
@@ -622,16 +582,16 @@ export class DeviceBase extends EventEmitter {
             break;
           }
           case proto.Status.NO_MEMORY: {
-            this._finishRequest(req, new MemoryError('Memory allocation error'));
+            this._finishRequest(req, new error.MemoryError('Memory allocation error'));
             break;
           }
           case proto.Status.NOT_FOUND: {
-            this._finishRequest(req, new DeviceError('Request has been cancelled'));
+            this._finishRequest(req, new error.DeviceError('Request has been cancelled'));
             break;
           }
           default: {
             this._log.error(`Unknown status code: ${srep.status}`);
-            this._finishRequest(req, new InternalError('Unknown status code'));
+            this._finishRequest(req, new error.ProtocolError('Unknown status code'));
             break;
           }
         }
@@ -686,7 +646,7 @@ export class DeviceBase extends EventEmitter {
                 this._startCheckTimer(req);
               } else {
                 this._log.error(`Unexpected status code: ${srep.status}`);
-                this._finishRequest(req, new InternalError('Unexpected status code'));
+                this._finishRequest(req, new error.ProtocolError('Unexpected status code'));
               }
               break;
             }
@@ -698,11 +658,11 @@ export class DeviceBase extends EventEmitter {
               break;
             }
             case proto.Status.NO_MEMORY: {
-              this._finishRequest(req, new MemoryError('Memory allocation error'));
+              this._finishRequest(req, new error.MemoryError('Memory allocation error'));
               break;
             }
             default: {
-              this._finishRequest(req, new InternalError('Unknown status code'));
+              this._finishRequest(req, new error.ProtocolError('Unknown status code'));
               break;
             }
           }
@@ -747,7 +707,7 @@ export class DeviceBase extends EventEmitter {
       try {
         srep = proto.parseReply(data);
       } catch (err) {
-        return cb(new DeviceError(err, 'Invalid service reply'));
+        return cb(new error.ProtocolError(err, 'Invalid service reply'));
       }
       cb(null, srep);
     });
@@ -759,7 +719,7 @@ export class DeviceBase extends EventEmitter {
     this._usbDev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, data, (err) => {
       this._usbBusy = false;
       if (err) {
-        err = new DeviceError(err, 'OUT control transfer failed');
+        err = new error.DeviceError(err, 'OUT control transfer failed');
       }
       cb(err);
       this._process();
@@ -772,7 +732,7 @@ export class DeviceBase extends EventEmitter {
     this._usbDev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, setup.wLength, (err, data) => {
       this._usbBusy = false;
       if (err) {
-        err = new DeviceError(err, 'IN control transfer failed');
+        err = new error.DeviceError(err, 'IN control transfer failed');
       }
       cb(err, data);
       this._process();
@@ -783,7 +743,7 @@ export class DeviceBase extends EventEmitter {
     const descr = this._usbDev.deviceDescriptor;
     this._usbDev.getStringDescriptor(descr.iSerialNumber, (err, id) => {
       if (err) {
-        return cb(new DeviceError(err, 'Unable to get serial number descriptor'));
+        return cb(new error.DeviceError(err, 'Unable to get serial number descriptor'));
       }
       this._id = id.toLowerCase();
       cb(null, this._id);
@@ -794,7 +754,7 @@ export class DeviceBase extends EventEmitter {
     this._usbDev.controlTransfer(proto.BmRequestType.DEVICE_TO_HOST, proto.PARTICLE_BREQUEST, 0,
         VendorRequest.SYSTEM_VERSION, proto.MIN_WLENGTH, (err, data) => {
       if (err) {
-        return cb(new DeviceError(err, 'Unable to query firmware version'));
+        return cb(new error.DeviceError(err, 'Unable to query firmware version'));
       }
       cb(null, data.toString());
     });
@@ -805,7 +765,7 @@ export class DeviceBase extends EventEmitter {
     try {
       usbDevs = usb.getDeviceList();
     } catch (err) {
-      return cb(new DeviceError(err, 'Unable to enumerate USB devices'));
+      return cb(new error.DeviceError(err, 'Unable to enumerate USB devices'));
     }
     const devs = []; // Particle devices
     for (let usbDev of usbDevs) {
@@ -839,7 +799,7 @@ export class DeviceBase extends EventEmitter {
         });
       }, (err, dev) => { // async.detectLimit()
         if (!dev) {
-          return cb(new DeviceError('Device is not found or cannot be opened'));
+          return cb(new error.DeviceError('Device is not found or cannot be opened'));
         }
         cb(null, dev);
       })

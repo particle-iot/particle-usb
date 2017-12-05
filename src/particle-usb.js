@@ -1,6 +1,6 @@
-import { DeviceBase, checkInterval } from './device-base';
+import { DeviceBase, PollingPolicy } from './device-base';
 
 export {
   DeviceBase,
-  checkInterval
+  PollingPolicy
 };
