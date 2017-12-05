@@ -3,7 +3,6 @@ import * as proto from './proto';
 import * as usb from 'usb';
 import * as async from 'async';
 import { VError } from 'verror';
-import * as _ from 'lodash';
 
 import EventEmitter from 'events';
 
@@ -463,7 +462,7 @@ export class DeviceBase extends EventEmitter {
     if (type < 0 || type > proto.MAX_REQUEST_TYPE) {
       return cb(new DeviceError('Invalid request type'));
     }
-    const dataIsStr = _.isString(data);
+    const dataIsStr = (typeof data == 'string');
     if (dataIsStr) {
       data = Buffer.from(data);
     }
@@ -718,7 +717,7 @@ export class DeviceBase extends EventEmitter {
 
   _startCheckTimer(req) {
     let timeout = req.checkInterval;
-    if (_.isFunction(timeout)) {
+    if (typeof timeout == 'function') {
       timeout = timeout(req.checkCount);
     }
     setTimeout(() => {

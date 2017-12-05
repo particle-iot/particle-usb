@@ -9,10 +9,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/sergeuz/particle-usb"
+    "url": "https://github.com/spark/particle-usb"
   },
-  "author": "Sergey Polyakov <sergeuz@gmail.com>",
   "license": "Apache-2.0",
+  "contributors": [
+    "Sergey Polyakov <sergeuz@gmail.com>"
+  ],
   "scripts": {
     "prepublish": "npm run compile",
     "compile": "babel src -s -d lib",
@@ -21,7 +23,6 @@
   "dependencies": {
     "async": "^2.6.0",
     "babel-runtime": "^6.26.0",
-    "lodash": "^4.17.4",
     "usb": "^1.2.0",
     "verror": "^1.10.0"
   },
