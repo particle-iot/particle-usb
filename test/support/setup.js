@@ -22,7 +22,7 @@ class Logger {
 
 const expect = chai.expect;
 
-usb.DeviceBase.config({
+usb.config({
   log: new Logger()
 });
 

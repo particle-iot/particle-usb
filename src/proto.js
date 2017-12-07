@@ -1,3 +1,5 @@
+import { ProtocolError } from './error';
+
 // Service request types
 export const ServiceType = {
   INIT: 1,
@@ -42,28 +44,8 @@ export const MAX_REQUEST_ID = 0xffff;
 export const MAX_REQUEST_TYPE = 0xffff;
 export const MAX_PAYLOAD_SIZE = 0xffff;
 
-function checkRequestId(id) {
-  if (id < 0 || id > MAX_REQUEST_ID) {
-    throw new RangeError("Invalid request ID");
-  }
-}
-
-function checkRequestType(type) {
-  if (type < 0 || type > MAX_REQUEST_TYPE) {
-    throw new RangeError("Invalid request type");
-  }
-}
-
-function checkPayloadSize(size) {
-  if (size < 0 || size > MAX_PAYLOAD_SIZE) {
-    throw new RangeError("Invalid size of the payload data");
-  }
-}
-
 // Returns the setup packet fields for the INIT service request
 export function initRequest(reqType, dataSize = 0) {
-  checkRequestType(reqType);
-  checkPayloadSize(dataSize);
   return {
     bmRequestType: BmRequestType.DEVICE_TO_HOST,
     bRequest: ServiceType.INIT,
@@ -75,7 +57,6 @@ export function initRequest(reqType, dataSize = 0) {
 
 // Returns the setup packet fields for the CHECK service request
 export function checkRequest(reqId) {
-  checkRequestId(reqId);
   return {
     bmRequestType: BmRequestType.DEVICE_TO_HOST,
     bRequest: ServiceType.CHECK,
@@ -87,8 +68,6 @@ export function checkRequest(reqId) {
 
 // Returns the setup packet fields for the SEND service request
 export function sendRequest(reqId, dataSize) {
-  checkRequestId(reqId);
-  checkPayloadSize(dataSize);
   return {
     // SEND is the only host-to-device service request defined by the protocol
     bmRequestType: BmRequestType.HOST_TO_DEVICE,
@@ -101,8 +80,6 @@ export function sendRequest(reqId, dataSize) {
 
 // Returns the setup packet fields for the RECV service request
 export function recvRequest(reqId, dataSize) {
-  checkRequestId(reqId);
-  checkPayloadSize(dataSize);
   return {
     bmRequestType: BmRequestType.DEVICE_TO_HOST,
     bRequest: ServiceType.RECV,
@@ -114,7 +91,6 @@ export function recvRequest(reqId, dataSize) {
 
 // Returns the setup packet fields for the RESET service request
 export function resetRequest(reqId = 0) {
-  checkRequestId(reqId);
   return {
     bmRequestType: BmRequestType.DEVICE_TO_HOST,
     bRequest: ServiceType.RESET,
@@ -126,28 +102,32 @@ export function resetRequest(reqId = 0) {
 
 // Parses service reply data
 export function parseReply(data) {
-  const rep = {};
-  let offs = 0;
-  // Field flags (4 bytes)
-  rep.flags = data.readUInt32LE(offs);
-  offs += 4;
-  // Status code (2 bytes)
-  rep.status = data.readUInt16LE(offs);
-  offs += 2;
-  // Request ID (2 bytes, optional)
-  if (rep.flags & FieldFlag.ID) {
-    rep.id = data.readUInt16LE(offs);
+  try {
+    const rep = {};
+    let offs = 0;
+    // Field flags (4 bytes)
+    rep.flags = data.readUInt32LE(offs);
+    offs += 4;
+    // Status code (2 bytes)
+    rep.status = data.readUInt16LE(offs);
     offs += 2;
+    // Request ID (2 bytes, optional)
+    if (rep.flags & FieldFlag.ID) {
+      rep.id = data.readUInt16LE(offs);
+      offs += 2;
+    }
+    // Payload size (4 bytes, optional)
+    if (rep.flags & FieldFlag.SIZE) {
+      rep.size = data.readUInt32LE(offs);
+      offs += 4;
+    }
+    // Result code (4 bytes, optional)
+    if (rep.flags & FieldFlag.RESULT) {
+      rep.result = data.readInt32LE(offs); // signed int
+      offs += 4;
+    }
+    return rep;
+  } catch (err) {
+    throw new ProtocolError(err, 'Unable to parse service reply');
   }
-  // Payload size (4 bytes, optional)
-  if (rep.flags & FieldFlag.SIZE) {
-    rep.size = data.readUInt32LE(offs);
-    offs += 4;
-  }
-  // Result code (4 bytes, optional)
-  if (rep.flags & FieldFlag.RESULT) {
-    rep.result = data.readInt32LE(offs); // signed int
-    offs += 4;
-  }
-  return rep;
 }

@@ -8,28 +8,25 @@ const RequestType = {
 
 const DEVICE_ID = '2a0031000447343138333038';
 
-describe('DeviceBase', function() {
-  this.timeout(3000);
-  this.slow(2000);
-
-  describe('list()', () => {
-    it('enumerates Particle USB devices', async () => {
-      const devs = await usb.DeviceBase.list();
-      expect(devs).to.not.be.empty;
-    });
+describe('getDevices()', () => {
+  it('enumerates Particle USB devices', async () => {
+    const devs = await usb.getDevices();
+    expect(devs).to.not.be.empty;
   });
+});
 
-  describe('openById()', () => {
-    it('opens a device with the specified ID', async () => {
-      const dev = await usb.DeviceBase.openById(DEVICE_ID);
-      expect(dev.id).to.equal(DEVICE_ID);
-      await dev.close(); // FIXME
-    });
+describe('openDeviceById()', () => {
+  it('opens a device with the specified ID', async () => {
+    const dev = await usb.openDeviceById(DEVICE_ID);
+    expect(dev.id).to.equal(DEVICE_ID);
+    await dev.close(); // FIXME
   });
+});
 
+describe('DeviceBase', () => {
   describe('sendRequest()', () => {
     it('sends a request', async () => {
-      const dev = await usb.DeviceBase.openById(DEVICE_ID);
+      const dev = await usb.openDeviceById(DEVICE_ID);
       const rep = await dev.sendRequest(RequestType.DIAGNOSTIC_INFO);
       await dev.close(); // FIXME
     });

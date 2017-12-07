@@ -21,7 +21,6 @@
     "test": "mocha --require babel-register --require babel-polyfill"
   },
   "dependencies": {
-    "async": "^2.6.0",
     "babel-runtime": "^6.26.0",
     "usb": "^1.2.0",
     "verror": "^1.10.0"

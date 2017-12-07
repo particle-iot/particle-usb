@@ -1,8 +1,7 @@
+import * as usb from './node-usb';
 import * as proto from './proto';
-import * as error from './error';
 
-import * as usb from 'usb';
-import * as async from 'async';
+import { DeviceError, TimeoutError, MemoryError, ProtocolError, assert } from './error';
 
 import EventEmitter from 'events';
 
@@ -62,7 +61,7 @@ const USB_DEVICE_INFO = {
 };
 
 // Default backoff intervals for the CHECK request
-const DEFAULT_CHECK_INTERVALS = [100, 100, 250, 250, 500, 500, 1000];
+const DEFAULT_CHECK_INTERVALS = [50, 50, 100, 100, 250, 250, 500, 500, 1000];
 
 function checkInterval(attempts, intervals) {
   if (attempts < intervals.length) {
@@ -80,24 +79,32 @@ export const PollingPolicy = {
 
 // Default options for DeviceBase.open()
 const DEFAULT_OPEN_OPTIONS = {
-  concurrentRequests: null // Maximum number of concurrent requests is limited by a device
+  // Maximum number of concurrent requests that can be sent to the device
+  concurrentRequests: null // The number of requests is limited by the device
 };
 
 // Default options for DeviceBase.close()
 const DEFAULT_CLOSE_OPTIONS = {
-  processPendingRequests: true, // Process pending requests before closing the device
+  // Process pending requests before closing the device
+  processPendingRequests: true,
+  // Timeout to process pending requests
   timeout: null // Wait until all requests are processed
 };
 
 // Default options for DeviceBase.sendRequest()
 const DEFAULT_REQUEST_OPTIONS = {
-  pollingPolicy: PollingPolicy.DEFAULT, // Polling policy
-  timeout: 30000 // Request timeout
+  // Polling policy
+  pollingPolicy: PollingPolicy.DEFAULT,
+  // Request timeout
+  timeout: 30000
 };
 
-// Default options for DeviceBase.list()
-const DEFAULT_LIST_OPTIONS = {
-  includeDfu: true // Include devices which are in the DFU mode
+// Default options for getDevices()
+const DEFAULT_GET_DEVICES_OPTIONS = {
+  // Device types (DeviceType.PHOTON, DeviceType.ELECTRON, etc).
+  types: [],
+  // Include devices which are in the DFU mode
+  includeDfu: true
 };
 
 // Device state
@@ -108,15 +115,7 @@ const DeviceState = {
   CLOSING: 3
 };
 
-// Request state
-const RequestState = {
-  NEW: 0, // New request
-  ALLOC: 1, // Buffer allocation is pending
-  PENDING: 2, // Request processing is pending
-  DONE: 3 // Request processing is completed
-};
-
-// Low-level vendor requests (see ctrl_request_type enum defined in the firmware source code)
+// Low-level vendor requests as defined by the firmware's ctrl_request_type enum
 const VendorRequest = {
   SYSTEM_VERSION: 30, // Get system version
 };
@@ -128,35 +127,17 @@ export const RequestResult = {
   OK: 0
 };
 
-// Helper function which is used to wrap the internal callback-based implementation into a
-// Promise-based interface exposed by the DeviceBase class
-function promisify(fn, ...fnArgs) {
-  return new Promise((resolve, reject) => {
-    fn(...fnArgs, (err, ...args) => {
-      if (!err) {
-        if (args.length > 1) {
-          resolve(args); // Pass the callback arguments as an array
-        } else {
-          resolve(...args);
-        }
-      } else {
-        reject(err);
-      }
-    });
-  });
-}
-
 // Dummy callback function
-function noop() {
+function ignore() {
 }
 
 // Global configuration
 let configOptions = {
   log: { // Dummy logger
-    trace: noop,
-    info: noop,
-    warn: noop,
-    error: noop
+    trace: ignore,
+    info: ignore,
+    warn: ignore,
+    error: ignore
   }
 };
 
@@ -164,23 +145,23 @@ let configOptions = {
  * Base class for a Particle USB device.
  */
 export class DeviceBase extends EventEmitter {
-  constructor(usbDev, info) {
+  constructor(dev, info) {
     super();
-    this._usbDev = usbDev; // USB device object
+    this._dev = dev; // USB device handle
     this._info = info; // Device info
     this._log = configOptions.log; // Logger instance
     this._state = DeviceState.CLOSED; // Device state
     this._reqs = new Map(); // All known requests
-    this._reqQueue = []; // Unprocessed requests (array of request objects)
-    this._checkQueue = []; // Active requests that need to be checked (array of request objects)
-    this._resetQueue = []; // Active requests that need to be reset (array of protocol IDs)
+    this._reqQueue = []; // Unprocessed requests
+    this._checkQueue = []; // Active requests that need to be checked
+    this._resetQueue = []; // Active requests that need to be reset
     this._activeReqs = 0; // Number of active requests
     this._maxActiveReqs = null; // Maximum number of active requests
     this._lastReqId = 0; // Last used request ID
     this._closeTimer = null; // Timer for the closing operation
-    this._closeMe = false; // Set to true if the device needs to be closed
+    this._wantClose = false; // Set to true if the device needs to be closed
     this._resetAllReqs = false; // Set to true if all requests need to be reset
-    this._usbBusy = false; // Set to true if there's an activity on the USB connection
+    this._busy = false; // Set to true if there's an activity on the USB connection
     this._fwVer = null; // Firmware version
     this._id = null; // Device ID
   }
@@ -192,7 +173,38 @@ export class DeviceBase extends EventEmitter {
    * @return {Promise}
    */
   open(options = DEFAULT_OPEN_OPTIONS) {
-    return promisify(this._open.bind(this), options);
+    if (this._state != DeviceState.CLOSED) {
+      return Promise.reject(new DeviceError('Device is already open'));
+    }
+    // Open USB device
+    this._log.trace('Opening device');
+    this._state = DeviceState.OPENING;
+    return this._dev.open().then(() => {
+      // Pre-0.7.0 firmwares report the device ID in upper case
+      this._id = this._dev.serialNumber.toLowerCase();
+      this._log.trace(`Device ID: ${this._id}`);
+      // Get firmware version
+      return this._getFirmwareVersion();
+    }).then(ver => {
+      this._fwVer = ver;
+      this._log.trace(`Firmware version: ${this._fwVer}`);
+    }, err => {
+      // Pre-0.6.0 firmwares and devices in DFU mode don't support the firmware version request
+      if (!this._info.dfu) {
+        this._log.trace(`Unable to get firmware version: ${err.message}`);
+      }
+    }).then(() => {
+      this._log.trace('Device is open');
+      this._maxActiveReqs = options.concurrentRequests;
+      this._resetAllReqs = true; // Reset all requests remaining from a previous session
+      this._state = DeviceState.OPEN;
+      this.emit('open');
+      this._process();
+    }).catch(err => {
+      return this._close(err).then(() => {
+        throw err;
+      });
+    });
   }
 
   /**
@@ -202,7 +214,87 @@ export class DeviceBase extends EventEmitter {
    * @return {Promise}
    */
   close(options = DEFAULT_CLOSE_OPTIONS) {
-    return promisify(this._close.bind(this), options);
+    if (this._state == DeviceState.CLOSED) {
+      return Promise.resolve();
+    }
+    // Check if pending requests need to be processed before closing the device
+    if (!options.processPendingRequests) {
+      this._rejectAllRequests(new DeviceError('Device is being closed'));
+      if (this._closeTimer) {
+        clearTimeout(this._closeTimer);
+        this._closeTimer = null;
+      }
+    } else if (options.timeout && !this._wantClose) { // Timeout cannot be overriden
+      this._closeTimer = setTimeout(() => {
+        this._rejectAllRequests(new DeviceError('Device is being closed'));
+        this._process();
+      }, options.timeout);
+    }
+    return new Promise((resolve, reject) => {
+      // Use EventEmitter's queue to resolve the promise
+      this.once('closed', () => {
+        resolve();
+      });
+      this._wantClose = true;
+      this._process();
+    });
+  }
+
+  /**
+   * Send a USB request.
+   *
+   * @param {Number} type Request type.
+   * @param {Buffer|String} data Request data.
+   * @param {Object} options Request options.
+   * @return {Promise}
+   */
+  sendRequest(type, data = null, options = DEFAULT_REQUEST_OPTIONS) {
+    return new Promise((resolve, reject) => {
+      if (this._state == DeviceState.CLOSED) {
+        throw new DeviceError('Device is not open');
+      }
+      if (this._state == DeviceState.CLOSING || this._wantClose) {
+        throw new DeviceError('Device is being closed');
+      }
+      if (type < 0 || type > proto.MAX_REQUEST_TYPE) {
+        throw new DeviceError('Invalid request type');
+      }
+      const dataIsStr = (typeof data == 'string');
+      if (dataIsStr) {
+        data = Buffer.from(data);
+      }
+      if (data && data.length > proto.MAX_PAYLOAD_SIZE) {
+        throw new DeviceError('Request data is too large');
+      }
+      const checkInterval = (options.pollingPolicy || PollingPolicy.DEFAULT);
+      const req = {
+        id: ++this._lastReqId, // Internal request ID
+        type: type,
+        data: data,
+        dataIsStr: dataIsStr,
+        dataSent: false,
+        protoId: null, // Protocol request ID
+        checkInterval: checkInterval,
+        checkIntervalIsFunc: (typeof checkInterval == 'function'),
+        checkTimer: null,
+        checkCount: 0,
+        reqTimer: null,
+        resolve: resolve,
+        reject: reject,
+        done: false
+      };
+      if (options.timeout) {
+        // Start request timer
+        req.reqTimer = setTimeout(() => {
+          this._rejectRequest(req, new TimeoutError('Request timeout'));
+          this._process();
+        }, options.timeout);
+      }
+      this._reqs.set(req.id, req);
+      this._reqQueue.push(req);
+      this._log.trace(`Request ${req.id}: Enqueued`);
+      this._process();
+    });
   }
 
   /**
@@ -224,18 +316,6 @@ export class DeviceBase extends EventEmitter {
    */
   get firmwareVersion() {
     return this._fwVer;
-  }
-
-  /**
-   * Send a USB request.
-   *
-   * @param {Number} type Request type.
-   * @param {Buffer|String} data Request data.
-   * @param {Object} options Request options.
-   * @return {Promise}
-   */
-  sendRequest(type, data = null, options = DEFAULT_REQUEST_OPTIONS) {
-    return promisify(this._sendRequest.bind(this), type, data, options);
   }
 
   /**
@@ -287,196 +367,282 @@ export class DeviceBase extends EventEmitter {
     return this._info.dfu;
   }
 
-  /**
-   * Underlying USB device object.
-   *
-   * @see https://github.com/tessel/node-usb#device
-   */
-  get usbDevice() {
-    return this._usbDev;
-  }
-
-  /**
-   * List Particle USB devices connected to the host.
-   *
-   * @param {Object} options Options.
-   * @return {Promise}
-   */
-  static list(options = DEFAULT_LIST_OPTIONS) {
-    return promisify(DeviceBase._list, options);
-  }
-
-  /**
-   * Open a device with the specified ID.
-   *
-   * @param {String} id Device ID.
-   * @param {Object} options Options.
-   * @return {Promise}
-   */
-  static openById(id, options = DEFAULT_OPEN_OPTIONS) {
-    return promisify(DeviceBase._openById, id, options);
-  }
-
-  /**
-   * Set global options.
-   *
-   * @param {Object} options Options.
-   */
-  static config(options) {
-    Object.assign(configOptions, options);
-  }
-
-  // Internal implementation
-  _open(options, cb) {
-    if (this._state != DeviceState.CLOSED) {
-      return cb(new error.DeviceError('Device is already open'));
+  _process() {
+    if (this._state == DeviceState.CLOSED || this._state == DeviceState.OPENING || this._busy) {
+      return;
     }
-    // Open USB device
-    try {
-      this._usbDev.open();
-    } catch (err) {
-      return cb(err);
+    if (this._wantClose && this._state != DeviceState.CLOSING) {
+      this._log.trace('Closing device');
+      this._state = DeviceState.CLOSING;
     }
-    this._state = DeviceState.OPENING;
-    async.series([
-      // Get device ID
-      cb => this._getId(cb),
-      // Get firmware version
-      cb => this._getFirmwareVersion((err, ver) => cb(null, ver)) // Ignore error
-    ], (err, result) => {
-      if (err) {
-        this._closeNow(new error.DeviceError(err, 'Unable to open device'));
-        return cb(err);
-      }
-      this._id = result[0]; // Device ID
-      this._fwVer = result[1]; // Firmware version
-      this._maxActiveReqs = options.concurrentRequests;
-      this._resetAllReqs = true; // Reset all requests remaining from a previous session
-      this._state = DeviceState.OPEN;
-      this.emit('open');
+    if (this._resetAllRequests()) {
+      return;
+    }
+    if (this._resetNextRequest()) {
+      return;
+    }
+    if (this._checkNextRequest()) {
+      return;
+    }
+    if (this._sendNextRequest()) {
+      return;
+    }
+    if (this._state == DeviceState.CLOSING && this._activeReqs == 0) {
+      this._close();
+    }
+  }
+
+  _resetAllRequests() {
+    if (!this._resetAllReqs) {
+      return false;
+    }
+    this._log.trace('Sending RESET');
+    assert(!this._busy);
+    this._busy = true;
+    const setup = proto.resetRequest();
+    this._sendServiceRequest(setup).catch(ignore).then(() => { // Ignore result
+      this._resetAllReqs = false;
+      this._activeReqs = 0;
+    }).finally(() => {
+      this._busy = false;
       this._process();
-      cb();
     });
+    return true;
   }
 
-  _close(options, cb) {
-    if (this._state == DeviceState.CLOSED) {
-      return cb();
+  _resetNextRequest() {
+    if (this._resetQueue.length == 0) {
+      return false;
     }
-    // Check if pending requests need to be processed before closing the device
-    if (!options.processPendingRequests) {
-      this._cancelAllRequests(new error.DeviceError('Device is being closed'));
-      if (this._closeTimer) {
-        clearTimeout(this._closeTimer);
-        this._closeTimer = null;
+    const req = this._resetQueue.shift();
+    this._log.trace(`Request ${req.id}: Sending RESET`);
+    assert(!this._busy && req.protoId);
+    this._busy = true;
+    const setup = proto.resetRequest(req.protoId);
+    this._sendServiceRequest(setup).catch(ignore).then(() => { // Ignore result
+      assert(--this._activeReqs >= 0);
+    }).finally(() => {
+      this._busy = false;
+      this._process();
+    });
+    return true;
+  }
+
+  _checkNextRequest() {
+    let req = null
+    while (this._checkQueue.length != 0) {
+      const r = this._checkQueue.shift();
+      if (!r.done) { // Skip cancelled requests
+        req = r;
+        break;
       }
-    } else if (options.timeout && !this._closeMe) { // Timeout value cannot be overriden
-      this._closeTimer = setTimeout(() => {
-        this._cancelAllRequests(new error.DeviceError('Device is being closed'));
-        this._process();
-      }, options.timeout);
     }
-    // Use EventEmitter's queue to invoke the callback
-    this.once('closed', cb);
-    this._closeMe = true;
-    this._process();
+    if (!req) {
+      return false;
+    }
+    this._log.trace(`Request ${req.id}: Sending CHECK (${req.checkCount})`);
+    assert(!this._busy && req.protoId);
+    this._busy = true;
+    const setup = proto.checkRequest(req.protoId);
+    this._sendServiceRequest(setup).then(srep => {
+      this._log.trace(`Request ${req.id}: Status: ${srep.status}`);
+      switch (srep.status) {
+        case proto.Status.OK: {
+          if (req.dataSent) {
+            // Request processing is completed
+            const rep = {
+              result: (srep.result || RequestResult.OK)
+            };
+            if (srep.size) {
+              // Receive payload data
+              this._log.trace(`Request ${req.id}: Sending RECV`);
+              const setup = proto.recvRequest(req.protoId, srep.size);
+              return this._dev.transferIn(setup).then(data => {
+                this._log.trace(`Request ${req.id}: Received payload data (${data.length} bytes)`);
+                rep.data = req.dataIsStr ? data.toString() : data;
+                this._resolveRequest(req, rep);
+              });
+            } else {
+              this._resolveRequest(req, rep); // No reply data
+            }
+          } else {
+            // Buffer allocation is completed, send payload data
+            this._log.trace(`Request ${req.id}: Sending SEND`);
+            const setup = proto.sendRequest(req.protoId, req.data.length);
+            return this._dev.transferOut(setup, req.data).then(() => {
+              this._log.trace(`Request ${req.id}: Sent payload data (${req.data.length} bytes)`);
+              req.dataSent = true;
+              req.checkCount = 0; // Reset check counter
+              this._startCheckTimer(req);
+            });
+          }
+          break;
+        }
+        case proto.Status.PENDING: {
+          this._startCheckTimer(req);
+          break;
+        }
+        case proto.Status.NO_MEMORY: {
+          throw new MemoryError('Memory allocation error');
+        }
+        case proto.Status.NOT_FOUND: {
+          throw new DeviceError('Request was cancelled');
+        }
+        default: {
+          throw new ProtocolError(`Unknown status code: ${srep.status}`);
+        }
+      }
+    }).catch(err => {
+      this._rejectRequest(req, err);
+    }).finally(() => {
+      this._busy = false;
+      this._process();
+    });
+    return true;
   }
 
-  _closeNow(err = null) {
-    if (this._state != DeviceState.CLOSING && this._state != DeviceState.OPENING) {
-      throw new error.InternalError('Unexpected device state');
+  _sendNextRequest() {
+    if (this._maxActiveReqs && this._activeReqs >= this._maxActiveReqs) {
+      return false;
     }
+    let req = null;
+    while (this._reqQueue.length != 0) {
+      const r = this._reqQueue.shift();
+      if (!r.done) { // Skip cancelled requests
+        req = r;
+        break;
+      }
+    }
+    if (!req) {
+      return false;
+    }
+    this._log.trace(`Request ${req.id}: Sending INIT`);
+    assert(!this._busy);
+    this._busy = true;
+    const setup = proto.initRequest(req.type, req.data ? req.data.length : 0);
+    this._sendServiceRequest(setup).then(srep => {
+      this._log.trace(`Request ${req.id}: Status: ${srep.status}`);
+      if (srep.status == proto.Status.OK || srep.status == proto.Status.PENDING) {
+        req.protoId = srep.id;
+        ++this._activeReqs;
+        this._log.trace(`Request ${req.id}: Protocol ID: ${req.protoId}`);
+      }
+      switch (srep.status) {
+        case proto.Status.OK: {
+          if (req.data && req.data.length > 0) {
+            // Send payload data
+            this._log.trace(`Request ${req.id}: Sending SEND`);
+            const setup = proto.sendRequest(req.protoId, req.data.length);
+            return this._dev.transferOut(setup, req.data).then(() => {
+              this._log.trace(`Request ${req.id}: Sent payload data (${req.data.length} bytes)`);
+              req.dataSent = true;
+              this._startCheckTimer(req);
+            });
+          } else {
+            req.dataSent = true; // No payload data
+            this._startCheckTimer(req);
+          }
+          break;
+        }
+        case proto.Status.PENDING: {
+          if (!req.data || req.data.length == 0) {
+            throw new ProtocolError(`Unexpected status code: ${srep.status}`);
+          }
+          // Buffer allocation is pending
+          this._startCheckTimer(req);
+          break;
+        }
+        case proto.Status.BUSY: {
+          // Update maximum number of active requests
+          this._maxActiveReqs = this._activeReqs;
+          // Return the request back to queue
+          this._reqQueue.unshift(req);
+          break;
+        }
+        case proto.Status.NO_MEMORY: {
+          throw new MemoryError('Memory allocation error');
+        }
+        default: {
+          throw new ProtocolError(`Unknown status code: ${srep.status}`);
+        }
+      }
+    }).catch(err => {
+      this._rejectRequest(req, err);
+    }).finally(() => {
+      this._busy = false;
+      this._process();
+    });
+    return true;
+  }
+
+  _close(err = null) {
+    assert(!this._busy);
     // Cancel all requests
-    if (this._reqs.size > 0) {
+    if (this._reqs.size != 0) {
       if (!err) {
-        err = new error.DeviceError('Device has been closed');
+        err = new DeviceError('Device has been closed');
       }
-      this._cancelAllRequests(err);
+      this._rejectAllRequests(err);
     }
+    this._activeReqs = 0;
+    this._resetAllReqs = false;
     // Cancel timers
     if (this._closeTimer) {
       clearTimeout(this._closeTimer);
       this._closeTimer = null;
     }
     // Close USB device
-    try {
-      this._usbDev.close();
-    } catch (err) {
+    return this._dev.close().catch(err => {
       this._log.error(`Unable to close USB device: ${err.message}`);
-    }
-    // Reset device state
-    this._state = DeviceState.CLOSED;
-    this._closeMe = false;
-    this._maxActiveReqs = null;
-    this._fwVer = null;
-    this.emit('closed');
-  }
-
-  _sendRequest(type, data, options, cb) {
-    if (this._state == DeviceState.CLOSED) {
-      return cb(new error.DeviceError('Device is not open'));
-    }
-    if (this._state == DeviceState.CLOSING || this._closeMe) {
-      return cb(new error.DeviceError('Device is being closed'));
-    }
-    if (type < 0 || type > proto.MAX_REQUEST_TYPE) {
-      return cb(new error.DeviceError('Invalid request type'));
-    }
-    const dataIsStr = (typeof data == 'string');
-    if (dataIsStr) {
-      data = Buffer.from(data);
-    }
-    if (data && data.length > proto.MAX_PAYLOAD_SIZE) {
-      return cb(new error.DeviceError('Request data is too large'));
-    }
-    const req = {
-      id: ++this._lastReqId, // Internal request ID
-      type: type,
-      data: data,
-      hasTextData: dataIsStr,
-      state: RequestState.NEW,
-      protoId: null, // Protocol request ID
-      checkInterval: (options.pollingPolicy || PollingPolicy.DEFAULT),
-      checkTimer: null,
-      checkCount: 0,
-      reqTimer: null,
-      callback: cb
-    };
-    if (options.timeout) {
-      // Start request timer
-      req.reqTimer = setTimeout(() => {
-        this._finishRequest(req, new error.TimeoutError('Request timeout'));
-        if (req.protoId) {
-          // Notify the device that the request has been cancelled
-          this._resetQueue.push(req.protoId);
-          this._process();
-        }
-      }, options.timeout);
-    }
-    this._reqs.set(req.id, req);
-    this._reqQueue.push(req);
-    this._log.trace(`Request ${req.id}: Enqued`);
-    this._process();
-  }
-
-  _cancelAllRequests(err) {
-    this._reqs.forEach((req, id) => {
-      this._finishRequest(req, err);
+    }).then(() => {
+      // Reset device state
+      const emitEvent = (this._state == DeviceState.CLOSING);
+      this._state = DeviceState.CLOSED;
+      this._wantClose = false;
+      this._maxActiveReqs = null;
+      this._fwVer = null;
+      this._id = null;
+      if (emitEvent) {
+        this.emit('closed');
+      }
     });
-    this._reqs.clear();
+  }
+
+  _rejectAllRequests(err) {
+    this._reqs.forEach(req => {
+      this._rejectRequest(req, err);
+    });
     this._reqQueue = [];
     this._checkQueue = [];
     this._resetQueue = [];
-    if (this._activeReqs != 0) {
-      this._activeReqs = 0;
+    if (this._activeReqs > 0) {
       this._resetAllReqs = true;
     }
   }
 
-  _finishRequest(req, ...args) {
-    if (req.state == RequestState.DONE) {
-      throw new error.InternalError('Unexpected request state');
+  _rejectRequest(req, err) {
+    if (req.done) {
+      return;
     }
+    this._log.trace(`Request ${req.id}: Failed: ${err.message}`);
+    this._clearRequest(req);
+    if (req.protoId) {
+      this._resetQueue.push(req.protoId);
+    }
+    req.reject(err);
+  }
+
+  _resolveRequest(req, rep) {
+    if (req.done) {
+      return;
+    }
+    this._log.trace(`Request ${req.id}: Completed`);
+    this._clearRequest(req);
+    assert(--this._activeReqs >= 0);
+    req.resolve(rep);
+  }
+
+  _clearRequest(req) {
     if (req.checkTimer) {
       clearTimeout(req.checkTimer);
       req.checkTimer = null;
@@ -485,324 +651,109 @@ export class DeviceBase extends EventEmitter {
       clearTimeout(req.reqTimer);
       req.reqTimer = null;
     }
-    if (req.protoId && --this._activeReqs < 0) {
-      throw new error.InternalError('Invalid number of active requests');
-    }
-    req.data = null;
-    req.state = RequestState.DONE;
     this._reqs.delete(req.id);
-    this._log.trace(`Request ${req.id}: Completed`);
-    req.callback(...args);
-  }
-
-  // TODO: Refactor this method into a few smaller ones
-  _process() {
-    if (this._state == DeviceState.CLOSED || this._state == DeviceState.OPENING || this._usbBusy) {
-      return;
-    }
-    if (this._closeMe) {
-      this._state = DeviceState.CLOSING;
-    }
-    // Reset all requests
-    if (this._resetAllReqs) {
-      this._log.trace('Sending RESET');
-      const setup = proto.resetRequest();
-      return this._sendServiceRequest(setup, () => { // Ignore result
-        this._resetAllReqs = false;
-      });
-    }
-    // Reset next request
-    if (this._resetQueue.length > 0) {
-      const protoId = this._resetQueue.shift();
-      this._log.trace('Sending RESET, protocol ID: ${protoId}');
-      const setup = proto.resetRequest(protoId);
-      return this._sendServiceRequest(setup, noop); // Ignore result
-    }
-    // Check next request
-    while (this._checkQueue.length > 0) {
-      const req = this._checkQueue.shift();
-      if (req.state == RequestState.DONE) {
-        continue; // Cancelled request
-      }
-      this._log.trace(`Request ${req.id}: Sending CHECK (${req.checkCount + 1})`);
-      const setup = proto.checkRequest(req.protoId);
-      return this._sendServiceRequest(setup, (err, srep) => {
-        if (this._isRequestFailed(req, err)) {
-          return;
-        }
-        this._log.trace(`Request ${req.id}: Received service reply, status: ${srep.status}`);
-        switch (srep.status) {
-          case proto.Status.OK: {
-            ++req.checkCount;
-            if (req.state == RequestState.PENDING) {
-              // Request processing is finished
-              const rep = {
-                result: srep.result || RequestResult.OK
-              };
-              if (srep.size) {
-                // Receive payload data
-                this._log.trace(`Request ${req.id}: Sending RECV`);
-                const setup = proto.recvRequest(req.protoId, srep.size);
-                this._transferIn(setup, (err, data) => {
-                  if (this._isRequestFailed(req, err)) {
-                    return;
-                  }
-                  this._log.trace(`Request ${req.id}: Received payload data`);
-                  if (req.hasTextData) {
-                    data = data.toString();
-                  }
-                  rep.data = data;
-                  this._finishRequest(req, null, rep);
-                })
-              } else {
-                this._finishRequest(req, null, rep); // No reply data
-              }
-            } else if (req.state == RequestState.ALLOC) {
-              // Buffer allocation is completed, send payload data
-              this._log.trace(`Request ${req.id}: Sending SEND`);
-              const setup = proto.sendRequest(req.protoId, req.data.length);
-              this._transferOut(setup, req.data, (err) => {
-                if (this._isRequestFailed(req, err)) {
-                  return;
-                }
-                this._log.trace(`Request ${req.id}: Sent payload data`);
-                // Update request state
-                req.state = RequestState.PENDING;
-                req.checkCount = 0; // Reset check counter
-                this._startCheckTimer(req);
-              });
-            } else {
-              this._finishRequest(req, new error.InternalError('Unexpected request state'));
-            }
-            break;
-          }
-          case proto.Status.PENDING: {
-            ++req.checkCount;
-            this._startCheckTimer(req);
-            break;
-          }
-          case proto.Status.NO_MEMORY: {
-            this._finishRequest(req, new error.MemoryError('Memory allocation error'));
-            break;
-          }
-          case proto.Status.NOT_FOUND: {
-            this._finishRequest(req, new error.DeviceError('Request has been cancelled'));
-            break;
-          }
-          default: {
-            this._log.error(`Unknown status code: ${srep.status}`);
-            this._finishRequest(req, new error.ProtocolError('Unknown status code'));
-            break;
-          }
-        }
-      });
-    }
-    // Send next request
-    if (!this._maxActiveReqs || this._activeReqs < this._maxActiveReqs) {
-      while (this._reqQueue.length > 0) {
-        const req = this._reqQueue.shift();
-        if (req.state == RequestState.DONE) {
-          continue; // Cancelled request
-        }
-        this._log.trace(`Request ${req.id}: Sending INIT`);
-        const setup = proto.initRequest(req.type, req.data ? req.data.length : 0);
-        return this._sendServiceRequest(setup, (err, srep) => {
-          if (this._isRequestFailed(req, err)) {
-            return;
-          }
-          this._log.trace(`Request ${req.id}: Received service reply, status: ${srep.status}`);
-          switch (srep.status) {
-            case proto.Status.OK: {
-              ++this._activeReqs;
-              req.protoId = srep.id;
-              this._log.trace(`Request ${req.id}: Protocol ID: ${req.protoId}`);
-              if (req.data && req.data.length > 0) {
-                // Send payload data
-                this._log.trace(`Request ${req.id}: Sending SEND`);
-                const setup = proto.sendRequest(req.protoId, req.data.length);
-                this._transferOut(setup, req.data, (err) => {
-                  if (this._isRequestFailed(req, err)) {
-                    return;
-                  }
-                  this._log.trace(`Request ${req.id}: Sent payload data`);
-                  // Request processing is pending
-                  req.state = RequestState.PENDING;
-                  this._startCheckTimer(req);
-                });
-              } else {
-                // Request processing is pending
-                req.state = RequestState.PENDING;
-                this._startCheckTimer(req);
-              }
-              break;
-            }
-            case proto.Status.PENDING: {
-              ++this._activeReqs;
-              req.protoId = srep.id;
-              this._log.trace(`Request ${req.id}: Protocol ID: ${req.protoId}`);
-              if (req.data && req.data.length > 0) {
-                // Buffer allocation is pending
-                req.state = RequestState.ALLOC;
-                this._startCheckTimer(req);
-              } else {
-                this._log.error(`Unexpected status code: ${srep.status}`);
-                this._finishRequest(req, new error.ProtocolError('Unexpected status code'));
-              }
-              break;
-            }
-            case proto.Status.BUSY: {
-              // Update maximum number of active requests
-              this._maxActiveReqs = this._activeReqs;
-              // Return request back to queue
-              this._reqQueue.unshift(req);
-              break;
-            }
-            case proto.Status.NO_MEMORY: {
-              this._finishRequest(req, new error.MemoryError('Memory allocation error'));
-              break;
-            }
-            default: {
-              this._finishRequest(req, new error.ProtocolError('Unknown status code'));
-              break;
-            }
-          }
-        });
-      }
-    }
-    // Nothing more to do, close the device if necessary
-    if (this._state == DeviceState.CLOSING) {
-      this._closeNow();
-    }
+    req.done = true;
   }
 
   _startCheckTimer(req) {
     let timeout = req.checkInterval;
-    if (typeof timeout == 'function') {
+    if (req.checkIntervalIsFunc) {
       timeout = timeout(req.checkCount);
     }
+    ++req.checkCount;
     setTimeout(() => {
       this._checkQueue.push(req);
       this._process();
     }, timeout);
   }
 
-  _isRequestFailed(req, err) {
-    if (req.state == RequestState.DONE) {
-      return true;
-    }
-    if (err) {
-      this._finishRequest(req, err);
-      return true;
-    }
-    return false;
-  }
-
-  // Sends a service request and parses a reply data
-  _sendServiceRequest(setup, cb) {
-    this._transferIn(setup, (err, data) => {
-      if (err) {
-        return cb(err);
-      }
-      let srep = null;
-      try {
-        srep = proto.parseReply(data);
-      } catch (err) {
-        return cb(new error.ProtocolError(err, 'Invalid service reply'));
-      }
-      cb(null, srep);
+  _getFirmwareVersion() {
+    const setup = {
+      bmRequestType: proto.BmRequestType.DEVICE_TO_HOST,
+      bRequest: proto.PARTICLE_BREQUEST,
+      wIndex: VendorRequest.SYSTEM_VERSION,
+      wValue: 0,
+      wLength: proto.MIN_WLENGTH
+    };
+    return this._dev.transferIn(setup).then(data => {
+      return data.toString();
     });
   }
 
-  // Performs an OUT control transfer
-  _transferOut(setup, data, cb) {
-    this._usbBusy = true;
-    this._usbDev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, data, (err) => {
-      this._usbBusy = false;
-      if (err) {
-        err = new error.DeviceError(err, 'OUT control transfer failed');
-      }
-      cb(err);
-      this._process();
+  // Sends a service request and parses the reply data
+  _sendServiceRequest(setup) {
+    return this._dev.transferIn(setup).then(data => {
+      return proto.parseReply(data);
     });
   }
+}
 
-  // Performs an IN control transfer
-  _transferIn(setup, cb) {
-    this._usbBusy = true;
-    this._usbDev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, setup.wLength, (err, data) => {
-      this._usbBusy = false;
-      if (err) {
-        err = new error.DeviceError(err, 'IN control transfer failed');
-      }
-      cb(err, data);
-      this._process();
-    })
-  }
-
-  _getId(cb) {
-    const descr = this._usbDev.deviceDescriptor;
-    this._usbDev.getStringDescriptor(descr.iSerialNumber, (err, id) => {
-      if (err) {
-        return cb(new error.DeviceError(err, 'Unable to get serial number descriptor'));
-      }
-      this._id = id.toLowerCase();
-      cb(null, this._id);
-    });
-  }
-
-  _getFirmwareVersion(cb) {
-    this._usbDev.controlTransfer(proto.BmRequestType.DEVICE_TO_HOST, proto.PARTICLE_BREQUEST, 0,
-        VendorRequest.SYSTEM_VERSION, proto.MIN_WLENGTH, (err, data) => {
-      if (err) {
-        return cb(new error.DeviceError(err, 'Unable to query firmware version'));
-      }
-      cb(null, data.toString());
-    });
-  }
-
-  static _list(options, cb) {
-    let usbDevs = null; // Detected USB devices
-    try {
-      usbDevs = usb.getDeviceList();
-    } catch (err) {
-      return cb(new error.DeviceError(err, 'Unable to enumerate USB devices'));
-    }
+/**
+ * Enumerate Particle USB devices connected to the host.
+ *
+ * @param {Object} options Options.
+ * @return {Promise}
+ */
+export function getDevices(options = DEFAULT_GET_DEVICES_OPTIONS) {
+  return usb.getDevices().then(usbDevs => {
     const devs = []; // Particle devices
     for (let usbDev of usbDevs) {
-      const descr = usbDev.deviceDescriptor;
-      const vendorId = descr.idVendor.toString(16);
-      const productId = descr.idProduct.toString(16);
-      const usbId = vendorId + ':' + productId;
-      const info = USB_DEVICE_INFO[usbId];
-      if (info && (!info.dfu || options.includeDfu)) {
+      const usbDevId = usbDev.vendorId.toString(16) + ':' + usbDev.productId.toString(16);
+      const info = USB_DEVICE_INFO[usbDevId];
+      if (info && (!info.dfu || options.includeDfu) && (options.types.length == 0 ||
+          options.types.includes(info.type))) {
         devs.push(new DeviceBase(usbDev, info));
       }
     }
-    cb(null, devs);
-  }
+    return devs;
+  });
+}
 
-  static _openById(id, options, cb) {
-    async.waterfall([
-      // Get all Particle devices
-      cb => DeviceBase._list(DEFAULT_LIST_OPTIONS, cb),
-      // Find a device with the specified ID
-      (devs, cb) => async.detectLimit(devs, 4, (dev, cb) => { // Open up to 4 devices at once
-        // Open the device
-        dev._open(options, (err) => {
-          if (err) {
-            return cb(null, false); // Ignore error
-          } else if (dev.id == id) {
-            return cb(null, true); // Device is found
-          } else {
-            return dev._close(DEFAULT_CLOSE_OPTIONS, () => cb(null, false)); // Close the device
-          }
-        });
-      }, (err, dev) => { // async.detectLimit()
-        if (!dev) {
-          return cb(new error.DeviceError('Device is not found or cannot be opened'));
+/**
+ * Open a device with the specified ID.
+ *
+ * @param {String} id Device ID.
+ * @param {Object} options Options.
+ * @return {Promise}
+ */
+export function openDeviceById(id, options = DEFAULT_OPEN_OPTIONS) {
+  id = id.toLowerCase();
+  // Get all Particle devices
+  return getDevices().then(devs => {
+    // Open each device and check its ID
+    const p = devs.map(dev => {
+      return dev.open(options).then(() => {
+        if (dev.id != id) {
+          return dev.close();
         }
-        cb(null, dev);
-      })
-    ], cb); // async.waterfall()
-  }
+        return dev;
+      }).catch(ignore); // Ignore error
+    });
+    return Promise.all(p);
+  }).then(devs => {
+    devs = devs.filter(dev => !!dev);
+    if (devs.length == 0) {
+      throw new DeviceError('Device is not found');
+    }
+    const dev = devs.shift();
+    if (devs.length != 0) {
+      configOptions.log.warn(`Found multiple devices with the same ID: ${id}`); // lol
+      const p = devs.map(dev => {
+        return dev.close().catch(ignore); // Ignore error
+      });
+      return Promise.all(p).then(() => {
+        return dev;
+      });
+    }
+    return dev;
+  });
+}
+
+/**
+ * Set global options.
+ *
+ * @param {Object} options Options.
+ */
+export function config(options) {
+  Object.assign(configOptions, options);
 }
