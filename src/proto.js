@@ -123,11 +123,53 @@ export function parseReply(data) {
     }
     // Result code (4 bytes, optional)
     if (rep.flags & FieldFlag.RESULT) {
-      rep.result = data.readInt32LE(offs); // signed int
+      rep.result = data.readInt32LE(offs); // Signed
       offs += 4;
     }
     return rep;
   } catch (err) {
     throw new ProtocolError(err, 'Unable to parse service reply');
   }
+}
+
+// Serializes service reply data
+export function encodeReply(rep) {
+  let flags = proto.FieldFlag.STATUS; // Status code is a mandatory field
+  let size = 6; // 4 bytes for field flags and 2 bytes for status code
+  if (rep.id) {
+    flags |= proto.FieldFlag.ID;
+    size += 2;
+  }
+  if (rep.size) {
+    flags |= proto.FieldFlag.SIZE;
+    size += 4;
+  }
+  if (rep.result) {
+    flags |= proto.FieldFlag.RESULT;
+    size += 4;
+  }
+  const data = Buffer.alloc(size);
+  let offs = 0;
+  // Field flags (4 bytes)
+  data.writeUInt32LE(flags, offs);
+  offs += 4;
+  // Status code (2 bytes)
+  data.writeUInt16LE(rep.status, offs);
+  offs += 2;
+  // Request ID (2 bytes, optional)
+  if (flags & proto.FieldFlag.ID) {
+    data.writeUInt16LE(rep.id, offs);
+    offs += 2;
+  }
+  // Payload size (4 bytes, optional)
+  if (flags & proto.FieldFlag.SIZE) {
+    data.writeUInt32LE(rep.size, offs);
+    offs += 4;
+  }
+  // Result code (4 bytes, optional)
+  if (flags & proto.FieldFlag.RESULT) {
+    data.writeInt16LE(rep.result, offs); // Signed
+    offs += 4;
+  }
+  return data;
 }

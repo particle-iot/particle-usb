@@ -1,4 +1,4 @@
-import { usb, expect } from './support/setup';
+import { usb, expect } from './support';
 
 // TODO: The tests below cover only basic functionality and require a real device connected to the host
 

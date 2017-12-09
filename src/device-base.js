@@ -117,7 +117,7 @@ const DeviceState = {
 
 // Low-level vendor requests as defined by the firmware's ctrl_request_type enum
 const VendorRequest = {
-  SYSTEM_VERSION: 30, // Get system version
+  SYSTEM_VERSION: 30 // Get system version
 };
 
 /**
