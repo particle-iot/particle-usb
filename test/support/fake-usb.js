@@ -1,18 +1,18 @@
-import { RequestResult } from '../../src/device-base';
+import { DeviceType, RequestResult } from '../../src/device-base';
 import { ProtocolError, UsbError } from '../../src/error';
 import * as proto from '../../src/proto';
 
 const PARTICLE_DEVICES = [
-  { type: 'Core', vendorId: 0x1d50, productId: 0x607d, dfu: false },
-  { type: 'Core', vendorId: 0x1d50, productId: 0x607f, dfu: true },
-  { type: 'Photon', vendorId: 0x2b04, productId: 0xc006, dfu: false },
-  { type: 'Photon', vendorId: 0x2b04, productId: 0xd006, dfu: true },
-  { type: 'P1', vendorId: 0x2b04, productId: 0xc008, dfu: false },
-  { type: 'P1', vendorId: 0x2b04, productId: 0xd008, dfu: true },
-  { type: 'Electron', vendorId: 0x2b04, productId: 0xc00a, dfu: false },
-  { type: 'Electron', vendorId: 0x2b04, productId: 0xd00a, dfu: true },
-  { type: 'Duo', vendorId: 0x2b04, productId: 0xc058, dfu: false },
-  { type: 'Duo', vendorId: 0x2b04, productId: 0xd058, dfu: true }
+  { type: DeviceType.CORE, vendorId: 0x1d50, productId: 0x607d, dfu: false },
+  { type: DeviceType.CORE, vendorId: 0x1d50, productId: 0x607f, dfu: true },
+  { type: DeviceType.PHOTON, vendorId: 0x2b04, productId: 0xc006, dfu: false },
+  { type: DeviceType.PHOTON, vendorId: 0x2b04, productId: 0xd006, dfu: true },
+  { type: DeviceType.P1, vendorId: 0x2b04, productId: 0xc008, dfu: false },
+  { type: DeviceType.P1, vendorId: 0x2b04, productId: 0xd008, dfu: true },
+  { type: DeviceType.ELECTRON, vendorId: 0x2b04, productId: 0xc00a, dfu: false },
+  { type: DeviceType.ELECTRON, vendorId: 0x2b04, productId: 0xd00a, dfu: true },
+  { type: DeviceType.DUO, vendorId: 0x2b04, productId: 0xc058, dfu: false },
+  { type: DeviceType.DUO, vendorId: 0x2b04, productId: 0xd058, dfu: true }
 ];
 
 // Low-level vendor requests
@@ -20,8 +20,11 @@ const VendorRequest = {
   SYSTEM_VERSION: 30 // Get system version
 };
 
-// List of USB devices "attached" to the host
-let devices = [];
+// USB devices "attached" to the host
+let devices = new Map();
+
+// Last used internal device ID
+let lastDeviceId = 0;
 
 // Mockable protocol implementation
 export class Protocol {
@@ -38,24 +41,27 @@ export class Protocol {
     let data = null
     switch (setup.bRequest) {
       case proto.ServiceType.INIT: {
-        data = initServiceRequest(setup.wIndex, setup.wValue);
+        data = this.initServiceRequest(setup.wIndex, setup.wValue);
         break;
       }
       case proto.ServiceType.CHECK: {
-        data = checkServiceRequest(setup.wIndex);
+        data = this.checkServiceRequest(setup.wIndex);
         break;
       }
       case proto.ServiceType.RECV: {
-        data = recvServiceRequest(setup.wIndex, setup.wLength);
+        data = this.recvServiceRequest(setup.wIndex, setup.wLength);
         break;
       }
       case proto.ServiceType.RESET: {
-        data = resetServiceRequest(setup.wIndex);
+        data = this.resetServiceRequest(setup.wIndex);
         break;
       }
       case proto.PARTICLE_BREQUEST: { // Low-level vendor request
-        if (setup.wIndex == VendorRequest.SYSTEM_VERSION && this._opts.id) {
-          data = Buffer.from(this._opts.id);
+        if (setup.wIndex == VendorRequest.SYSTEM_VERSION) {
+          if (!this._opts.firmwareVersion) {
+            throw new ProtocolError(`Unsupported device-to-host request: wIndex: ${setup.wIndex}`);
+          }
+          data = Buffer.from(this._opts.firmwareVersion);
         } else {
           throw new ProtocolError(`Unsupported device-to-host request: wIndex: ${setup.wIndex}`);
         }
@@ -80,7 +86,7 @@ export class Protocol {
     }
     switch (setup.bRequest) {
       case proto.ServiceType.SEND: {
-        sendServiceRequest(setup.wIndex, data);
+        this.sendServiceRequest(setup.wIndex, data);
         break;
       }
       case proto.PARTICLE_BREQUEST: { // Low-level vendor request
@@ -108,8 +114,11 @@ export class Protocol {
       reply: null
     };
     const srep = {}; // Service reply
-    srep.status = this.newRequest(req);
+    srep.status = this.initRequest(req);
     if (srep.status == proto.Status.OK || srep.status == proto.Status.PENDING) {
+      if (srep.status == proto.Status.OK && req.size && !req.data) {
+        req.data = Buffer.alloc(req.size);
+      }
       this._reqs.set(id, req);
       this._lastReqId = id;
       srep.id = id;
@@ -123,22 +132,20 @@ export class Protocol {
     if (req) {
       if (req.size && !req.data) {
         // Buffer allocation is pending
-        srep.status = this.allocRequest(req);
+        srep.status = this.checkBuffer(req);
         if (srep.status == proto.Status.OK) {
-          if (!req.data) {
-            req.data = Buffer.alloc(req.size);
-          }
+          req.data = Buffer.alloc(req.size);
         } else if (srep.status != proto.Status.PENDING) {
           this._reqs.delete(id); // Buffer allocation failed
         }
       } else {
         // Request processing is pending
-        const rep = { // Application reply
-          result: RequestResult.OK,
-          data: null
-        };
-        srep.status = this.processRequest(req, rep);
+        srep.status = this.checkRequest(req);
         if (srep.status == proto.Status.OK) {
+          const rep = { // Application reply
+            result: this.replyResult(req),
+            data: this.replyData(req)
+          };
           srep.result = rep.result;
           if (rep.data && rep.data.length != 0) {
             srep.size = rep.data.length;
@@ -177,11 +184,11 @@ export class Protocol {
       // Payload data is application-specific, so we can't reply with a status code
       throw new ProtocolError(`Request not found: ${id}`);
     }
-    if (!req.reply || !req.reply.data) {
+    const data = req.reply ? req.reply.data : null;
+    if (!data) {
       throw new ProtocolError('Reply data is not available');
     }
-    const data = req.reply.data;
-    if (data.length != size) {
+    if (size != data.length) {
       throw new ProtocolError('Unexpected size of the reply data');
     }
     this._reqs.delete(id); // Request completed
@@ -209,15 +216,15 @@ export class Protocol {
     return proto.encodeReply(srep);
   }
 
-  newRequest(req) {
-    return proto.Status.PENDING;
-  }
-
-  allocRequest(req) {
+  initRequest(req) {
     return proto.Status.OK;
   }
 
-  processRequest(req, rep) {
+  checkBuffer(req) {
+    return proto.Status.OK;
+  }
+
+  checkRequest(req) {
     return proto.Status.OK;
   }
 
@@ -229,6 +236,14 @@ export class Protocol {
     return proto.Status.OK;
   }
 
+  replyResult(req) {
+    return RequestResult.OK;
+  }
+
+  replyData(req) {
+    return null;
+  }
+
   reset() {
     this._reqs.clear();
     this._lastReqId = 0;
@@ -237,36 +252,59 @@ export class Protocol {
 
 // Class implementing a fake USB device
 export class Device {
-  constructor(options) {
+  constructor(id, options) {
+    this._objId = id; // Internal object ID
     this._opts = options; // Device options
     this._proto = new Protocol(options); // Protocol implementation
-    this._isOpen = false; // Set to true if the device is open
+    this._open = false; // Set to true if the device is open
+    this._attached = true; // Set to true if the device is "attached" to the host
   }
 
   async open() {
-    if (this._isOpen) {
+    if (!this._attached) {
+      throw new UsbError('Device is not found');
+    }
+    if (this._open) {
       throw new UsbError('Device is already open');
     }
-    this._isOpen = true;
+    this._open = true;
   }
 
   async close() {
+    if (!this._attached) {
+      throw new UsbError('Device is not found');
+    }
     this._proto.reset();
-    this._isOpen = false;
+    this._open = false;
   }
 
   async transferIn(setup) {
-    if (!this._isOpen) {
+    if (!this._attached) {
+      throw new UsbError('Device is not found');
+    }
+    if (!this._open) {
       throw new UsbError('Device is not open');
     }
     return this._proto.deviceToHostRequest(setup);
   }
 
   async transferOut(setup, data) {
-    if (!this._isOpen) {
+    if (!this._attached) {
+      throw new UsbError('Device is not found');
+    }
+    if (!this._open) {
       throw new UsbError('Device is not open');
     }
     this._proto.hostToDeviceRequest(setup, data);
+  }
+
+  detach() {
+    this._proto.reset();
+    this._attached = false;
+  }
+
+  get objectId() {
+    return this._objId;
   }
 
   get vendorId() {
@@ -278,63 +316,88 @@ export class Device {
   }
 
   get serialNumber() {
-    return (this._isOpen ? this._opts.id : null);
+    return this._opts.serialNumber;
   }
 
   get protocol() {
     return this._proto;
   }
 
+  get options() {
+    return this._opts;
+  }
+
   get isOpen() {
-    return this._isOpen;
+    return this._open;
   }
 }
 
-export function getDevices() {
-  return Promise.resolve(devices);
+export async function getDevices() {
+  return Array.from(devices.values());
 }
 
 export function addDevice(options) {
   if (options.type) {
-    const devs = PARTICLE_DEVICES.filter(dev => (dev.type == options.type && !!dev.dfu == !!options.dfu));
+    const devs = PARTICLE_DEVICES.filter(dev => (dev.type == options.type && dev.dfu == !!options.dfu));
     if (devs.length == 0) {
       throw new Error(`Unknown device type: ${options.type}`);
     }
     options = Object.assign({}, options, devs[0]);
-    if (!('id' in options)) {
-      options.id = String(devices.length).padStart(24, '0'); // Generate device ID
+    if (!options.id) {
+      // Generate ID for a Particle device
+      options.id = String(devices.length).padStart(24, '0');
     }
+    // Particle devices expose the device ID via the serial number descriptor
+    options.serialNumber = options.id;
   }
-  const dev = new Device(options);
-  devices.push(dev);
+  const objId = ++lastDeviceId; // Internal object ID
+  const dev = new Device(objId, options);
+  devices.set(objId, dev);
   return dev;
 }
 
+export function addDevices(options) {
+  let devs = [];
+  for (let opts of options) {
+    devs.push(addDevice(opts));
+  }
+  return devs;
+}
+
 export function addCore(options) {
-  const opts = Object.assign({ type: 'Core' }, options);
+  const opts = Object.assign({}, options, { type: DeviceType.CORE });
   return addDevice(opts);
 }
 
 export function addPhoton(options) {
-  const opts = Object.assign({ type: 'Photon' }, options);
+  const opts = Object.assign({}, options, { type: DeviceType.PHOTON });
   return addDevice(opts);
 }
 
 export function addP1(options) {
-  const opts = Object.assign({ type: 'P1' }, options);
+  const opts = Object.assign({}, options, { type: DeviceType.P1 });
   return addDevice(opts);
 }
 
 export function addElectron(options) {
-  const opts = Object.assign({ type: 'Electron' }, options);
+  const opts = Object.assign({}, options, { type: DeviceType.ELECTRON });
   return addDevice(opts);
 }
 
 export function addDuo(options) {
-  const opts = Object.assign({ type: 'Duo' }, options);
+  const opts = Object.assign({}, options, { type: DeviceType.DUO });
   return addDevice(opts);
 }
 
+export function removeDevice(dev) {
+  if (devices.delete(dev.objectId)) {
+    dev.detach();
+  }
+}
+
 export function clearDevices() {
-  devices = [];
+  for (let dev of devices.values()) {
+    dev.detach();
+  }
+  devices.clear();
 }

@@ -109,6 +109,9 @@ export function parseReply(data) {
     rep.flags = data.readUInt32LE(offs);
     offs += 4;
     // Status code (2 bytes)
+    if (!(rep.flags & FieldFlag.STATUS)) {
+      throw new ProtocolError('Service reply is missing mandatory status field');
+    }
     rep.status = data.readUInt16LE(offs);
     offs += 2;
     // Request ID (2 bytes, optional)
@@ -128,24 +131,27 @@ export function parseReply(data) {
     }
     return rep;
   } catch (err) {
-    throw new ProtocolError(err, 'Unable to parse service reply');
+    if (!(err instanceof ProtocolError)) {
+      throw new ProtocolError(err, 'Unable to parse service reply');
+    }
+    throw err;
   }
 }
 
 // Serializes service reply data
 export function encodeReply(rep) {
-  let flags = proto.FieldFlag.STATUS; // Status code is a mandatory field
+  let flags = FieldFlag.STATUS; // Status code is a mandatory field
   let size = 6; // 4 bytes for field flags and 2 bytes for status code
-  if (rep.id) {
-    flags |= proto.FieldFlag.ID;
+  if ('id' in rep) {
+    flags |= FieldFlag.ID;
     size += 2;
   }
-  if (rep.size) {
-    flags |= proto.FieldFlag.SIZE;
+  if ('size' in rep) {
+    flags |= FieldFlag.SIZE;
     size += 4;
   }
-  if (rep.result) {
-    flags |= proto.FieldFlag.RESULT;
+  if ('result' in rep) {
+    flags |= FieldFlag.RESULT;
     size += 4;
   }
   const data = Buffer.alloc(size);
@@ -157,18 +163,18 @@ export function encodeReply(rep) {
   data.writeUInt16LE(rep.status, offs);
   offs += 2;
   // Request ID (2 bytes, optional)
-  if (flags & proto.FieldFlag.ID) {
+  if (flags & FieldFlag.ID) {
     data.writeUInt16LE(rep.id, offs);
     offs += 2;
   }
   // Payload size (4 bytes, optional)
-  if (flags & proto.FieldFlag.SIZE) {
+  if (flags & FieldFlag.SIZE) {
     data.writeUInt32LE(rep.size, offs);
     offs += 4;
   }
   // Result code (4 bytes, optional)
-  if (flags & proto.FieldFlag.RESULT) {
-    data.writeInt16LE(rep.result, offs); // Signed
+  if (flags & FieldFlag.RESULT) {
+    data.writeInt32LE(rep.result, offs); // Signed
     offs += 4;
   }
   return data;

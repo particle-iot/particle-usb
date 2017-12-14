@@ -18,7 +18,7 @@
   "scripts": {
     "prepublish": "npm run compile",
     "compile": "babel src -s -d lib",
-    "test": "mocha --require babel-register --require babel-polyfill"
+    "test": "mocha -r babel-register -r babel-polyfill"
   },
   "dependencies": {
     "babel-runtime": "^6.26.0",
@@ -34,6 +34,7 @@
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
     "mocha": "^4.0.1",
+    "mocha-sinon": "^2.0.0",
     "sinon": "^4.1.2",
     "sinon-chai": "^2.14.0"
   }

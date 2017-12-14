@@ -3,7 +3,11 @@ import * as fakeUsb from './fake-usb';
 
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import 'mocha-sinon';
+
+import * as util from 'util';
 
 chai.use(chaiAsPromised);
 chai.use(sinonChai);
@@ -18,7 +22,7 @@ class Logger {
   }
 
   warn(...args) {
-    console.log(...args);
+    // console.log(...args);
   }
 
   error(...args) {
@@ -26,14 +30,28 @@ class Logger {
   }
 }
 
+function nextTick() {
+  return new Promise(resolve => {
+    setImmediate(resolve);
+  });
+}
+
+function dump(val) {
+  console.log(util.inspect(val, { depth: null }));
+}
+
 usb.config({
   log: new Logger()
 });
 
 const expect = chai.expect;
+const assert = chai.assert;
 
 export {
-  usb,
   fakeUsb,
-  expect
+  sinon,
+  expect,
+  assert,
+  nextTick,
+  dump
 };

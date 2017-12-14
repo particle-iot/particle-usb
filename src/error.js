@@ -11,9 +11,19 @@ export class DeviceError extends VError {
 }
 
 /**
- * USB error.
+ * Error reported when a requested entity cannot be found.
  */
-export class UsbError extends DeviceError {
+export class NotFoundError extends DeviceError {
+  constructor(...args) {
+    super(...args);
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+/**
+ * Error reported when an object is not in an appropriate state to perform an operation.
+ */
+export class StateError extends DeviceError {
   constructor(...args) {
     super(...args);
     Error.captureStackTrace(this, this.constructor);
@@ -44,6 +54,16 @@ export class MemoryError extends DeviceError {
  * Protocol error.
  */
 export class ProtocolError extends DeviceError {
+  constructor(...args) {
+    super(...args);
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+/**
+ * USB error.
+ */
+export class UsbError extends DeviceError {
   constructor(...args) {
     super(...args);
     Error.captureStackTrace(this, this.constructor);

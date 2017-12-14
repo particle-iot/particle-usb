@@ -1,7 +1,7 @@
 import * as usb from './node-usb';
 import * as proto from './proto';
 
-import { DeviceError, TimeoutError, MemoryError, ProtocolError, assert } from './error';
+import { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, assert } from './error';
 
 import EventEmitter from 'events';
 
@@ -20,7 +20,8 @@ export const DeviceType = {
 const USB_DEVICE_INFO = {
   // Core
   '1d50:607d': {
-    type: DeviceType.CORE
+    type: DeviceType.CORE,
+    dfu: false
   },
   '1d50:607f': {
     type: DeviceType.CORE,
@@ -28,7 +29,8 @@ const USB_DEVICE_INFO = {
   },
   // Photon
   '2b04:c006': {
-    type: DeviceType.PHOTON
+    type: DeviceType.PHOTON,
+    dfu: false
   },
   '2b04:d006': {
     type: DeviceType.PHOTON,
@@ -36,7 +38,8 @@ const USB_DEVICE_INFO = {
   },
   // P1
   '2b04:c008': {
-    type: DeviceType.P1
+    type: DeviceType.P1,
+    dfu: false
   },
   '2b04:d008': {
     type: DeviceType.P1,
@@ -44,7 +47,8 @@ const USB_DEVICE_INFO = {
   },
   // Electron
   '2b04:c00a': {
-    type: DeviceType.ELECTRON
+    type: DeviceType.ELECTRON,
+    dfu: false
   },
   '2b04:d00a': {
     type: DeviceType.ELECTRON,
@@ -52,7 +56,8 @@ const USB_DEVICE_INFO = {
   },
   // Duo
   '2b04:c058': {
-    type: DeviceType.DUO
+    type: DeviceType.DUO,
+    dfu: false
   },
   '2b04:d058': {
     type: DeviceType.DUO,
@@ -60,7 +65,7 @@ const USB_DEVICE_INFO = {
   }
 };
 
-// Default backoff intervals for the CHECK request
+// Default backoff intervals for the CHECK service request
 const DEFAULT_CHECK_INTERVALS = [50, 50, 100, 100, 250, 250, 500, 500, 1000];
 
 function checkInterval(attempts, intervals) {
@@ -92,7 +97,7 @@ const DEFAULT_CLOSE_OPTIONS = {
 };
 
 // Default options for DeviceBase.sendRequest()
-const DEFAULT_REQUEST_OPTIONS = {
+const DEFAULT_SEND_REQUEST_OPTIONS = {
   // Polling policy
   pollingPolicy: PollingPolicy.DEFAULT,
   // Request timeout
@@ -124,7 +129,8 @@ const VendorRequest = {
  * Request result codes.
  */
 export const RequestResult = {
-  OK: 0
+  OK: 0,
+  ERROR: -100 // Unspecified error
 };
 
 // Dummy callback function
@@ -172,9 +178,10 @@ export class DeviceBase extends EventEmitter {
    * @param {Object} options Options.
    * @return {Promise}
    */
-  open(options = DEFAULT_OPEN_OPTIONS) {
+  open(options) {
+    const opts = Object.assign({}, DEFAULT_OPEN_OPTIONS, options);
     if (this._state != DeviceState.CLOSED) {
-      return Promise.reject(new DeviceError('Device is already open'));
+      return Promise.reject(new StateError('Device is already open'));
     }
     // Open USB device
     this._log.trace('Opening device');
@@ -184,25 +191,25 @@ export class DeviceBase extends EventEmitter {
       this._id = this._dev.serialNumber.toLowerCase();
       this._log.trace(`Device ID: ${this._id}`);
       // Get firmware version
-      return this._getFirmwareVersion();
-    }).then(ver => {
-      this._fwVer = ver;
-      this._log.trace(`Firmware version: ${this._fwVer}`);
-    }, err => {
-      // Pre-0.6.0 firmwares and devices in DFU mode don't support the firmware version request
-      if (!this._info.dfu) {
-        this._log.trace(`Unable to get firmware version: ${err.message}`);
-      }
+      return this._getFirmwareVersion().then(ver => {
+        this._fwVer = ver;
+        this._log.trace(`Firmware version: ${this._fwVer}`);
+      }).catch(err => {
+        // Pre-0.6.0 firmwares and devices in DFU mode don't support the firmware version request
+        if (!this._info.dfu) {
+          this._log.trace(`Unable to get firmware version: ${err.message}`);
+        }
+      });
     }).then(() => {
       this._log.trace('Device is open');
-      this._maxActiveReqs = options.concurrentRequests;
+      this._maxActiveReqs = opts.concurrentRequests;
       this._resetAllReqs = true; // Reset all requests remaining from a previous session
       this._state = DeviceState.OPEN;
       this.emit('open');
       this._process();
     }).catch(err => {
-      return this._close(err).then(() => {
-        throw err;
+      return this._close(err).catch(ignore).then(() => {
+         throw err;
       });
     });
   }
@@ -213,22 +220,23 @@ export class DeviceBase extends EventEmitter {
    * @param {Object} options Options.
    * @return {Promise}
    */
-  close(options = DEFAULT_CLOSE_OPTIONS) {
+  close(options) {
+    const opts = Object.assign({}, DEFAULT_CLOSE_OPTIONS, options);
     if (this._state == DeviceState.CLOSED) {
       return Promise.resolve();
     }
     // Check if pending requests need to be processed before closing the device
-    if (!options.processPendingRequests) {
-      this._rejectAllRequests(new DeviceError('Device is being closed'));
+    if (!opts.processPendingRequests) {
+      this._rejectAllRequests(new StateError('Device is being closed'));
       if (this._closeTimer) {
         clearTimeout(this._closeTimer);
         this._closeTimer = null;
       }
-    } else if (options.timeout && !this._wantClose) { // Timeout cannot be overriden
+    } else if (opts.timeout && !this._wantClose) { // Timeout cannot be overriden
       this._closeTimer = setTimeout(() => {
-        this._rejectAllRequests(new DeviceError('Device is being closed'));
+        this._rejectAllRequests(new StateError('Device is being closed'));
         this._process();
-      }, options.timeout);
+      }, opts.timeout);
     }
     return new Promise((resolve, reject) => {
       // Use EventEmitter's queue to resolve the promise
@@ -248,13 +256,14 @@ export class DeviceBase extends EventEmitter {
    * @param {Object} options Request options.
    * @return {Promise}
    */
-  sendRequest(type, data = null, options = DEFAULT_REQUEST_OPTIONS) {
+  sendRequest(type, data, options) {
+    const opts = Object.assign({}, DEFAULT_SEND_REQUEST_OPTIONS, options);
     return new Promise((resolve, reject) => {
       if (this._state == DeviceState.CLOSED) {
-        throw new DeviceError('Device is not open');
+        throw new StateError('Device is not open');
       }
       if (this._state == DeviceState.CLOSING || this._wantClose) {
-        throw new DeviceError('Device is being closed');
+        throw new StateError('Device is being closed');
       }
       if (type < 0 || type > proto.MAX_REQUEST_TYPE) {
         throw new DeviceError('Invalid request type');
@@ -266,7 +275,6 @@ export class DeviceBase extends EventEmitter {
       if (data && data.length > proto.MAX_PAYLOAD_SIZE) {
         throw new DeviceError('Request data is too large');
       }
-      const checkInterval = (options.pollingPolicy || PollingPolicy.DEFAULT);
       const req = {
         id: ++this._lastReqId, // Internal request ID
         type: type,
@@ -274,8 +282,8 @@ export class DeviceBase extends EventEmitter {
         dataIsStr: dataIsStr,
         dataSent: false,
         protoId: null, // Protocol request ID
-        checkInterval: checkInterval,
-        checkIntervalIsFunc: (typeof checkInterval == 'function'),
+        checkInterval: opts.pollingPolicy,
+        checkIntervalIsFunc: (typeof opts.pollingPolicy == 'function'),
         checkTimer: null,
         checkCount: 0,
         reqTimer: null,
@@ -283,12 +291,12 @@ export class DeviceBase extends EventEmitter {
         reject: reject,
         done: false
       };
-      if (options.timeout) {
+      if (opts.timeout) {
         // Start request timer
         req.reqTimer = setTimeout(() => {
           this._rejectRequest(req, new TimeoutError('Request timeout'));
           this._process();
-        }, options.timeout);
+        }, opts.timeout);
       }
       this._reqs.set(req.id, req);
       this._reqQueue.push(req);
@@ -365,6 +373,13 @@ export class DeviceBase extends EventEmitter {
    */
   get isInDfuMode() {
     return this._info.dfu;
+  }
+
+  /**
+   * Returns an internal USB device handle.
+   */
+  get usbDevice() {
+    return this._dev;
   }
 
   _process() {
@@ -580,7 +595,7 @@ export class DeviceBase extends EventEmitter {
     // Cancel all requests
     if (this._reqs.size != 0) {
       if (!err) {
-        err = new DeviceError('Device has been closed');
+        err = new StateError('Device has been closed');
       }
       this._rejectAllRequests(err);
     }
@@ -593,7 +608,7 @@ export class DeviceBase extends EventEmitter {
     }
     // Close USB device
     return this._dev.close().catch(err => {
-      this._log.error(`Unable to close USB device: ${err.message}`);
+      this._log.warn(`Unable to close USB device: ${err.message}`);
     }).then(() => {
       // Reset device state
       const emitEvent = (this._state == DeviceState.CLOSING);
@@ -627,7 +642,7 @@ export class DeviceBase extends EventEmitter {
     this._log.trace(`Request ${req.id}: Failed: ${err.message}`);
     this._clearRequest(req);
     if (req.protoId) {
-      this._resetQueue.push(req.protoId);
+      this._resetQueue.push(req);
     }
     req.reject(err);
   }
@@ -694,14 +709,14 @@ export class DeviceBase extends EventEmitter {
  * @param {Object} options Options.
  * @return {Promise}
  */
-export function getDevices(options = DEFAULT_GET_DEVICES_OPTIONS) {
+export function getDevices(options) {
+  const opts = Object.assign({}, DEFAULT_GET_DEVICES_OPTIONS, options);
   return usb.getDevices().then(usbDevs => {
     const devs = []; // Particle devices
     for (let usbDev of usbDevs) {
       const usbDevId = usbDev.vendorId.toString(16) + ':' + usbDev.productId.toString(16);
       const info = USB_DEVICE_INFO[usbDevId];
-      if (info && (!info.dfu || options.includeDfu) && (options.types.length == 0 ||
-          options.types.includes(info.type))) {
+      if (info && (!info.dfu || opts.includeDfu) && (!opts.types.length || opts.types.includes(info.type))) {
         devs.push(new DeviceBase(usbDev, info));
       }
     }
@@ -716,7 +731,7 @@ export function getDevices(options = DEFAULT_GET_DEVICES_OPTIONS) {
  * @param {Object} options Options.
  * @return {Promise}
  */
-export function openDeviceById(id, options = DEFAULT_OPEN_OPTIONS) {
+export function openDeviceById(id, options) {
   id = id.toLowerCase();
   // Get all Particle devices
   return getDevices().then(devs => {
@@ -733,7 +748,7 @@ export function openDeviceById(id, options = DEFAULT_OPEN_OPTIONS) {
   }).then(devs => {
     devs = devs.filter(dev => !!dev);
     if (devs.length == 0) {
-      throw new DeviceError('Device is not found');
+      throw new NotFoundError('Device is not found');
     }
     const dev = devs.shift();
     if (devs.length != 0) {
