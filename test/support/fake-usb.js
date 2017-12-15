@@ -1,4 +1,4 @@
-import { DeviceType, RequestResult } from '../../src/device-base';
+import { DeviceType } from '../../src/device-base';
 import { ProtocolError, UsbError } from '../../src/error';
 import * as proto from '../../src/proto';
 
@@ -237,7 +237,7 @@ export class Protocol {
   }
 
   replyResult(req) {
-    return RequestResult.OK;
+    return 0; // OK
   }
 
   replyData(req) {
@@ -345,7 +345,7 @@ export function addDevice(options) {
     options = Object.assign({}, options, devs[0]);
     if (!options.id) {
       // Generate ID for a Particle device
-      options.id = String(devices.length).padStart(24, '0');
+      options.id = String(devices.size).padStart(24, '0');
     }
     // Particle devices expose the device ID via the serial number descriptor
     options.serialNumber = options.id;

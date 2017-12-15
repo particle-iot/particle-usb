@@ -125,14 +125,6 @@ const VendorRequest = {
   SYSTEM_VERSION: 30 // Get system version
 };
 
-/**
- * Request result codes.
- */
-export const RequestResult = {
-  OK: 0,
-  ERROR: -100 // Unspecified error
-};
-
 // Dummy callback function
 function ignore() {
 }
@@ -179,7 +171,7 @@ export class DeviceBase extends EventEmitter {
    * @return {Promise}
    */
   open(options) {
-    const opts = Object.assign({}, DEFAULT_OPEN_OPTIONS, options);
+    options = Object.assign({}, DEFAULT_OPEN_OPTIONS, options);
     if (this._state != DeviceState.CLOSED) {
       return Promise.reject(new StateError('Device is already open'));
     }
@@ -202,7 +194,7 @@ export class DeviceBase extends EventEmitter {
       });
     }).then(() => {
       this._log.trace('Device is open');
-      this._maxActiveReqs = opts.concurrentRequests;
+      this._maxActiveReqs = options.concurrentRequests;
       this._resetAllReqs = true; // Reset all requests remaining from a previous session
       this._state = DeviceState.OPEN;
       this.emit('open');
@@ -221,22 +213,22 @@ export class DeviceBase extends EventEmitter {
    * @return {Promise}
    */
   close(options) {
-    const opts = Object.assign({}, DEFAULT_CLOSE_OPTIONS, options);
+    options = Object.assign({}, DEFAULT_CLOSE_OPTIONS, options);
     if (this._state == DeviceState.CLOSED) {
       return Promise.resolve();
     }
     // Check if pending requests need to be processed before closing the device
-    if (!opts.processPendingRequests) {
+    if (!options.processPendingRequests) {
       this._rejectAllRequests(new StateError('Device is being closed'));
       if (this._closeTimer) {
         clearTimeout(this._closeTimer);
         this._closeTimer = null;
       }
-    } else if (opts.timeout && !this._wantClose) { // Timeout cannot be overriden
+    } else if (options.timeout && !this._wantClose) { // Timeout cannot be overriden
       this._closeTimer = setTimeout(() => {
         this._rejectAllRequests(new StateError('Device is being closed'));
         this._process();
-      }, opts.timeout);
+      }, options.timeout);
     }
     return new Promise((resolve, reject) => {
       // Use EventEmitter's queue to resolve the promise
@@ -257,7 +249,7 @@ export class DeviceBase extends EventEmitter {
    * @return {Promise}
    */
   sendRequest(type, data, options) {
-    const opts = Object.assign({}, DEFAULT_SEND_REQUEST_OPTIONS, options);
+    options = Object.assign({}, DEFAULT_SEND_REQUEST_OPTIONS, options);
     return new Promise((resolve, reject) => {
       if (this._state == DeviceState.CLOSED) {
         throw new StateError('Device is not open');
@@ -282,8 +274,8 @@ export class DeviceBase extends EventEmitter {
         dataIsStr: dataIsStr,
         dataSent: false,
         protoId: null, // Protocol request ID
-        checkInterval: opts.pollingPolicy,
-        checkIntervalIsFunc: (typeof opts.pollingPolicy == 'function'),
+        checkInterval: options.pollingPolicy,
+        checkIntervalIsFunc: (typeof options.pollingPolicy == 'function'),
         checkTimer: null,
         checkCount: 0,
         reqTimer: null,
@@ -291,12 +283,12 @@ export class DeviceBase extends EventEmitter {
         reject: reject,
         done: false
       };
-      if (opts.timeout) {
+      if (options.timeout) {
         // Start request timer
         req.reqTimer = setTimeout(() => {
           this._rejectRequest(req, new TimeoutError('Request timeout'));
           this._process();
-        }, opts.timeout);
+        }, options.timeout);
       }
       this._reqs.set(req.id, req);
       this._reqQueue.push(req);
@@ -466,7 +458,7 @@ export class DeviceBase extends EventEmitter {
           if (req.dataSent) {
             // Request processing is completed
             const rep = {
-              result: (srep.result || RequestResult.OK)
+              result: srep.result
             };
             if (srep.size) {
               // Receive payload data
@@ -710,13 +702,13 @@ export class DeviceBase extends EventEmitter {
  * @return {Promise}
  */
 export function getDevices(options) {
-  const opts = Object.assign({}, DEFAULT_GET_DEVICES_OPTIONS, options);
+  options = Object.assign({}, DEFAULT_GET_DEVICES_OPTIONS, options);
   return usb.getDevices().then(usbDevs => {
     const devs = []; // Particle devices
     for (let usbDev of usbDevs) {
       const usbDevId = usbDev.vendorId.toString(16) + ':' + usbDev.productId.toString(16);
       const info = USB_DEVICE_INFO[usbDevId];
-      if (info && (!info.dfu || opts.includeDfu) && (!opts.types.length || opts.types.includes(info.type))) {
+      if (info && (!info.dfu || options.includeDfu) && (!options.types.length || options.types.includes(info.type))) {
         devs.push(new DeviceBase(usbDev, info));
       }
     }

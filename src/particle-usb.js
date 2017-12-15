@@ -1,9 +1,2 @@
-import { DeviceBase, PollingPolicy, getDevices, openDeviceById, config } from './device-base';
-
-export {
-  DeviceBase,
-  PollingPolicy,
-  getDevices,
-  openDeviceById,
-  config
-};
+export { Device, getDevices, openDeviceById } from './device';
+export { PollingPolicy, config } from './device-base';

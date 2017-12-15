@@ -3,7 +3,7 @@ import * as usbImpl from '../src/node-usb';
 import * as proto from '../src/proto';
 import * as error from '../src/error';
 
-import { fakeUsb, sinon, expect, assert, nextTick, dump } from './support';
+import { fakeUsb, sinon, expect, assert, nextTick } from './support';
 
 // Application-specific request types
 const REQUEST_1 = 1;
@@ -302,24 +302,24 @@ describe('device-base', () => {
 
       it('resolves to an object containing the result code property', async function() {
         this.sinon.useFakeTimers();
-        this.sinon.stub(usbDev.protocol, 'replyResult').returns(usb.RequestResult.ERROR);
+        this.sinon.stub(usbDev.protocol, 'replyResult').returns(1234);
         const req = dev.sendRequest(REQUEST_1);
         await this.checkTimeout();
         const rep = await req;
         expect(rep).to.have.property('result');
-        expect(rep.result).to.equal(usb.RequestResult.ERROR);
+        expect(rep.result).to.equal(1234);
         expect(rep).not.to.have.property('data');
       });
 
       it('resolves to an object containing the reply data property', async function() {
         this.sinon.useFakeTimers();
-        this.sinon.stub(usbDev.protocol, 'replyResult').returns(usb.RequestResult.OK);
+        this.sinon.stub(usbDev.protocol, 'replyResult').returns(0);
         this.sinon.stub(usbDev.protocol, 'replyData').returns(Buffer.from('reply data'));
         const req = dev.sendRequest(REQUEST_1);
         await this.checkTimeout();
         const rep = await req;
         expect(rep).to.have.property('result');
-        expect(rep.result).to.equal(usb.RequestResult.OK);
+        expect(rep.result).to.equal(0);
         expect(rep).to.have.property('data');
         expect(rep.data).to.deep.equal(Buffer.from('reply data'));
       });
