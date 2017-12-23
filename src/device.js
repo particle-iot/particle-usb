@@ -18,8 +18,11 @@ const RequestType = {
   SAFE_MODE: {
     id: 60
   },
-  LISTENING_MODE: {
+  START_LISTENING: {
     id: 70
+  },
+  STOP_LISTENING: {
+    id: 71
   },
   LOG_CONFIG: {
     id: 80
@@ -101,31 +104,122 @@ const RequestType = {
   }
 };
 
+// Result codes as defined by the firmware's system_error_t enum
+const RESULT_CODES = [
+  {
+    id: 'OK',
+    value: 0,
+    message: 'Operation succeeded'
+  },
+  {
+    id: 'ERROR',
+    value: -100,
+    message: 'Unknown error'
+  },
+  {
+    id: 'BUSY',
+    value: -110,
+    message: 'Resource is busy'
+  },
+  {
+    id: 'NOT_SUPPORTED',
+    value: -120,
+    message: 'Not supported'
+  },
+  {
+    id: 'NOT_ALLOWED',
+    value: -130,
+    message: 'Not allowed'
+  },
+  {
+    id: 'CANCELLED',
+    value: -140,
+    message: 'Operation cancelled'
+  },
+  {
+    id: 'ABORTED',
+    value: -150,
+    message: 'Operation aborted'
+  },
+  {
+    id: 'TIMEOUT_ERROR',
+    value: -160,
+    message: 'Timeout error'
+  },
+  {
+    id: 'NOT_FOUND',
+    value: -170,
+    message: 'Not found'
+  },
+  {
+    id: 'ALREADY_EXISTS',
+    value: -180,
+    message: 'Already exists'
+  },
+  {
+    id: 'TOO_LARGE',
+    value: -190,
+    message: 'Data is too large'
+  },
+  {
+    id: 'LIMIT_EXCEEDED',
+    value: -200,
+    message: 'Limit exceeded'
+  },
+  {
+    id: 'INVALID_STATE',
+    value: -210,
+    message: 'Invalid state'
+  },
+  {
+    id: 'IO_ERROR',
+    value: -220,
+    message: 'IO error'
+  },
+  {
+    id: 'NETWORK_ERROR',
+    value: -230,
+    message: 'Network error'
+  },
+  {
+    id: 'PROTOCOL_ERROR',
+    value: -240,
+    message: 'Protocol error'
+  },
+  {
+    id: 'INTERNAL_ERROR',
+    value: -250,
+    message: 'Internal error'
+  },
+  {
+    id: 'NO_MEMORY',
+    value: -260,
+    message: 'Memory allocation error'
+  },
+  {
+    id: 'INVALID_ARGUMENT',
+    value: -270,
+    message: 'Invalid argument'
+  },
+  {
+    id: 'BAD_DATA',
+    value: -280,
+    message: 'Invalid data format'
+  }
+];
+
+const RESULT_CODE_MESSAGES = RESULT_CODES.reduce((obj, result) => {
+  obj[result.value] = result.message;
+  return obj;
+}, {});
+
 /**
  * Request result codes.
  */
-export const RequestResult = {
-  OK: 0,
-  ERROR: -100,
-  BUSY: -110,
-  NOT_SUPPORTED: -120,
-  NOT_ALLOWED: -130,
-  CANCELLED: -140,
-  ABORTED: -150,
-  TIMEOUT: -160,
-  NOT_FOUND: -170,
-  ALREADY_EXISTS: -180,
-  TOO_LARGE: -190,
-  LIMIT_EXCEEDED: -200,
-  INVALID_STATE: -210,
-  IO_ERROR: -220,
-  NETWORK_ERROR: -230,
-  PROTOCOL_ERROR: -240,
-  INTERNAL_ERROR: -250,
-  NO_MEMORY: -260,
-  INVALID_ARGUMENT: -270,
-  BAD_DATA: -280
-};
+export const RequestResult = RESULT_CODES.reduce((obj, result) => {
+  obj[result.id] = result.value;
+  return obj;
+}, {});
 
 /**
  * Request error.
@@ -208,16 +302,15 @@ export class Device extends usb.DeviceBase{
     return this._pbRequest(RequestType.STOP_NYAN_SIGNAL);
   }
 
-  _pbRequest(type, data) {
+  _pbRequest(type, props) {
     let buf = null;
-    if (data && type.request) {
-      const msg = type.request.create(data);
+    if (props && type.request) {
+      const msg = type.request.create(props);
       buf = type.request.encode(msg).finish();
     }
     return this.sendRequest(type.id, buf).then(rep => {
       if (rep.result != RequestResult.OK) {
-        console.log(rep.result);
-        throw new RequestError(rep.result); // TODO: Error message
+        throw new RequestError(rep.result, RESULT_CODE_MESSAGES[rep.result]);
       }
       if (rep.data && type.reply) {
         return type.reply.decode(rep.data);
