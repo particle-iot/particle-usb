@@ -1,8 +1,8 @@
-import { DeviceType } from '../../src/device-base';
-import { ProtocolError, UsbError } from '../../src/error';
 import * as proto from '../../src/proto';
+import { DeviceType } from '../../src/device-type';
+import { ProtocolError, UsbError } from '../../src/error';
 
-const PARTICLE_DEVICES = [
+const USB_DEVICES = [
   { type: DeviceType.CORE, vendorId: 0x1d50, productId: 0x607d, dfu: false },
   { type: DeviceType.CORE, vendorId: 0x1d50, productId: 0x607f, dfu: true },
   { type: DeviceType.PHOTON, vendorId: 0x2b04, productId: 0xc006, dfu: false },
@@ -338,7 +338,7 @@ export async function getDevices() {
 
 export function addDevice(options) {
   if (options.type) {
-    const devs = PARTICLE_DEVICES.filter(dev => (dev.type == options.type && dev.dfu == !!options.dfu));
+    const devs = USB_DEVICES.filter(dev => (dev.type == options.type && dev.dfu == !!options.dfu));
     if (devs.length == 0) {
       throw new Error(`Unknown device type: ${options.type}`);
     }

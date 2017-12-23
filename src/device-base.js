@@ -1,69 +1,30 @@
 import * as usb from './node-usb';
 import * as proto from './proto';
-
+import { DeviceType, DEVICES } from './device-type';
 import { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, assert } from './error';
 
 import EventEmitter from 'events';
 
-/**
- * Device types.
- */
-export const DeviceType = {
-  CORE: 'Core',
-  PHOTON: 'Photon',
-  P1: 'P1',
-  ELECTRON: 'Electron',
-  DUO: 'Duo'
-};
-
-// Particle USB devices
-const USB_DEVICE_INFO = {
-  // Core
-  '1d50:607d': {
-    type: DeviceType.CORE,
-    dfu: false
-  },
-  '1d50:607f': {
-    type: DeviceType.CORE,
-    dfu: true
-  },
-  // Photon
-  '2b04:c006': {
-    type: DeviceType.PHOTON,
-    dfu: false
-  },
-  '2b04:d006': {
-    type: DeviceType.PHOTON,
-    dfu: true
-  },
-  // P1
-  '2b04:c008': {
-    type: DeviceType.P1,
-    dfu: false
-  },
-  '2b04:d008': {
-    type: DeviceType.P1,
-    dfu: true
-  },
-  // Electron
-  '2b04:c00a': {
-    type: DeviceType.ELECTRON,
-    dfu: false
-  },
-  '2b04:d00a': {
-    type: DeviceType.ELECTRON,
-    dfu: true
-  },
-  // Duo
-  '2b04:c058': {
-    type: DeviceType.DUO,
-    dfu: false
-  },
-  '2b04:d058': {
-    type: DeviceType.DUO,
-    dfu: true
+// Arrange supported USB devices by vendor and product IDs
+const USB_DEVICES = Object.entries(DEVICES).reduce((obj, dev) => {
+  const type = dev[0]; // Device type
+  dev = dev[1]; // Device info
+  if (!(dev.usbVendorId in obj)) {
+    obj[dev.usbVendorId] = {};
   }
-};
+  obj[dev.usbVendorId][dev.usbProductId] = {
+    type: type,
+    dfu: false
+  };
+  if (!(dev.dfu.usbVendorId in obj)) {
+    obj[dev.dfu.usbVendorId] = {};
+  }
+  obj[dev.dfu.usbVendorId][dev.dfu.usbProductId] = {
+    type: type,
+    dfu: true
+  };
+  return obj;
+}, {});
 
 // Default backoff intervals for the CHECK service request
 const DEFAULT_CHECK_INTERVALS = [50, 50, 100, 100, 250, 250, 500, 500, 1000];
@@ -706,10 +667,12 @@ export function getDevices(options) {
   return usb.getDevices().then(usbDevs => {
     const devs = []; // Particle devices
     for (let usbDev of usbDevs) {
-      const usbDevId = usbDev.vendorId.toString(16) + ':' + usbDev.productId.toString(16);
-      const info = USB_DEVICE_INFO[usbDevId];
-      if (info && (!info.dfu || options.includeDfu) && (!options.types.length || options.types.includes(info.type))) {
-        devs.push(new DeviceBase(usbDev, info));
+      let info = USB_DEVICES[usbDev.vendorId];
+      if (info) {
+        info = info[usbDev.productId];
+        if (info && (!info.dfu || options.includeDfu) && (!options.types.length || options.types.includes(info.type))) {
+          devs.push(new DeviceBase(usbDev, info));
+        }
       }
     }
     return devs;

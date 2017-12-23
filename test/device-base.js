@@ -1,4 +1,5 @@
-import * as usb from '../src/device-base';
+import { getDevices, openDeviceById, PollingPolicy } from '../src/device-base';
+import { DeviceType } from '../src/device-type';
 import * as usbImpl from '../src/node-usb';
 import * as proto from '../src/proto';
 import * as error from '../src/error';
@@ -29,7 +30,7 @@ describe('device-base', () => {
     // Number of CHECK requests sent to a USB device during the test
     this.checkCount = 0;
     // Current polling policy
-    this.pollingPolicy = usb.PollingPolicy.DEFAULT;
+    this.pollingPolicy = PollingPolicy.DEFAULT;
     // Fires the CHECK request timer depending on current polling policy
     this.checkTimeout = async () => {
       await this.tick(this.pollingPolicy(this.checkCount++));
@@ -50,7 +51,7 @@ describe('device-base', () => {
       usbDevs.push(fakeUsb.addElectron());
       fakeUsb.addDevice({ vendorId: 0xcccc, productId: 0xcccc });
       // Enumerate detected devices
-      let devs = await usb.getDevices();
+      let devs = await getDevices();
       devs = devs.map(dev => dev.usbDevice);
       expect(devs).to.have.all.members(usbDevs);
     });
@@ -62,7 +63,7 @@ describe('device-base', () => {
         fakeUsb.addP1({ dfu: true }),
         fakeUsb.addElectron({ dfu: true })
       ];
-      let devs = await usb.getDevices();
+      let devs = await getDevices();
       devs = devs.map(dev => dev.usbDevice);
       expect(devs).to.have.all.members(usbDevs);
     });
@@ -70,7 +71,7 @@ describe('device-base', () => {
     it('can optionally exclude devices in the DFU mode', async () => {
       const photon1 = fakeUsb.addPhoton({ dfu: true });
       const photon2 = fakeUsb.addPhoton({ dfu: false });
-      const devs = await usb.getDevices({ includeDfu: false });
+      const devs = await getDevices({ includeDfu: false });
       expect(devs).to.have.lengthOf(1);
       expect(devs[0].usbDevice).to.equal(photon2);
     });
@@ -80,12 +81,12 @@ describe('device-base', () => {
       const photon = fakeUsb.addPhoton();
       const p1 = fakeUsb.addP1();
       const electron = fakeUsb.addElectron();
-      let devs = await usb.getDevices({ types: [usb.DeviceType.DUO] });
+      let devs = await getDevices({ types: [DeviceType.DUO] });
       expect(devs).to.be.empty;
-      devs = await usb.getDevices({ types: [usb.DeviceType.CORE] });
+      devs = await getDevices({ types: [DeviceType.CORE] });
       expect(devs).to.have.lengthOf(1);
       expect(devs[0].usbDevice).to.equal(core);
-      devs = await usb.getDevices({ types: [usb.DeviceType.PHOTON, usb.DeviceType.P1, usb.DeviceType.ELECTRON] });
+      devs = await getDevices({ types: [DeviceType.PHOTON, DeviceType.P1, DeviceType.ELECTRON] });
       expect(devs).to.have.lengthOf(3);
       devs = devs.map(dev => dev.usbDevice);
       expect(devs).to.have.all.members([photon, p1, electron]);
@@ -97,7 +98,7 @@ describe('device-base', () => {
       const photon1 = fakeUsb.addPhoton({ id: '111111111111111111111111' });
       const photon2 = fakeUsb.addPhoton({ id: '222222222222222222222222' });
       const photon3 = fakeUsb.addPhoton({ id: '333333333333333333333333' });
-      const dev = await usb.openDeviceById('222222222222222222222222');
+      const dev = await openDeviceById('222222222222222222222222');
       expect(dev.usbDevice).to.equal(photon2);
       expect(photon1.isOpen).to.be.false;
       expect(photon2.isOpen).to.be.true;
@@ -106,7 +107,7 @@ describe('device-base', () => {
 
     it('fails if the device cannot be found', async () => {
       const photon = fakeUsb.addPhoton({ id: '111111111111111111111111' });
-      const dev = usb.openDeviceById('222222222222222222222222');
+      const dev = openDeviceById('222222222222222222222222');
       await expect(dev).to.be.rejectedWith(error.NotFoundError);
       expect(photon.isOpen).to.be.false;
     });
@@ -118,7 +119,7 @@ describe('device-base', () => {
         serialNumber: '111111111111111111111111'
       });
       const open = this.sinon.spy(unknown, 'open');
-      const dev = usb.openDeviceById('111111111111111111111111');
+      const dev = openDeviceById('111111111111111111111111');
       await expect(dev).to.be.rejectedWith(error.NotFoundError);
       expect(open).to.have.not.been.called;
     });
@@ -126,8 +127,8 @@ describe('device-base', () => {
     it('matches serial numbers in a case-insensitive manner', async () => {
       fakeUsb.addPhoton({ id: 'ABCDABCDABCDABCDABCDABCD' });
       fakeUsb.addElectron({ id: 'cdefcdefcdefcdefcdefcdef' });
-      await usb.openDeviceById('abcdabcdabcdabcdabcdabcd');
-      await usb.openDeviceById('CDEFCDEFCDEFCDEFCDEFCDEF');
+      await openDeviceById('abcdabcdabcdabcdabcdabcd');
+      await openDeviceById('CDEFCDEFCDEFCDEFCDEFCDEF');
     });
   });
 
@@ -141,7 +142,7 @@ describe('device-base', () => {
         id: '111111111111111111111111',
         firmwareVersion: '1.0.0'
       });
-      const devs = await usb.getDevices();
+      const devs = await getDevices();
       assert(devs.length != 0);
       dev = devs[0];
     });
