@@ -101,6 +101,26 @@ const RequestType = {
   },
   SET_SOFTAP_SSID: {
     id: 240
+  },
+  PREPARE_FIRMWARE_UPDATE: {
+    id: 250,
+    request: pb.PrepareFirmwareUpdateRequest,
+    reply: pb.PrepareFirmwareUpdateReply
+  },
+  FINISH_FIRMWARE_UPDATE: {
+    id: 251,
+    request: pb.FinishFirmwareUpdateRequest,
+    reply: pb.FinishFirmwareUpdateReply
+  },
+  CANCEL_FIRMWARE_UPDATE: {
+    id: 252,
+    request: pb.CancelFirmwareUpdateRequest,
+    reply: pb.CancelFirmwareUpdateReply
+  },
+  SAVE_FIRMWARE_CHUNK: {
+    id: 253,
+    request: pb.SaveFirmwareChunkRequest,
+    reply: pb.SaveFirmwareChunkReply
   }
 };
 
@@ -300,6 +320,34 @@ export class Device extends usb.DeviceBase{
 
   stopNyanSignal() {
     return this._pbRequest(RequestType.STOP_NYAN_SIGNAL);
+  }
+
+  uploadFirmware(data) {
+    return this._pbRequest(RequestType.PREPARE_FIRMWARE_UPDATE, {
+      size: data.length
+    }).then(rep => {
+      let chunkSize = rep.chunkSize;
+      let offs = 0;
+      const sendChunks = () => {
+        if (offs + chunkSize > data.length) {
+          chunkSize = data.length - offs;
+        }
+        if (chunkSize == 0) {
+          return Promise.resolve();
+        }
+        return this._pbRequest(RequestType.SAVE_FIRMWARE_CHUNK, {
+          data: data.slice(offs, offs + chunkSize)
+        }).then(() => {
+          offs += chunkSize;
+          return sendChunks();
+        });
+      };
+      return sendChunks();
+    }).then(() => {
+      return this._pbRequest(RequestType.FINISH_FIRMWARE_UPDATE, {
+        validateOnly: false
+      });
+    });
   }
 
   _pbRequest(type, props) {

@@ -5,6 +5,7 @@ import * as usb from 'usb';
 export class Device {
   constructor(dev) {
     this._dev = dev;
+    this._dev.timeout = 5000; // Use longer timeout for control transfers
     this._serialNum = null;
   }
 
