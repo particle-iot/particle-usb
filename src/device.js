@@ -1,273 +1,94 @@
 import * as usb from './device-base';
-import { DeviceError } from './error';
-
-import pbMessage from '../lib/pb-message.js';
-const pb = pbMessage.particle.ctrl;
-
-// Request types
-const RequestType = {
-  RESET: {
-    id: 40
-  },
-  FACTORY_RESET: {
-    id: 41
-  },
-  DFU_MODE: {
-    id: 50
-  },
-  SAFE_MODE: {
-    id: 60
-  },
-  START_LISTENING: {
-    id: 70
-  },
-  STOP_LISTENING: {
-    id: 71
-  },
-  LOG_CONFIG: {
-    id: 80
-  },
-  MODULE_INFO: {
-    id: 90
-  },
-  DIAGNOSTIC_INFO: {
-    id: 100
-  },
-  WIFI_SET_ANTENNA: {
-    id: 110
-  },
-  WIFI_GET_ANTENNA: {
-    id: 111
-  },
-  WIFI_SCAN: {
-    id: 112
-  },
-  WIFI_SET_CREDENTIALS: {
-    id: 113
-  },
-  WIFI_GET_CREDENTIALS: {
-    id: 114
-  },
-  WIFI_CLEAR_CREDENTIALS: {
-    id: 115
-  },
-  NETWORK_SET_CONFIGURATION: {
-    id: 120
-  },
-  NETWORK_GET_CONFIGURATION: {
-    id: 121
-  },
-  NETWORK_GET_STATUS: {
-    id: 122
-  },
-  SET_CLAIM_CODE: {
-    id: 200,
-    request: pb.SetClaimCodeRequest
-  },
-  IS_CLAIMED: {
-    id: 201
-  },
-  SET_SECURITY_KEY: {
-    id: 210,
-    request: pb.SetSecurityKeyRequest
-  },
-  GET_SECURITY_KEY: {
-    id: 211,
-    request: pb.GetSecurityKeyRequest,
-    reply: pb.GetSecurityKeyReply
-  },
-  SET_SERVER_ADDRESS: {
-    id: 220,
-    request: pb.SetServerAddressRequest
-  },
-  GET_SERVER_ADDRESS: {
-    id: 221,
-    request: pb.GetServerAddressRequest,
-    reply: pb.GetServerAddressReply
-  },
-  SET_SERVER_PROTOCOL: {
-    id: 222,
-    request: pb.SetServerProtocolRequest
-  },
-  GET_SERVER_PROTOCOL: {
-    id: 223,
-    reply: pb.GetServerProtocolReply
-  },
-  START_NYAN_SIGNAL: {
-    id: 230
-  },
-  STOP_NYAN_SIGNAL: {
-    id: 231
-  },
-  SET_SOFTAP_SSID: {
-    id: 240
-  },
-  PREPARE_FIRMWARE_UPDATE: {
-    id: 250,
-    request: pb.PrepareFirmwareUpdateRequest,
-    reply: pb.PrepareFirmwareUpdateReply
-  },
-  FINISH_FIRMWARE_UPDATE: {
-    id: 251,
-    request: pb.FinishFirmwareUpdateRequest,
-    reply: pb.FinishFirmwareUpdateReply
-  },
-  CANCEL_FIRMWARE_UPDATE: {
-    id: 252,
-    request: pb.CancelFirmwareUpdateRequest,
-    reply: pb.CancelFirmwareUpdateReply
-  },
-  SAVE_FIRMWARE_CHUNK: {
-    id: 253,
-    request: pb.SaveFirmwareChunkRequest,
-    reply: pb.SaveFirmwareChunkReply
-  }
-};
-
-// Result codes as defined by the firmware's system_error_t enum
-const RESULT_CODES = [
-  {
-    id: 'OK',
-    value: 0,
-    message: 'Operation succeeded'
-  },
-  {
-    id: 'ERROR',
-    value: -100,
-    message: 'Unknown error'
-  },
-  {
-    id: 'BUSY',
-    value: -110,
-    message: 'Resource is busy'
-  },
-  {
-    id: 'NOT_SUPPORTED',
-    value: -120,
-    message: 'Not supported'
-  },
-  {
-    id: 'NOT_ALLOWED',
-    value: -130,
-    message: 'Not allowed'
-  },
-  {
-    id: 'CANCELLED',
-    value: -140,
-    message: 'Operation cancelled'
-  },
-  {
-    id: 'ABORTED',
-    value: -150,
-    message: 'Operation aborted'
-  },
-  {
-    id: 'TIMEOUT_ERROR',
-    value: -160,
-    message: 'Timeout error'
-  },
-  {
-    id: 'NOT_FOUND',
-    value: -170,
-    message: 'Not found'
-  },
-  {
-    id: 'ALREADY_EXISTS',
-    value: -180,
-    message: 'Already exists'
-  },
-  {
-    id: 'TOO_LARGE',
-    value: -190,
-    message: 'Data is too large'
-  },
-  {
-    id: 'LIMIT_EXCEEDED',
-    value: -200,
-    message: 'Limit exceeded'
-  },
-  {
-    id: 'INVALID_STATE',
-    value: -210,
-    message: 'Invalid state'
-  },
-  {
-    id: 'IO_ERROR',
-    value: -220,
-    message: 'IO error'
-  },
-  {
-    id: 'NETWORK_ERROR',
-    value: -230,
-    message: 'Network error'
-  },
-  {
-    id: 'PROTOCOL_ERROR',
-    value: -240,
-    message: 'Protocol error'
-  },
-  {
-    id: 'INTERNAL_ERROR',
-    value: -250,
-    message: 'Internal error'
-  },
-  {
-    id: 'NO_MEMORY',
-    value: -260,
-    message: 'Memory allocation error'
-  },
-  {
-    id: 'INVALID_ARGUMENT',
-    value: -270,
-    message: 'Invalid argument'
-  },
-  {
-    id: 'BAD_DATA',
-    value: -280,
-    message: 'Invalid data format'
-  }
-];
-
-const RESULT_CODE_MESSAGES = RESULT_CODES.reduce((obj, result) => {
-  obj[result.value] = result.message;
-  return obj;
-}, {});
+import { RequestType, proto } from './request-type';
+import { RequestResult, messageForResultCode } from './request-result';
+import { mapProtobufEnum } from './protobuf-util';
+import { RequestError, ProtocolError } from './error';
 
 /**
- * Request result codes.
+ * Server protocol types.
  */
-export const RequestResult = RESULT_CODES.reduce((obj, result) => {
-  obj[result.id] = result.value;
-  return obj;
-}, {});
-
-/**
- * Request error.
- */
-export class RequestError extends DeviceError {
-  constructor(result, ...args) {
-    super(...args);
-    this.result = result;
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
+export const ServerProtocol = mapProtobufEnum({
+  TCP: proto.ServerProtocolType.TCP_PROTOCOL,
+  UDP: proto.ServerProtocolType.UDP_PROTOCOL
+});
 
 /**
  * Particle USB device.
  */
-export class Device extends usb.DeviceBase{
+export class Device extends usb.DeviceBase {
+  /**
+   * Perform the system reset.
+   *
+   * @return {Promise}
+   */
   reset() {
-    return this._pbRequest(RequestType.RESET);
+    return this.sendProtobufRequest(RequestType.RESET);
   }
 
+  /**
+   * Perform the factory reset.
+   *
+   * @return {Promise}
+   */
+  factoryReset() {
+    return this.sendProtobufRequest(RequestType.FACTORY_RESET);
+  }
+
+  /**
+   * Reset and enter the DFU mode.
+   *
+   * @return {Promise}
+   */
+  enterDfuMode() {
+    return this.sendProtobufRequest(RequestType.DFU_MODE);
+  }
+
+  /**
+   * Reset and enter the safe mode.
+   *
+   * @return {Promise}
+   */
+  enterSafeMode() {
+    return this.sendProtobufRequest(RequestType.SAFE_MODE);
+  }
+
+  /**
+   * Enter the listening mode.
+   *
+   * @return {Promise}
+   */
+  enterListeningMode() {
+    return this.sendProtobufRequest(RequestType.START_LISTENING);
+  }
+
+  /**
+   * Leave the listening mode.
+   *
+   * @return {Promise}
+   */
+  leaveListeningMode() {
+    return this.sendProtobufRequest(RequestType.STOP_LISTENING);
+  }
+
+  /**
+   * Set the claim code.
+   *
+   * @param {String} code Claim code.
+   * @return {Promise}
+   */
   setClaimCode(code) {
-    return this._pbRequest(RequestType.SET_CLAIM_CODE, {
+    return this.sendProtobufRequest(RequestType.SET_CLAIM_CODE, {
       code: code
     });
   }
 
+  /**
+   * Check if the device is claimed.
+   *
+   * @return {Promise<Boolean>}
+   */
   isClaimed() {
-    return this._pbRequest(RequestType.IS_CLAIMED).then(() => true, err => {
+    return this.sendProtobufRequest(RequestType.IS_CLAIMED).then(() => true, err => {
       if (err.result == RequestResult.NOT_FOUND) {
         return false;
       }
@@ -275,82 +96,199 @@ export class Device extends usb.DeviceBase{
     });
   }
 
-  setSecurityKey(type, data) {
-    return this._pbRequest(RequestType.SET_SECURITY_KEY, {
-      type: type,
-      data: data
+  /**
+   * Set the device private key.
+   *
+   * @param {Buffer} data Key data.
+   * @param {String} [protocol] Server protocol.
+   * @return {Promise}
+   */
+  setDevicePrivateKey(data, protocol) {
+    return this._getServerProtocol(protocol).then(protocol => {
+      const keyType = (protocol == proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_DEVICE_PRIVATE_KEY :
+          proto.SecurityKeyType.TCP_DEVICE_PRIVATE_KEY);
+      return this._setSecurityKey(keyType, data);
     });
   }
 
-  getSecurityKey(type) {
-    return this._pbRequest(RequestType.GET_SECURITY_KEY, {
-      type: type
+  /**
+   * Get the device private key.
+   *
+   * @param {String} [protocol] Server protocol.
+   * @return {Promise<Buffer>}
+   */
+  getDevicePrivateKey(protocol) {
+    return this._getServerProtocol(protocol).then(protocol => {
+      const keyType = (protocol == proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_DEVICE_PRIVATE_KEY :
+          proto.SecurityKeyType.TCP_DEVICE_PRIVATE_KEY);
+      return this._getSecurityKey(keyType);
     });
   }
 
-  setServerAddress(protocol, address, port) {
-    return this._pbRequest(RequestType.SET_SERVER_ADDRESS, {
-      protocol: protocol,
-      address: address,
-      port: port
+  /**
+   * Set the device public key.
+   *
+   * @param {Buffer} data Key data.
+   * @param {String} [protocol] Server protocol.
+   * @return {Promise}
+   */
+  setDevicePublicKey(data, protocol) {
+    return this._getServerProtocol(protocol).then(protocol => {
+      const keyType = (protocol == proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_DEVICE_PUBLIC_KEY :
+          proto.SecurityKeyType.TCP_DEVICE_PUBLIC_KEY);
+      return this._setSecurityKey(keyType, data);
     });
   }
 
+  /**
+   * Get the device public key.
+   *
+   * @param {String} [protocol] Server protocol.
+   * @return {Promise<Buffer>}
+   */
+  getDevicePublicKey(data, protocol) {
+    return this._getServerProtocol(protocol).then(protocol => {
+      const keyType = (protocol == proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_DEVICE_PUBLIC_KEY :
+          proto.SecurityKeyType.TCP_DEVICE_PUBLIC_KEY);
+      return this._getSecurityKey(keyType);
+    });
+  }
+
+  /**
+   * Set the server public key.
+   *
+   * @param {Buffer} data Key data.
+   * @param {String} [protocol] Server protocol.
+   * @return {Promise}
+   */
+  setServerPublicKey(data, protocol) {
+    return this._getServerProtocol(protocol).then(protocol => {
+      const keyType = (protocol == proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_SERVER_PUBLIC_KEY :
+          proto.SecurityKeyType.TCP_SERVER_PUBLIC_KEY);
+      return this._setSecurityKey(keyType, data);
+    });
+  }
+
+  /**
+   * Get the server public key.
+   *
+   * @param {String} [protocol] Server protocol.
+   * @return {Promise<Buffer>}
+   */
+  getServerPublicKey(data, protocol) {
+    return this._getServerProtocol(protocol).then(protocol => {
+      const keyType = (protocol == proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_SERVER_PUBLIC_KEY :
+          proto.SecurityKeyType.TCP_SERVER_PUBLIC_KEY);
+      return this._getSecurityKey(keyType);
+    });
+  }
+
+  /**
+   * Set the server address.
+   *
+   * @param {String} data Host address.
+   * @param {Number} port Port number.
+   * @param {String} [protocol] Server protocol.
+   * @return {Promise}
+   */
+  setServerAddress(address, port, protocol) {
+    return this._getServerProtocol(protocol).then(protocol => {
+      return this.sendProtobufRequest(RequestType.SET_SERVER_ADDRESS, {
+        protocol: protocol,
+        address: address,
+        port: port // TODO: Make port number optional
+      });
+    });
+  }
+
+  /**
+   * Get the server address.
+   *
+   * @param {String} [protocol] Server protocol.
+   * @return {Promise<Object>}
+   */
   getServerAddress(protocol) {
-    return this._pbRequest(RequestType.GET_SERVER_ADDRESS, {
-      protocol: protocol
+    return this._getServerProtocol(protocol).then(protocol => {
+      return this.sendProtobufRequest(RequestType.GET_SERVER_ADDRESS, {
+        protocol: protocol
+      });
     });
   }
 
+  /**
+   * Set the server protocol.
+   *
+   * @param {String} protocol Server protocol.
+   * @return {Promise}
+   */
   setServerProtocol(protocol) {
-    return this._pbRequest(RequestType.SET_SERVER_PROTOCOL, {
-      protocol: protocol
+    return this.sendProtobufRequest(RequestType.SET_SERVER_PROTOCOL, {
+      protocol: ServerProtocol.toProtobuf(protocol)
     });
   }
 
+  /**
+   * Get the server protocol.
+   *
+   * @return {Promise<String>}
+   */
   getServerProtocol() {
-    return this._pbRequest(RequestType.GET_SERVER_PROTOCOL).then(rep => {
-      return rep.protocol;
-    });
+    return this._getServerProtocol().then(protocol => ServerProtocol.fromProtobuf(protocol));
   }
 
+  /**
+   * Start the Nyan LED indication.
+   *
+   * @return {Promise}
+   */
   startNyanSignal() {
-    return this._pbRequest(RequestType.START_NYAN_SIGNAL);
+    return this.sendProtobufRequest(RequestType.START_NYAN_SIGNAL);
   }
 
+  /**
+   * Stop the Nyan LED indication.
+   *
+   * @return {Promise}
+   */
   stopNyanSignal() {
-    return this._pbRequest(RequestType.STOP_NYAN_SIGNAL);
+    return this.sendProtobufRequest(RequestType.STOP_NYAN_SIGNAL);
   }
 
-  uploadFirmware(data) {
-    return this._pbRequest(RequestType.PREPARE_FIRMWARE_UPDATE, {
+  /**
+   * Perform the firmware update.
+   *
+   * @param {Buffer} data Firmware module data.
+   * @return {Promise}
+   */
+  updateFirmware(data) {
+    return this.sendProtobufRequest(RequestType.START_FIRMWARE_UPDATE, {
       size: data.length
     }).then(rep => {
       let chunkSize = rep.chunkSize;
       let offs = 0;
-      const sendChunks = () => {
+      const sendFirmwareData = () => {
         if (offs + chunkSize > data.length) {
           chunkSize = data.length - offs;
         }
         if (chunkSize == 0) {
           return Promise.resolve();
         }
-        return this._pbRequest(RequestType.SAVE_FIRMWARE_CHUNK, {
+        return this.sendProtobufRequest(RequestType.SAVE_FIRMWARE_DATA, {
           data: data.slice(offs, offs + chunkSize)
         }).then(() => {
           offs += chunkSize;
-          return sendChunks();
+          return sendFirmwareData();
         });
       };
-      return sendChunks();
+      return sendFirmwareData();
     }).then(() => {
-      return this._pbRequest(RequestType.FINISH_FIRMWARE_UPDATE, {
+      return this.sendProtobufRequest(RequestType.FINISH_FIRMWARE_UPDATE, {
         validateOnly: false
       });
     });
   }
 
-  _pbRequest(type, props) {
+  sendProtobufRequest(type, props) {
     let buf = null;
     if (props && type.request) {
       const msg = type.request.create(props);
@@ -358,11 +296,33 @@ export class Device extends usb.DeviceBase{
     }
     return this.sendRequest(type.id, buf).then(rep => {
       if (rep.result != RequestResult.OK) {
-        throw new RequestError(rep.result, RESULT_CODE_MESSAGES[rep.result]);
+        throw new RequestError(rep.result, messageForResultCode(rep.result));
       }
       if (rep.data && type.reply) {
         return type.reply.decode(rep.data);
       }
+    });
+  }
+
+  _setSecurityKey(type, data) {
+    return this.sendProtobufRequest(RequestType.SET_SECURITY_KEY, {
+      type: type,
+      data: data
+    });
+  }
+
+  _getSecurityKey(type) {
+    return this.sendProtobufRequest(RequestType.GET_SECURITY_KEY, {
+      type: type
+    });
+  }
+
+  _getServerProtocol(protocol) {
+    if (protocol) {
+      return Promise.resolve(ServerProtocol.toProtobuf(protocol));
+    }
+    return this.sendProtobufRequest(RequestType.GET_SERVER_PROTOCOL).then(rep => {
+      return rep.protocol;
     });
   }
 }

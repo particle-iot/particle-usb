@@ -9,59 +9,56 @@ export const DeviceType = {
   DUO: 'Duo'
 };
 
-/**
- * Server protocol types.
- */
-export const ServerProtocol = {
-  TCP: 'TCP',
-  UDP: 'UDP'
-};
-
 // Descriptions of the devices supported by the library
 export const DEVICES = {
   [DeviceType.CORE]: {
-    serverProtocol: ServerProtocol.TCP,
-    usbVendorId: 0x1d50,
-    usbProductId: 0x607d,
-    dfu: {
-      usbVendorId: 0x1d50,
-      usbProductId: 0x607f
+    usb: {
+      vendorId: 0x1d50,
+      productId: 0x607d,
+      dfu: {
+        vendorId: 0x1d50,
+        productId: 0x607f
+      }
     }
   },
   [DeviceType.PHOTON]: {
-    serverProtocol: ServerProtocol.TCP,
-    usbVendorId: 0x2b04,
-    usbProductId: 0xc006,
-    dfu: {
-      usbVendorId: 0x2b04,
-      usbProductId: 0xd006
+    usb: {
+      vendorId: 0x2b04,
+      productId: 0xc006,
+      dfu: {
+        vendorId: 0x2b04,
+        productId: 0xd006
+      }
     }
   },
   [DeviceType.P1]: {
-    serverProtocol: ServerProtocol.TCP,
-    usbVendorId: 0x2b04,
-    usbProductId: 0xc008,
-    dfu: {
-      usbVendorId: 0x2b04,
-      usbProductId: 0xd008
+    usb: {
+      vendorId: 0x2b04,
+      productId: 0xc008,
+      dfu: {
+        vendorId: 0x2b04,
+        productId: 0xd008
+      }
     }
   },
   [DeviceType.ELECTRON]: {
-    serverProtocol: [ServerProtocol.UDP, ServerProtocol.TCP],
-    usbVendorId: 0x2b04,
-    usbProductId: 0xc00a,
-    dfu: {
-      usbVendorId: 0x2b04,
-      usbProductId: 0xd00a
+    usb: {
+      vendorId: 0x2b04,
+      productId: 0xc00a,
+      dfu: {
+        vendorId: 0x2b04,
+        productId: 0xd00a
+      }
     }
   },
   [DeviceType.DUO]: {
-    serverProtocol: ServerProtocol.TCP,
-    usbVendorId: 0x2b04,
-    usbProductId: 0xc058,
-    dfu: {
-      usbVendorId: 0x2b04,
-      usbProductId: 0xd058
+    usb: {
+      vendorId: 0x2b04,
+      productId: 0xc058,
+      dfu: {
+        vendorId: 0x2b04,
+        productId: 0xd058
+      }
     }
   }
 };

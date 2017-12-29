@@ -80,6 +80,17 @@ export class InternalError extends DeviceError {
   }
 }
 
+/**
+ * Request error.
+ */
+export class RequestError extends DeviceError {
+  constructor(result, ...args) {
+    super(...args);
+    this.result = result;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
 export function assert(val, msg = null) {
   if (!val) {
     throw new InternalError(msg ? msg : 'Assertion failed');

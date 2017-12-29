@@ -1,7 +1,7 @@
 import { getDevices, openDeviceById, PollingPolicy } from '../src/device-base';
 import { DeviceType } from '../src/device-type';
 import * as usbImpl from '../src/node-usb';
-import * as proto from '../src/proto';
+import * as proto from '../src/usb-protocol';
 import * as error from '../src/error';
 
 import { fakeUsb, sinon, expect, assert, nextTick } from './support';

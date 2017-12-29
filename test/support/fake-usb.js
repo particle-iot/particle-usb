@@ -1,4 +1,4 @@
-import * as proto from '../../src/proto';
+import * as proto from '../../src/usb-protocol';
 import { DeviceType } from '../../src/device-type';
 import { ProtocolError, UsbError } from '../../src/error';
 

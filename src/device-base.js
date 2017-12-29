@@ -1,28 +1,24 @@
 import * as usb from './node-usb';
-import * as proto from './proto';
+import * as proto from './usb-protocol';
 import { DeviceType, DEVICES } from './device-type';
 import { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, assert } from './error';
 
 import EventEmitter from 'events';
 
-// Arrange supported USB devices by vendor and product IDs
+// Device descriptions arranged by vendor/product IDs
 const USB_DEVICES = Object.entries(DEVICES).reduce((obj, dev) => {
   const type = dev[0]; // Device type
-  dev = dev[1]; // Device info
-  if (!(dev.usbVendorId in obj)) {
-    obj[dev.usbVendorId] = {};
+  dev = Object.assign({}, dev[1]); // Device info
+  const usb = dev.usb;
+  delete dev.usb;
+  if (!(usb.vendorId in obj)) {
+    obj[usb.vendorId] = {};
   }
-  obj[dev.usbVendorId][dev.usbProductId] = {
-    type: type,
-    dfu: false
-  };
-  if (!(dev.dfu.usbVendorId in obj)) {
-    obj[dev.dfu.usbVendorId] = {};
+  obj[usb.vendorId][usb.productId] = Object.assign({ type: type, dfu: false }, dev);
+  if (!(usb.dfu.vendorId in obj)) {
+    obj[usb.dfu.vendorId] = {};
   }
-  obj[dev.dfu.usbVendorId][dev.dfu.usbProductId] = {
-    type: type,
-    dfu: true
-  };
+  obj[usb.dfu.vendorId][usb.dfu.productId] = Object.assign({ type: type, dfu: true }, dev);
   return obj;
 }, {});
 
@@ -41,36 +37,6 @@ function checkInterval(attempts, intervals) {
  */
 export const PollingPolicy = {
   DEFAULT: n => checkInterval(n, DEFAULT_CHECK_INTERVALS)
-};
-
-// Default options for DeviceBase.open()
-const DEFAULT_OPEN_OPTIONS = {
-  // Maximum number of concurrent requests that can be sent to the device
-  concurrentRequests: null // The number of requests is limited by the device
-};
-
-// Default options for DeviceBase.close()
-const DEFAULT_CLOSE_OPTIONS = {
-  // Process pending requests before closing the device
-  processPendingRequests: true,
-  // Timeout to process pending requests
-  timeout: null // Wait until all requests are processed
-};
-
-// Default options for DeviceBase.sendRequest()
-const DEFAULT_SEND_REQUEST_OPTIONS = {
-  // Polling policy
-  pollingPolicy: PollingPolicy.DEFAULT,
-  // Request timeout
-  timeout: 30000
-};
-
-// Default options for getDevices()
-const DEFAULT_GET_DEVICES_OPTIONS = {
-  // Device types (DeviceType.PHOTON, DeviceType.ELECTRON, etc).
-  types: [],
-  // Include devices which are in the DFU mode
-  includeDfu: true
 };
 
 // Device state
@@ -132,7 +98,9 @@ export class DeviceBase extends EventEmitter {
    * @return {Promise}
    */
   open(options) {
-    options = Object.assign({}, DEFAULT_OPEN_OPTIONS, options);
+    options = Object.assign({
+      concurrentRequests: null // The maximum number of concurrent requests is limited by the device
+    }, options);
     if (this._state != DeviceState.CLOSED) {
       return Promise.reject(new StateError('Device is already open'));
     }
@@ -174,7 +142,10 @@ export class DeviceBase extends EventEmitter {
    * @return {Promise}
    */
   close(options) {
-    options = Object.assign({}, DEFAULT_CLOSE_OPTIONS, options);
+    options = Object.assign({
+      processPendingRequests: true, // Process pending requests before closing the device
+      timeout: null // Wait until all requests are processed
+    }, options);
     if (this._state == DeviceState.CLOSED) {
       return Promise.resolve();
     }
@@ -210,7 +181,10 @@ export class DeviceBase extends EventEmitter {
    * @return {Promise}
    */
   sendRequest(type, data, options) {
-    options = Object.assign({}, DEFAULT_SEND_REQUEST_OPTIONS, options);
+    options = Object.assign({
+      pollingPolicy: PollingPolicy.DEFAULT, // Polling policy
+      timeout: 30000 // Request timeout
+    }, options);
     return new Promise((resolve, reject) => {
       if (this._state == DeviceState.CLOSED) {
         throw new StateError('Device is not open');
@@ -663,7 +637,10 @@ export class DeviceBase extends EventEmitter {
  * @return {Promise}
  */
 export function getDevices(options) {
-  options = Object.assign({}, DEFAULT_GET_DEVICES_OPTIONS, options);
+  options = Object.assign({
+    types: [], // Include devices of any type
+    includeDfu: true // Include devices in the DFU mode
+  }, options);
   return usb.getDevices().then(usbDevs => {
     const devs = []; // Particle devices
     for (let usbDev of usbDevs) {
