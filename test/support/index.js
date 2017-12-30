@@ -1,5 +1,6 @@
 import * as usb from '../../src/particle-usb';
 import * as fakeUsb from './fake-usb';
+import { config } from '../../src/config';
 
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
@@ -40,7 +41,7 @@ function dump(val) {
   console.log(util.inspect(val, { depth: null }));
 }
 
-usb.config({
+config({
   log: new Logger()
 });
 

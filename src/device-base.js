@@ -2,6 +2,7 @@ import * as usb from './node-usb';
 import * as proto from './usb-protocol';
 import { DeviceType, DEVICES } from './device-type';
 import { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, assert } from './error';
+import { globalOptions } from './config';
 
 import EventEmitter from 'events';
 
@@ -56,16 +57,6 @@ const VendorRequest = {
 function ignore() {
 }
 
-// Global configuration
-let configOptions = {
-  log: { // Dummy logger
-    trace: ignore,
-    info: ignore,
-    warn: ignore,
-    error: ignore
-  }
-};
-
 /**
  * Base class for a Particle USB device.
  */
@@ -74,7 +65,7 @@ export class DeviceBase extends EventEmitter {
     super();
     this._dev = dev; // USB device handle
     this._info = info; // Device info
-    this._log = configOptions.log; // Logger instance
+    this._log = globalOptions.log; // Logger instance
     this._state = DeviceState.CLOSED; // Device state
     this._reqs = new Map(); // All known requests
     this._reqQueue = []; // Unprocessed requests
@@ -684,7 +675,7 @@ export function openDeviceById(id, options) {
     }
     const dev = devs.shift();
     if (devs.length != 0) {
-      configOptions.log.warn(`Found multiple devices with the same ID: ${id}`); // lol
+      globalOptions.log.warn(`Found multiple devices with the same ID: ${id}`); // lol
       const p = devs.map(dev => {
         return dev.close().catch(ignore); // Ignore error
       });
@@ -694,13 +685,4 @@ export function openDeviceById(id, options) {
     }
     return dev;
   });
-}
-
-/**
- * Set global options.
- *
- * @param {Object} options Options.
- */
-export function config(options) {
-  Object.assign(configOptions, options);
 }

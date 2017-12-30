@@ -1,15 +1,17 @@
 import * as usb from './device-base';
-import { RequestType, proto } from './request-type';
+import { RequestType } from './request-type';
 import { RequestResult, messageForResultCode } from './request-result';
-import { mapProtobufEnum } from './protobuf-util';
-import { RequestError, ProtocolError } from './error';
+import { fromProtobufEnum } from './protobuf-util';
+import { RequestError } from './error';
+
+import proto from './protocol';
 
 /**
  * Server protocol types.
  */
-export const ServerProtocol = mapProtobufEnum({
-  TCP: proto.ServerProtocolType.TCP_PROTOCOL,
-  UDP: proto.ServerProtocolType.UDP_PROTOCOL
+export const ServerProtocol = fromProtobufEnum(proto.ServerProtocolType, {
+  TCP: 'TCP_PROTOCOL',
+  UDP: 'UDP_PROTOCOL'
 });
 
 /**
@@ -305,36 +307,17 @@ export class Device extends usb.DeviceBase {
   }
 
   _setSecurityKey(type, data) {
-    return this.sendProtobufRequest(RequestType.SET_SECURITY_KEY, {
-      type: type,
-      data: data
-    });
+    return this.sendProtobufRequest(RequestType.SET_SECURITY_KEY, { type: type, data: data });
   }
 
   _getSecurityKey(type) {
-    return this.sendProtobufRequest(RequestType.GET_SECURITY_KEY, {
-      type: type
-    });
+    return this.sendProtobufRequest(RequestType.GET_SECURITY_KEY, { type: type }).then(rep => rep.data);
   }
 
   _getServerProtocol(protocol) {
     if (protocol) {
       return Promise.resolve(ServerProtocol.toProtobuf(protocol));
     }
-    return this.sendProtobufRequest(RequestType.GET_SERVER_PROTOCOL).then(rep => {
-      return rep.protocol;
-    });
+    return this.sendProtobufRequest(RequestType.GET_SERVER_PROTOCOL).then(rep => rep.protocol);
   }
-}
-
-export function getDevices(options) {
-  return usb.getDevices(options).then(devs => devs.map(dev => {
-    return Object.setPrototypeOf(dev, Device.prototype); // DeviceBase -> Device
-  }));
-}
-
-export function openDeviceById(id, options) {
-  return usb.openDeviceById(id, options).then(dev => {
-    return Object.setPrototypeOf(dev, Device.prototype); // DeviceBase -> Device
-  });
 }

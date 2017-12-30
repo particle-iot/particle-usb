@@ -1,6 +1,4 @@
-import pbMessage from '../lib/pb-message.js';
-
-export const proto = pbMessage.particle.ctrl;
+import proto from './protocol';
 
 // Mapping of request types to Protobuf messages
 export const RequestType = {
@@ -32,22 +30,34 @@ export const RequestType = {
     id: 100
   },
   WIFI_SET_ANTENNA: {
-    id: 110
+    id: 110,
+    request: proto.WiFiSetAntennaRequest,
+    reply: proto.WiFiSetAntennaReply
   },
   WIFI_GET_ANTENNA: {
-    id: 111
+    id: 111,
+    request: proto.WiFiGetAntennaRequest,
+    reply: proto.WiFiGetAntennaReply
   },
   WIFI_SCAN: {
-    id: 112
+    id: 112,
+    request: proto.WiFiScanRequest,
+    reply: proto.WiFiScanReply
   },
   WIFI_SET_CREDENTIALS: {
-    id: 113
+    id: 113,
+    request: proto.WiFiSetCredentialsRequest,
+    reply: proto.WiFiSetCredentialsReply
   },
   WIFI_GET_CREDENTIALS: {
-    id: 114
+    id: 114,
+    request: proto.WiFiGetCredentialsRequest,
+    reply: proto.WiFiGetCredentialsReply
   },
   WIFI_CLEAR_CREDENTIALS: {
-    id: 115
+    id: 115,
+    request: proto.WiFiClearCredentialsRequest,
+    reply: proto.WiFiClearCredentialsReply
   },
   NETWORK_SET_CONFIGURATION: {
     id: 120
