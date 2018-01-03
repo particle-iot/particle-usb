@@ -9,7 +9,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/spark/particle-usb"
+    "url": "https://github.com/particle-iot/particle-usb"
   },
   "license": "Apache-2.0",
   "contributors": [
