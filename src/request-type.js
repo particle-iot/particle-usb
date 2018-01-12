@@ -132,7 +132,7 @@ export const RequestType = {
     request: proto.CancelFirmwareUpdateRequest,
     reply: proto.CancelFirmwareUpdateReply
   },
-  SAVE_FIRMWARE_DATA: {
+  FIRMWARE_UPDATE_DATA: {
     id: 253,
     request: proto.SaveFirmwareDataRequest,
     reply: proto.SaveFirmwareDataReply
@@ -142,19 +142,24 @@ export const RequestType = {
     request: proto.DescribeStorageRequest,
     reply: proto.DescribeStorageReply
   },
-  LOAD_STORAGE_DATA: {
+  READ_SECTION_DATA: {
     id: 261,
-    request: proto.LoadStorageDataRequest,
-    reply: proto.LoadStorageDataReply
+    request: proto.ReadSectionDataRequest,
+    reply: proto.ReadSectionDataReply
   },
-  SAVE_STORAGE_DATA: {
+  WRITE_SECTION_DATA: {
     id: 262,
-    request: proto.SaveStorageDataRequest,
-    reply: proto.SaveStorageDataReply
+    request: proto.WriteSectionDataRequest,
+    reply: proto.WriteSectionDataReply
   },
-  CLEAR_STORAGE_SECTION: {
+  CLEAR_SECTION_DATA: {
     id: 263,
-    request: proto.ClearStorageSectionRequest,
-    reply: proto.ClearStorageSectionReply
+    request: proto.ClearSectionDataRequest,
+    reply: proto.ClearSectionDataReply
+  },
+  GET_SECTION_DATA_SIZE: {
+    id: 264,
+    request: proto.GetSectionDataSizeRequest,
+    reply: proto.GetSectionDataSizeReply
   }
 };

@@ -24,7 +24,7 @@ export function fromProtobufEnum(pbEnum, map, unknownVal) {
     const pbName = map[val];
     const pbVal = pbEnum[pbName];
     if (pbVal === undefined) {
-      throw new Error(`Invalid enum value: ${pbName}`);
+      throw new Error(`Unknown enum value: ${pbName}`);
     }
     const v = val.toLowerCase();
     if (v in mapToProtobuf) {
@@ -54,6 +54,9 @@ function transformMessage(msg, map) {
         val = m.value(val); // Convert value
       }
     } else if (!m) {
+      continue; // Skip property
+    }
+    if (val === undefined) {
       continue; // Skip property
     }
     obj[name] = val;

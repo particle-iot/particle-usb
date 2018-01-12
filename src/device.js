@@ -1,23 +1,25 @@
-import * as usb from './device-base';
+import { DeviceBase } from './device-base';
 import { RequestType } from './request-type';
 import { RequestResult, messageForResultCode } from './request-result';
 import { fromProtobufEnum } from './protobuf-util';
-import { RequestError } from './error';
+import { RequestError, NotFoundError } from './error';
 
 import proto from './protocol';
 
 /**
- * Server protocol types.
+ * Firmware module types.
  */
-export const ServerProtocol = fromProtobufEnum(proto.ServerProtocolType, {
-  TCP: 'TCP_PROTOCOL',
-  UDP: 'UDP_PROTOCOL'
+export const FirmwareModule = fromProtobufEnum(proto.FirmwareModuleType, {
+  BOOTLOADER: 'BOOTLOADER',
+  SYSTEM_PART: 'SYSTEM_PART',
+  USER_PART: 'USER_PART',
+  MONO_FIRMWARE: 'MONO_FIRMWARE'
 });
 
 /**
- * Particle USB device.
+ * Basic functionality supported by all Particle devices.
  */
-export class Device extends usb.DeviceBase {
+export class Device extends DeviceBase {
   /**
    * Perform the system reset.
    *
@@ -73,172 +75,6 @@ export class Device extends usb.DeviceBase {
   }
 
   /**
-   * Set the claim code.
-   *
-   * @param {String} code Claim code.
-   * @return {Promise}
-   */
-  setClaimCode(code) {
-    return this.sendProtobufRequest(RequestType.SET_CLAIM_CODE, {
-      code: code
-    });
-  }
-
-  /**
-   * Check if the device is claimed.
-   *
-   * @return {Promise<Boolean>}
-   */
-  isClaimed() {
-    return this.sendProtobufRequest(RequestType.IS_CLAIMED).then(() => true, err => {
-      if (err.result == RequestResult.NOT_FOUND) {
-        return false;
-      }
-      throw err;
-    });
-  }
-
-  /**
-   * Set the device private key.
-   *
-   * @param {Buffer} data Key data.
-   * @param {String} [protocol] Server protocol.
-   * @return {Promise}
-   */
-  setDevicePrivateKey(data, protocol) {
-    return this._getServerProtocol(protocol).then(protocol => {
-      const keyType = (protocol == proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_DEVICE_PRIVATE_KEY :
-          proto.SecurityKeyType.TCP_DEVICE_PRIVATE_KEY);
-      return this._setSecurityKey(keyType, data);
-    });
-  }
-
-  /**
-   * Get the device private key.
-   *
-   * @param {String} [protocol] Server protocol.
-   * @return {Promise<Buffer>}
-   */
-  getDevicePrivateKey(protocol) {
-    return this._getServerProtocol(protocol).then(protocol => {
-      const keyType = (protocol == proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_DEVICE_PRIVATE_KEY :
-          proto.SecurityKeyType.TCP_DEVICE_PRIVATE_KEY);
-      return this._getSecurityKey(keyType);
-    });
-  }
-
-  /**
-   * Set the device public key.
-   *
-   * @param {Buffer} data Key data.
-   * @param {String} [protocol] Server protocol.
-   * @return {Promise}
-   */
-  setDevicePublicKey(data, protocol) {
-    return this._getServerProtocol(protocol).then(protocol => {
-      const keyType = (protocol == proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_DEVICE_PUBLIC_KEY :
-          proto.SecurityKeyType.TCP_DEVICE_PUBLIC_KEY);
-      return this._setSecurityKey(keyType, data);
-    });
-  }
-
-  /**
-   * Get the device public key.
-   *
-   * @param {String} [protocol] Server protocol.
-   * @return {Promise<Buffer>}
-   */
-  getDevicePublicKey(data, protocol) {
-    return this._getServerProtocol(protocol).then(protocol => {
-      const keyType = (protocol == proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_DEVICE_PUBLIC_KEY :
-          proto.SecurityKeyType.TCP_DEVICE_PUBLIC_KEY);
-      return this._getSecurityKey(keyType);
-    });
-  }
-
-  /**
-   * Set the server public key.
-   *
-   * @param {Buffer} data Key data.
-   * @param {String} [protocol] Server protocol.
-   * @return {Promise}
-   */
-  setServerPublicKey(data, protocol) {
-    return this._getServerProtocol(protocol).then(protocol => {
-      const keyType = (protocol == proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_SERVER_PUBLIC_KEY :
-          proto.SecurityKeyType.TCP_SERVER_PUBLIC_KEY);
-      return this._setSecurityKey(keyType, data);
-    });
-  }
-
-  /**
-   * Get the server public key.
-   *
-   * @param {String} [protocol] Server protocol.
-   * @return {Promise<Buffer>}
-   */
-  getServerPublicKey(data, protocol) {
-    return this._getServerProtocol(protocol).then(protocol => {
-      const keyType = (protocol == proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_SERVER_PUBLIC_KEY :
-          proto.SecurityKeyType.TCP_SERVER_PUBLIC_KEY);
-      return this._getSecurityKey(keyType);
-    });
-  }
-
-  /**
-   * Set the server address.
-   *
-   * @param {String} data Host address.
-   * @param {Number} port Port number.
-   * @param {String} [protocol] Server protocol.
-   * @return {Promise}
-   */
-  setServerAddress(address, port, protocol) {
-    return this._getServerProtocol(protocol).then(protocol => {
-      return this.sendProtobufRequest(RequestType.SET_SERVER_ADDRESS, {
-        protocol: protocol,
-        address: address,
-        port: port // TODO: Make port number optional
-      });
-    });
-  }
-
-  /**
-   * Get the server address.
-   *
-   * @param {String} [protocol] Server protocol.
-   * @return {Promise<Object>}
-   */
-  getServerAddress(protocol) {
-    return this._getServerProtocol(protocol).then(protocol => {
-      return this.sendProtobufRequest(RequestType.GET_SERVER_ADDRESS, {
-        protocol: protocol
-      });
-    });
-  }
-
-  /**
-   * Set the server protocol.
-   *
-   * @param {String} protocol Server protocol.
-   * @return {Promise}
-   */
-  setServerProtocol(protocol) {
-    return this.sendProtobufRequest(RequestType.SET_SERVER_PROTOCOL, {
-      protocol: ServerProtocol.toProtobuf(protocol)
-    });
-  }
-
-  /**
-   * Get the server protocol.
-   *
-   * @return {Promise<String>}
-   */
-  getServerProtocol() {
-    return this._getServerProtocol().then(protocol => ServerProtocol.fromProtobuf(protocol));
-  }
-
-  /**
    * Start the Nyan LED indication.
    *
    * @return {Promise}
@@ -259,7 +95,7 @@ export class Device extends usb.DeviceBase {
   /**
    * Perform the firmware update.
    *
-   * @param {Buffer} data Firmware module data.
+   * @param {Buffer} data Firmware data.
    * @return {Promise}
    */
   updateFirmware(data) {
@@ -267,22 +103,22 @@ export class Device extends usb.DeviceBase {
       size: data.length
     }).then(rep => {
       let chunkSize = rep.chunkSize;
-      let offs = 0;
-      const sendFirmwareData = () => {
-        if (offs + chunkSize > data.length) {
-          chunkSize = data.length - offs;
+      let chunkOffs = 0;
+      const writeChunk = () => {
+        if (chunkOffs + chunkSize > data.length) {
+          chunkSize = data.length - chunkOffs;
         }
         if (chunkSize == 0) {
           return Promise.resolve();
         }
-        return this.sendProtobufRequest(RequestType.SAVE_FIRMWARE_DATA, {
-          data: data.slice(offs, offs + chunkSize)
+        return this.sendProtobufRequest(RequestType.FIRMWARE_UPDATE_DATA, {
+          data: data.slice(chunkOffs, chunkOffs + chunkSize)
         }).then(() => {
-          offs += chunkSize;
-          return sendFirmwareData();
+          chunkOffs += chunkSize;
+          return writeChunk();
         });
       };
-      return sendFirmwareData();
+      return writeChunk();
     }).then(() => {
       return this.sendProtobufRequest(RequestType.FINISH_FIRMWARE_UPDATE, {
         validateOnly: false
@@ -290,6 +126,178 @@ export class Device extends usb.DeviceBase {
     });
   }
 
+  /**
+   * Get firmware module data.
+   *
+   * @param {String} module Module type.
+   * @param {Number} [index] Module index.
+   * @return {Promise<Buffer>}
+   */
+  getFirmwareModule(module, index) {
+    return this._getStorageInfo().then(storage => {
+      const section = storage.modules.find(section => {
+        return (section.moduleType == module && section.moduleIndex == index);
+      });
+      if (!section) {
+        throw new NotFoundError();
+      }
+      // Get size of the firmware module
+      return this._getSectionDataSize(section).then(size => {
+        // Read firmware data
+        return this._readSectionData(section, 0, size);
+      });
+    });
+  }
+
+  /**
+   * Check if the device runs a modular firmware.
+   *
+   * @return {Promise<Boolean>}
+   */
+  hasModularFirmware() {
+    return this._getStorageInfo().then(storage => storage.hasModularFirmware);
+  }
+
+  /**
+   * Set factory firmware.
+   *
+   * @param {Buffer} data Firmware data.
+   * @return {Promise}
+   */
+  setFactoryFirmware(data) {
+    return this._getStorageInfo().then(storage => {
+      if (!storage.factory) {
+        throw new NotFoundError();
+      }
+      return this._writeSectionData(storage.factory, 0, data);
+    });
+  }
+
+  /**
+   * Get factory firmware.
+   *
+   * @return {Promise<Buffer>}
+   */
+  getFactoryFirmware() {
+    return this._getStorageInfo().then(storage => {
+      if (!storage.factory) {
+        throw new NotFoundError();
+      }
+      // Get size of the firmware module
+      return this._getSectionDataSize(storage.factory).then(size => {
+        // Read firmware data
+        return this._readSectionData(storage.factory, 0, size);
+      });
+    });
+  }
+
+  /**
+   * Read configuration data.
+   *
+   * @param {Number} address Address.
+   * @param {Number} size Data size.
+   * @return {Promise<Buffer>}
+   */
+  readConfigData(address, size) {
+    return this._getStorageInfo().then(storage => {
+      if (!storage.config) {
+        throw new NotFoundError();
+      }
+      return this._readSectionData(storage.config, address, size);
+    });
+  }
+
+  /**
+   * Write configuration data.
+   *
+   * @param {Number} address Address.
+   * @param {Buffer} data Data.
+   * @return {Promise}
+   */
+  writeConfigData(address, data) {
+    return this._getStorageInfo().then(storage => {
+      if (!storage.config) {
+        throw new NotFoundError();
+      }
+      return this._writeSectionData(storage.config, address, data);
+    });
+  }
+
+  /**
+   * Get size of the configuration data.
+   *
+   * @return {Promise<Number>}
+   */
+  getConfigDataSize() {
+    return this._getStorageInfo().then(storage => {
+      if (!storage.config) {
+        throw new NotFoundError();
+      }
+      return storage.config.size;
+    });
+  }
+
+  /**
+   * Read from EEPROM.
+   *
+   * @param {Number} address Address.
+   * @param {Number} size Data size.
+   * @return {Promise<Buffer>}
+   */
+  readEeprom(address, size) {
+    return this._getStorageInfo().then(storage => {
+      if (!storage.eeprom) {
+        throw new NotFoundError();
+      }
+      return this._readSectionData(storage.eeprom, address, size);
+    });
+  }
+
+  /**
+   * Write to EEPROM.
+   *
+   * @param {Number} address Address.
+   * @param {Buffer} data Data.
+   * @return {Promise}
+   */
+  writeEeprom(address, data) {
+    return this._getStorageInfo().then(storage => {
+      if (!storage.eeprom) {
+        throw new NotFoundError();
+      }
+      return this._writeSectionData(storage.eeprom, address, data);
+    });
+  }
+
+  /**
+   * Clear EEPROM.
+   *
+   * @return {Promise}
+   */
+  clearEeprom() {
+    return this._getStorageInfo().then(storage => {
+      if (!storage.eeprom) {
+        throw new NotFoundError();
+      }
+      return this._clearSectionData(storage.eeprom);
+    });
+  }
+
+  /**
+   * Get size of the EEPROM.
+   *
+   * @return {Promise<Number>}
+   */
+  getEepromSize() {
+    return this._getStorageInfo().then(storage => {
+      if (!storage.eeprom) {
+        throw new NotFoundError();
+      }
+      return storage.eeprom.size;
+    });
+  }
+
+  // Sends a Protobuf-encoded request
   sendProtobufRequest(type, props) {
     let buf = null;
     if (props && type.request) {
@@ -306,18 +314,135 @@ export class Device extends usb.DeviceBase {
     });
   }
 
-  _setSecurityKey(type, data) {
-    return this.sendProtobufRequest(RequestType.SET_SECURITY_KEY, { type: type, data: data });
+  _readSectionData(section, offset, size) {
+    const data = Buffer.alloc(size);
+    let chunkSize = 4096;
+    let chunkOffs = 0;
+    const readChunk = () => {
+      if (chunkOffs + chunkSize > size) {
+        chunkSize = size - chunkOffs;
+      }
+      if (chunkSize == 0) {
+        return Promise.resolve(data);
+      }
+      return this.sendProtobufRequest(RequestType.READ_SECTION_DATA, {
+        storage: section.storageIndex,
+        section: section.sectionIndex,
+        offset: offset + chunkOffs,
+        size: chunkSize
+      }).then(rep => {
+        rep.data.copy(data, chunkOffs);
+        chunkOffs += chunkSize;
+        return readChunk();
+      });
+    };
+    return readChunk();
   }
 
-  _getSecurityKey(type) {
-    return this.sendProtobufRequest(RequestType.GET_SECURITY_KEY, { type: type }).then(rep => rep.data);
+  _writeSectionData(section, offset, data) {
+    return Promise.resolve().then(() => {
+      if (section.needClear) {
+        return this._clearSectionData(section);
+      }
+    }).then(() => {
+      let chunkSize = 4096;
+      let chunkOffs = 0;
+      const writeChunk = () => {
+        if (chunkOffs + chunkSize > data.length) {
+          chunkSize = data.length - chunkOffs;
+        }
+        if (chunkSize == 0) {
+          return Promise.resolve();
+        }
+        return this.sendProtobufRequest(RequestType.WRITE_SECTION_DATA, {
+          storage: section.storageIndex,
+          section: section.sectionIndex,
+          offset: offset + chunkOffs,
+          data: data.slice(chunkOffs, chunkOffs + chunkSize)
+        }).then(() => {
+          chunkOffs += chunkSize;
+          return writeChunk();
+        });
+      };
+      return writeChunk();
+    });
   }
 
-  _getServerProtocol(protocol) {
-    if (protocol) {
-      return Promise.resolve(ServerProtocol.toProtobuf(protocol));
+  _clearSectionData(section) {
+    return this.sendProtobufRequest(RequestType.CLEAR_SECTION_DATA, {
+      storage: section.storageIndex,
+      section: section.sectionIndex
+    });
+  }
+
+  _getSectionDataSize(section) {
+    return this.sendProtobufRequest(RequestType.GET_SECTION_DATA_SIZE, {
+      storage: section.storageIndex,
+      section: section.sectionIndex
+    }).then(rep => rep.size);
+  }
+
+  _getStorageInfo() {
+    // Check if there's a cached storage info
+    if (this._storageInfo) {
+      return Promise.resolve(this._storageInfo);
     }
-    return this.sendProtobufRequest(RequestType.GET_SERVER_PROTOCOL).then(rep => rep.protocol);
+    // Request storage info from the device
+    return this.sendProtobufRequest(RequestType.DESCRIBE_STORAGE).then(rep => {
+      const storage = {
+        modules: [],
+        factory: null,
+        config: null,
+        eeprom: null,
+        hasModularFirmware: true
+      };
+      for (let storageIndex = 0; storageIndex < rep.storage.length; ++storageIndex) {
+        const pbStorage = rep.storage[storageIndex];
+        for (let sectionIndex = 0; sectionIndex < pbStorage.sections.length; ++sectionIndex) {
+          const pbSection = pbStorage.sections[sectionIndex];
+          const section = {
+            storageIndex: storageIndex,
+            sectionIndex: sectionIndex,
+            size: pbSection.size,
+            needClear: !!(pbSection.flags & proto.SectionFlag.NEED_CLEAR)
+          };
+          switch (pbSection.type) {
+            // Firmware module
+            case proto.SectionType.FIRMWARE: {
+              const pbFirmwareModule = pbSection.firmwareModule;
+              if (pbFirmwareModule.type == proto.FirmwareModuleType.MONO_FIRMWARE) {
+                storage.hasModularFirmware = false;
+              }
+              section.moduleType = FirmwareModule.fromProtobuf(pbFirmwareModule.type);
+              if (pbFirmwareModule.index) {
+                section.moduleIndex = pbFirmwareModule.index;
+              }
+              storage.modules.push(section);
+              break;
+            }
+            // Factory firmware
+            case proto.SectionType.FACTORY_BACKUP: {
+              storage.factory = section;
+              break;
+            }
+            // Device configuration
+            case proto.SectionType.CONFIG: {
+              storage.config = section;
+              break;
+            }
+            // EEPROM
+            case proto.SectionType.EEPROM: {
+              storage.eeprom = section;
+              break;
+            }
+          }
+        }
+      }
+      this._storageInfo = storage;
+      this.once('closed', () => {
+        this._storageInfo = null;
+      });
+      return this._storageInfo;
+    });
   }
 }

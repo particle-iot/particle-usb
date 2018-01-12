@@ -16,8 +16,8 @@
     "Sergey Polyakov <sergeuz@gmail.com>"
   ],
   "scripts": {
-    "prepublish": "npm run compile",
-    "compile": "npm run compile-babel && npm run compile-proto",
+    "prepublish": "git submodule update --init && npm run compile",
+    "compile": "npm run compile-proto && npm run compile-babel",
     "compile-proto": "pbjs proto/control/*.proto -t static-module -o lib/pb-message.js --no-beautify --no-comments --no-delimited --no-convert --no-verify",
     "compile-babel": "babel src -s -d lib",
     "test": "mocha -r babel-register -r babel-polyfill"
