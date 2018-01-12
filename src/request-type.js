@@ -60,13 +60,19 @@ export const RequestType = {
     reply: proto.WiFiClearCredentialsReply
   },
   NETWORK_SET_CONFIGURATION: {
-    id: 120
+    id: 120,
+    request: proto.NetworkSetConfigurationRequest,
+    reply: proto.NetworkSetConfigurationReply
   },
   NETWORK_GET_CONFIGURATION: {
-    id: 121
+    id: 121,
+    request: proto.NetworkGetConfigurationRequest,
+    reply: proto.NetworkGetConfigurationReply
   },
   NETWORK_GET_STATUS: {
-    id: 122
+    id: 122,
+    request: proto.NetworkGetStatusRequest,
+    reply: proto.NetworkGetStatusReply
   },
   SET_CLAIM_CODE: {
     id: 200,
