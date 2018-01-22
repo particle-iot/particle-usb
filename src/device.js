@@ -308,7 +308,11 @@ export class Device extends DeviceBase {
       if (rep.result != RequestResult.OK) {
         throw new RequestError(rep.result, messageForResultCode(rep.result));
       }
-      if (rep.data && type.reply) {
+      if (type.reply) {
+        if (!rep.data) {
+          // Return a reply object containing default-initialized properties
+          return type.reply.create();
+        }
         return type.reply.decode(rep.data);
       }
     });

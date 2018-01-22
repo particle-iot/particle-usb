@@ -33,12 +33,7 @@ export const CloudDevice = Base => class extends Base {
    * @return {Promise<Boolean>}
    */
   isClaimed() {
-    return this.sendProtobufRequest(RequestType.IS_CLAIMED).then(() => true, err => {
-      if (err.result == RequestResult.NOT_FOUND) {
-        return false;
-      }
-      throw err;
-    });
+    return this.sendProtobufRequest(RequestType.IS_CLAIMED).then(rep => rep.claimed);
   }
 
   /**

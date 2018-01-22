@@ -80,7 +80,9 @@ export const RequestType = {
     reply: proto.SetClaimCodeReply
   },
   IS_CLAIMED: {
-    id: 201
+    id: 201,
+    request: proto.IsClaimedRequest,
+    reply: proto.IsClaimedReply
   },
   SET_SECURITY_KEY: {
     id: 210,
