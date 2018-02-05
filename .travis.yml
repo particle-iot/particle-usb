@@ -7,6 +7,10 @@ cache:
   directories:
     - node_modules
 sudo: false
+addons:
+  apt:
+    packages:
+      - libusb-dev
 install:
   - npm -g install npm@latest
   - npm install
