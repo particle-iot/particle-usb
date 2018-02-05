@@ -1,7 +1,7 @@
 {
   "name": "particle-usb",
   "version": "0.2.0",
-  "description": "A library to access Particle USB devices",
+  "description": "A library for accessing Particle USB devices",
   "main": "lib/particle-usb.js",
   "keywords": [
     "particle",
@@ -20,6 +20,7 @@
     "compile": "npm run compile-babel && npm run compile-proto",
     "compile-proto": "pbjs proto/control/*.proto -t static-module -o lib/pb-message.js --no-beautify --no-comments --no-delimited --no-convert --no-verify",
     "compile-babel": "babel src -s -d lib",
+    "docs": "documentation build src/** -g -f md -o docs/reference.md",
     "test": "mocha -r babel-register -r babel-polyfill"
   },
   "dependencies": {
@@ -36,6 +37,7 @@
     "babel-register": "^6.26.0",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
+    "documentation": "^5.3.5",
     "mocha": "^4.0.1",
     "mocha-sinon": "^2.0.0",
     "sinon": "^4.1.2",

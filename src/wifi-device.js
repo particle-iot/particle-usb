@@ -77,7 +77,7 @@ const accessPointToProtobuf = toProtobufMessage(proto.WiFiAccessPoint, accessPoi
 /**
  * Mixin class for a WiFi device.
  */
-export const WifiDevice = Base => class extends NetworkDevice(Base) {
+export const WifiDevice = base => class extends NetworkDevice(base) {
   /**
    * Set the WiFi antenna to use.
    *

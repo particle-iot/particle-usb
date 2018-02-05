@@ -14,7 +14,7 @@ export const ServerProtocol = fromProtobufEnum(proto.ServerProtocolType, {
 /**
  * Mixin class for a cloud-enabled device.
  */
-export const CloudDevice = Base => class extends Base {
+export const CloudDevice = base => class extends base {
   /**
    * Set the claim code.
    *
