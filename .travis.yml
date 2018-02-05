@@ -1,0 +1,15 @@
+language: node_js
+node_js:
+  - '4'
+  - '6'
+  - '8'
+cache:
+  directories:
+    - node_modules
+sudo: false
+install:
+  - npm -g install npm@latest
+  - npm install
+  - npm prune
+script:
+  - npm test

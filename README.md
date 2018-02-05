@@ -1,5 +1,7 @@
 # particle-usb
 
+[![Build Status](https://travis-ci.org/particle-iot/particle-usb.svg?branch=master)](https://travis-ci.org/particle-iot/particle-usb)
+
 A library for accessing Particle USB devices.
 
 **Note:** This library requires [Particle firmware](https://github.com/particle-iot/firmware) 0.8.0 or later.
