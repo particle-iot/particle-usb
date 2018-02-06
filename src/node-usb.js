@@ -1,6 +1,15 @@
 import { UsbError } from './error';
 
-import * as usb from 'usb';
+let usb = null;
+
+try {
+  usb = require('usb');
+} catch (err) {
+  // Ignore USB initialization errors when running in the Travis environment
+  if (!process.env.TRAVIS) {
+    throw err;
+  }
+}
 
 export class Device {
   constructor(dev) {
