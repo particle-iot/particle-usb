@@ -4,6 +4,7 @@ import { Device } from './device';
 import { WifiDevice } from './wifi-device';
 import { CellularDevice } from './cellular-device';
 import { CloudDevice } from './cloud-device';
+import { MeshDevice } from './mesh-device';
 
 export { DeviceType } from './device-type';
 export { PollingPolicy } from './device-base';
@@ -31,12 +32,24 @@ export class Electron extends CloudDevice(CellularDevice(Device)) {
 export class Duo extends CloudDevice(WifiDevice(Device)) {
 }
 
+export class Xenon extends CloudDevice(MeshDevice(Device)) {
+}
+
+export class Argon extends CloudDevice(MeshDevice(Device)) {
+}
+
+export class Boron extends CloudDevice(MeshDevice(Device)) {
+}
+
 const DEVICE_PROTOTYPES = {
   [DeviceType.CORE]: Core.prototype,
   [DeviceType.PHOTON]: Photon.prototype,
   [DeviceType.P1]: P1.prototype,
   [DeviceType.ELECTRON]: Electron.prototype,
-  [DeviceType.DUO]: Duo.prototype
+  [DeviceType.DUO]: Duo.prototype,
+  [DeviceType.XENON]: Xenon.prototype,
+  [DeviceType.ARGON]: Argon.prototype,
+  [DeviceType.BORON]: Boron.prototype,
 };
 
 function setDevicePrototype(dev) {

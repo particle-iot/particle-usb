@@ -6,7 +6,10 @@ export const DeviceType = {
   PHOTON: 'Photon',
   P1: 'P1',
   ELECTRON: 'Electron',
-  DUO: 'Duo'
+  DUO: 'Duo',
+  XENON: 'Xenon',
+  ARGON: 'Argon',
+  BORON: 'Boron'
 };
 
 // Descriptions of the devices supported by the library
@@ -58,6 +61,36 @@ export const DEVICES = {
       dfu: {
         vendorId: 0x2b04,
         productId: 0xd058
+      }
+    }
+  },
+  [DeviceType.XENON]: {
+    usb: {
+      vendorId: 0x2b04,
+      productId: 0xc00e,
+      dfu: {
+        vendorId: 0x2b04,
+        productId: 0xd00e
+      }
+    }
+  },
+  [DeviceType.ARGON]: {
+    usb: {
+      vendorId: 0x2b04,
+      productId: 0xc00c,
+      dfu: {
+        vendorId: 0x2b04,
+        productId: 0xd00c
+      }
+    }
+  },
+  [DeviceType.BORON]: {
+    usb: {
+      vendorId: 0x2b04,
+      productId: 0xc00d,
+      dfu: {
+        vendorId: 0x2b04,
+        productId: 0xd00d
       }
     }
   }
