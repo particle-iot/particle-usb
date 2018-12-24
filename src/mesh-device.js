@@ -11,6 +11,28 @@ const MAX_NETWORK_NAME_LENGTH = 16;
 const MIN_NETWORK_PASSWORD_LENGTH = 6;
 const MAX_NETWORK_PASSWORD_LENGTH = 255;
 
+export const DiagnosticType = fromProtobufEnum(proto.mesh.DiagnosticType, {
+  MAC_EXTENDED_ADDRESS: 'MAC_EXTENDED_ADDRESS',
+  RLOC: 'RLOC',
+  MAC_ADDRESS: 'MAC_ADDRESS',
+  MODE: 'MODE',
+  TIMEOUT: 'TIMEOUT',
+  CONNECTIVITY: 'CONNECTIVITY',
+  ROUTE64: 'ROUTE64',
+  LEADER_DATA: 'LEADER_DATA',
+  NETWORK_DATA: 'NETWORK_DATA',
+  IPV6_ADDRESS_LIST: 'IPV6_ADDRESS_LIST',
+  MAC_COUNTERS: 'MAC_COUNTERS',
+  BATTERY_LEVEL: 'BATTERY_LEVEL',
+  SUPPLY_VOLTAGE: 'SUPPLY_VOLTAGE',
+  CHILD_TABLE: 'CHILD_TABLE',
+  CHANNEL_PAGES: 'CHANNEL_PAGES',
+  TYPE_LIST: 'TYPE_LIST',
+  MAX_CHILD_TIMEOUT: 'MAX_CHILD_TIMEOUT'
+});
+
+const DIAGNOSTIC_DEFAULT_TIMEOUT = 10000; // 10 seconds
+
 /**
  * Mixin class for a Mesh device.
  */
@@ -195,5 +217,22 @@ export const MeshDevice = base => class extends base {
     } finally {
       await this.leaveListeningMode(); // Restore the device state
     }
+  }
+
+  /**
+   * Collect network diagnostic information
+   *
+   * @param {Object} opts Request options
+   * @return {Promise}
+   */
+  async getNetworkDiagnostics(opts = {
+      timeout: DIAGNOSTIC_DEFAULT_TIMEOUT,
+      queryChildren: false,
+      diagnosticTypes: ['RLOC']
+  }) {
+    return this.sendRequest(RequestType.MESH_GET_NETWORK_DIAGNOSTICS, {
+      flags: opts.queryChildren ? proto.mesh.GetNetworkDiagnosticsRequest.Flags['QUERY_CHILDREN'] : 0,
+      diagnosticTypes: opts.diagnosticTypes.map(DiagnosticType.toProtobuf)
+    });
   }
 }
