@@ -18,3 +18,4 @@ install:
   - npm prune
 script:
   - npm test
+  - npm run web
