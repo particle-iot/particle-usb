@@ -1,6 +1,9 @@
 // Global configuration
 export let globalOptions = {
-  log: { // Dummy logger
+  // Request timeout
+  requestTimeout: 30000,
+  // Logger instance
+  log: {
     trace: () => {},
     info: () => {},
     warn: () => {},

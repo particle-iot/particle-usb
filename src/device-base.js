@@ -174,7 +174,7 @@ export class DeviceBase extends EventEmitter {
   sendRequest(type, data, options) {
     options = Object.assign({
       pollingPolicy: PollingPolicy.DEFAULT, // Polling policy
-      timeout: 30000 // Request timeout
+      timeout: globalOptions.requestTimeout // Request timeout
     }, options);
     return new Promise((resolve, reject) => {
       if (this._state == DeviceState.CLOSED) {
