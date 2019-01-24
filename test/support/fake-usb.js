@@ -12,7 +12,13 @@ const USB_DEVICES = [
   { type: DeviceType.ELECTRON, vendorId: 0x2b04, productId: 0xc00a, dfu: false },
   { type: DeviceType.ELECTRON, vendorId: 0x2b04, productId: 0xd00a, dfu: true },
   { type: DeviceType.DUO, vendorId: 0x2b04, productId: 0xc058, dfu: false },
-  { type: DeviceType.DUO, vendorId: 0x2b04, productId: 0xd058, dfu: true }
+  { type: DeviceType.DUO, vendorId: 0x2b04, productId: 0xd058, dfu: true },
+  { type: DeviceType.XENON, vendorId: 0x2b04, productId: 0xc00e, dfu: false },
+  { type: DeviceType.XENON, vendorId: 0x2b04, productId: 0xd00e, dfu: true },
+  { type: DeviceType.ARGON, vendorId: 0x2b04, productId: 0xc00c, dfu: false },
+  { type: DeviceType.ARGON, vendorId: 0x2b04, productId: 0xd00c, dfu: true },
+  { type: DeviceType.BORON, vendorId: 0x2b04, productId: 0xc00d, dfu: false },
+  { type: DeviceType.BORON, vendorId: 0x2b04, productId: 0xd00d, dfu: true }
 ];
 
 // Low-level vendor requests
@@ -386,6 +392,21 @@ export function addElectron(options) {
 
 export function addDuo(options) {
   const opts = Object.assign({}, options, { type: DeviceType.DUO });
+  return addDevice(opts);
+}
+
+export function addXenon(options) {
+  const opts = Object.assign({}, options, { type: DeviceType.XENON });
+  return addDevice(opts);
+}
+
+export function addArgon(options) {
+  const opts = Object.assign({}, options, { type: DeviceType.ARGON });
+  return addDevice(opts);
+}
+
+export function addBoron(options) {
+  const opts = Object.assign({}, options, { type: DeviceType.BORON });
   return addDevice(opts);
 }
 

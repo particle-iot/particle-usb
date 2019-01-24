@@ -50,6 +50,11 @@ describe('device-base', () => {
       usbDevs.push(fakeUsb.addP1());
       usbDevs.push(fakeUsb.addElectron());
       fakeUsb.addDevice({ vendorId: 0xcccc, productId: 0xcccc });
+      usbDevs.push(fakeUsb.addDuo());
+      fakeUsb.addDevice({ vendorId: 0xdddd, productId: 0xeeee });
+      usbDevs.push(fakeUsb.addXenon());
+      usbDevs.push(fakeUsb.addArgon());
+      usbDevs.push(fakeUsb.addBoron());
       // Enumerate detected devices
       let devs = await getDevices();
       devs = devs.map(dev => dev.usbDevice);
@@ -61,7 +66,11 @@ describe('device-base', () => {
         fakeUsb.addCore({ dfu: true }),
         fakeUsb.addPhoton({ dfu: true }),
         fakeUsb.addP1({ dfu: true }),
-        fakeUsb.addElectron({ dfu: true })
+        fakeUsb.addElectron({ dfu: true }),
+        fakeUsb.addDuo({ dfu: true }),
+        fakeUsb.addXenon({ dfu: true }),
+        fakeUsb.addArgon({ dfu: true }),
+        fakeUsb.addBoron({ dfu: true })
       ];
       let devs = await getDevices();
       devs = devs.map(dev => dev.usbDevice);
@@ -81,6 +90,9 @@ describe('device-base', () => {
       const photon = fakeUsb.addPhoton();
       const p1 = fakeUsb.addP1();
       const electron = fakeUsb.addElectron();
+      const xenon = fakeUsb.addXenon();
+      const argon = fakeUsb.addArgon();
+      const boron = fakeUsb.addBoron();
       let devs = await getDevices({ types: [DeviceType.DUO] });
       expect(devs).to.be.empty;
       devs = await getDevices({ types: [DeviceType.CORE] });
@@ -90,6 +102,10 @@ describe('device-base', () => {
       expect(devs).to.have.lengthOf(3);
       devs = devs.map(dev => dev.usbDevice);
       expect(devs).to.have.all.members([photon, p1, electron]);
+      devs = await getDevices({ types: [DeviceType.XENON, DeviceType.ARGON, DeviceType.BORON] });
+      expect(devs).to.have.lengthOf(3);
+      devs = devs.map(dev => dev.usbDevice);
+      expect(devs).to.have.all.members([xenon, argon, boron]);
     });
   });
 

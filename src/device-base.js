@@ -287,6 +287,27 @@ export class DeviceBase extends EventEmitter {
   }
 
   /**
+   * Set to `true` if this is a Xenon device.
+   */
+  get isXenon() {
+    return (this.type == DeviceType.XENON);
+  }
+
+  /**
+   * Set to `true` if this is a Xenon device.
+   */
+  get isArgon() {
+    return (this.type == DeviceType.ARGON);
+  }
+
+  /**
+   * Set to `true` if this is a Xenon device.
+   */
+  get isBoron() {
+    return (this.type == DeviceType.BORON);
+  }
+
+  /**
    * Set to `true` if this device is in the DFU mode.
    */
   get isInDfuMode() {
