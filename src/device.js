@@ -2,7 +2,8 @@ import { DeviceBase } from './device-base';
 import { RequestType } from './request-type';
 import { RequestResult, messageForResultCode } from './request-result';
 import { fromProtobufEnum } from './protobuf-util';
-import { RequestError, NotFoundError } from './error';
+import { RequestError, NotFoundError, TimeoutError } from './error';
+import { globalOptions } from './config';
 
 import proto from './protocol';
 
@@ -15,6 +16,44 @@ export const FirmwareModule = fromProtobufEnum(proto.FirmwareModuleType, {
   USER_PART: 'USER_PART',
   MONO_FIRMWARE: 'MONO_FIRMWARE'
 });
+
+/**
+ * Device modes.
+ */
+export const DeviceMode = fromProtobufEnum(proto.DeviceMode, {
+  NORMAL: 'NORMAL_MODE',
+  LISTENING: 'LISTENING_MODE'
+});
+
+// Helper class used by Device.timeout()
+class RequestSender {
+  constructor(dev, timeout) {
+    this._dev = dev;
+    this._timeoutTime = Date.now() + timeout;
+  }
+
+  async sendProtobufRequest(type, msg, opts) {
+    if (!opts || !opts.timeout) {
+      const t = this._timeoutTime - Date.now();
+      if (t <= 0) {
+        throw new TimeoutError();
+      }
+      opts = Object.assign({}, opts, { timeout: t });
+    } else if (Date.now() + opts.timeout >= this._timeoutTime) {
+      throw new TimeoutError();
+    }
+    return this._dev.sendProtobufRequest(type, msg, opts);
+  }
+
+  async delay(ms) {
+    if (Date.now() + ms >= this._timeoutTime) {
+      throw new TimeoutError();
+    }
+    return new Promise((resolve, reject) => {
+      setTimeout(() => resolve(), ms);
+    });
+  }
+}
 
 /**
  * Basic functionality supported by all Particle devices.
@@ -61,8 +100,20 @@ export class Device extends DeviceBase {
    *
    * @return {Promise}
    */
-  enterListeningMode() {
-    return this.sendProtobufRequest(RequestType.START_LISTENING);
+  async enterListeningMode() {
+    return this.timeout(async (s) => {
+      await s.sendProtobufRequest(RequestType.START_LISTENING);
+      // Wait until the device enters the listening mode
+      while (true) {
+        const r = await s.sendProtobufRequest(RequestType.GET_DEVICE_MODE, null, {
+          dontThrow: true // This request may not be supported by the device
+        });
+        if (r.result != RequestResult.OK || r.mode == proto.DeviceMode.LISTENING_MODE) {
+          break;
+        }
+        await s.delay(500);
+      }
+    });
   }
 
   /**
@@ -71,7 +122,27 @@ export class Device extends DeviceBase {
    * @return {Promise}
    */
   leaveListeningMode() {
-    return this.sendProtobufRequest(RequestType.STOP_LISTENING);
+    return this.timeout(async (s) => {
+      await s.sendProtobufRequest(RequestType.STOP_LISTENING);
+      // Wait until the device leaves the listening mode
+      while (true) {
+        const r = await s.sendProtobufRequest(RequestType.GET_DEVICE_MODE, null, {
+          dontThrow: true // This request may not be supported by the device
+        });
+        if (r.result != RequestResult.OK || r.mode != proto.DeviceMode.LISTENING_MODE) {
+          break;
+        }
+        await s.delay(500);
+      }
+    });
+  }
+
+  /**
+   * Get device mode.
+   */
+  async getDeviceMode() {
+    const r = await this.sendProtobufRequest(RequestType.GET_DEVICE_MODE);
+    return DeviceMode.fromProtobuf(r.mode);
   }
 
   /**
@@ -298,24 +369,40 @@ export class Device extends DeviceBase {
   }
 
   // Sends a Protobuf-encoded request
-  sendProtobufRequest(type, props) {
+  sendProtobufRequest(type, msg, opts) {
     let buf = null;
-    if (props && type.request) {
-      const msg = type.request.create(props);
-      buf = type.request.encode(msg).finish();
+    if (msg && type.request) {
+      const m = type.request.create(msg); // Protobuf message object
+      buf = type.request.encode(m).finish();
     }
-    return this.sendRequest(type.id, buf).then(rep => {
-      if (rep.result != RequestResult.OK) {
+    return this.sendRequest(type.id, buf, opts).then(rep => {
+      let r = undefined;
+      if (opts && opts.dontThrow) {
+        r = { result: rep.result };
+      } else if (rep.result != RequestResult.OK) {
         throw new RequestError(rep.result, messageForResultCode(rep.result));
       }
       if (type.reply) {
-        if (!rep.data) {
-          // Return a reply object containing default-initialized properties
-          return type.reply.create();
+        if (rep.data) {
+          r = Object.assign({}, r, type.reply.decode(rep.data));
+        } else {
+          // Return a message with default-initialized properties
+          r = Object.assign({}, r, type.reply.create());
         }
-        return type.reply.decode(rep.data);
       }
+      return r;
     });
+  }
+
+  // This method is used to send multiple requests to the device. The overall execution time can be
+  // limited via the `ms` argument (optional)
+  async timeout(ms, fn) {
+    if (typeof ms == 'function') {
+      fn = ms;
+      ms = globalOptions.requestTimeout; // Default timeout
+    }
+    const s = new RequestSender(this, ms);
+    return fn(s);
   }
 
   _readSectionData(section, offset, size) {

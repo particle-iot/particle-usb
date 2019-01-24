@@ -20,6 +20,11 @@ export const RequestType = {
   STOP_LISTENING: {
     id: 71
   },
+  GET_DEVICE_MODE: {
+    id: 72,
+    request: proto.GetDeviceModeRequest,
+    reply: proto.GetDeviceModeReply
+  },
   LOG_CONFIG: {
     id: 80
   },
