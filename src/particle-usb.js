@@ -35,10 +35,10 @@ export class Duo extends CloudDevice(WifiDevice(Device)) {
 export class Xenon extends CloudDevice(MeshDevice(Device)) {
 }
 
-export class Argon extends CloudDevice(MeshDevice(Device)) {
+export class Argon extends CloudDevice(WifiDevice(MeshDevice(Device))) {
 }
 
-export class Boron extends CloudDevice(MeshDevice(Device)) {
+export class Boron extends CloudDevice(CellularDevice(MeshDevice(Device))) {
 }
 
 const DEVICE_PROTOTYPES = {
