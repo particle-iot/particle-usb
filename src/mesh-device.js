@@ -230,9 +230,13 @@ export const MeshDevice = base => class extends base {
       queryChildren: false,
       diagnosticTypes: ['RLOC']
   }) {
-    return this.sendRequest(RequestType.MESH_GET_NETWORK_DIAGNOSTICS, {
+    if (opts.queryChildren && !opts.diagnosticTypes.includes('CHILD_TABLE')) {
+      opts.diagnosticTypes.push('CHILD_TABLE');
+    }
+    return this.sendProtobufRequest(RequestType.GET_NETWORK_DIAGNOSTICS, {
       flags: opts.queryChildren ? proto.mesh.GetNetworkDiagnosticsRequest.Flags['QUERY_CHILDREN'] : 0,
-      diagnosticTypes: opts.diagnosticTypes.map(DiagnosticType.toProtobuf)
+      diagnosticTypes: opts.diagnosticTypes.map(DiagnosticType.toProtobuf),
+      timeout: timeout
     });
   }
 }
