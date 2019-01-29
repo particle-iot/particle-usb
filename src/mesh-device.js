@@ -27,7 +27,8 @@ export const DiagnosticType = fromProtobufEnum(proto.mesh.DiagnosticType, {
   SUPPLY_VOLTAGE: 'SUPPLY_VOLTAGE',
   CHILD_TABLE: 'CHILD_TABLE',
   CHANNEL_PAGES: 'CHANNEL_PAGES',
-  TYPE_LIST: 'TYPE_LIST',
+  // NOTE: it's not possible to query this diagnostic TLV
+  // TYPE_LIST: 'TYPE_LIST',
   MAX_CHILD_TIMEOUT: 'MAX_CHILD_TIMEOUT'
 });
 
