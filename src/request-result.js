@@ -116,7 +116,7 @@ const RESULT_CODE_MESSAGES = RESULT_CODES.reduce((obj, result) => {
 /**
  * Request result codes.
  */
-export const RequestResult = RESULT_CODES.reduce((obj, result) => {
+export const Result = RESULT_CODES.reduce((obj, result) => {
   obj[result.id] = result.value;
   return obj;
 }, {});

@@ -1,6 +1,6 @@
 import { DeviceBase } from './device-base';
 import { RequestType } from './request-type';
-import { RequestResult, messageForResultCode } from './request-result';
+import { Result, messageForResultCode } from './request-result';
 import { fromProtobufEnum } from './protobuf-util';
 import { RequestError, NotFoundError, TimeoutError } from './error';
 import { globalOptions } from './config';
@@ -108,7 +108,7 @@ export class Device extends DeviceBase {
         const r = await s.sendRequest(RequestType.GET_DEVICE_MODE, null, {
           dontThrow: true // This request may not be supported by the device
         });
-        if (r.result != RequestResult.OK || r.mode == proto.DeviceMode.LISTENING_MODE) {
+        if (r.result != Result.OK || r.mode == proto.DeviceMode.LISTENING_MODE) {
           break;
         }
         await s.delay(500);
@@ -129,7 +129,7 @@ export class Device extends DeviceBase {
         const r = await s.sendRequest(RequestType.GET_DEVICE_MODE, null, {
           dontThrow: true // This request may not be supported by the device
         });
-        if (r.result != RequestResult.OK || r.mode != proto.DeviceMode.LISTENING_MODE) {
+        if (r.result != Result.OK || r.mode != proto.DeviceMode.LISTENING_MODE) {
           break;
         }
         await s.delay(500);
@@ -379,7 +379,7 @@ export class Device extends DeviceBase {
       let r = undefined;
       if (opts && opts.dontThrow) {
         r = { result: rep.result };
-      } else if (rep.result != RequestResult.OK) {
+      } else if (rep.result != Result.OK) {
         throw new RequestError(rep.result, messageForResultCode(rep.result));
       }
       if (type.reply) {

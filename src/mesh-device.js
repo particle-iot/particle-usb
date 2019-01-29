@@ -1,6 +1,6 @@
 import { DeviceMode } from './device';
 import { RequestType } from './request-type';
-import { RequestResult } from './request-result';
+import { Result } from './request-result';
 import { fromProtobufEnum } from './protobuf-util';
 import { RequestError } from './error';
 
@@ -58,10 +58,10 @@ export const MeshDevice = base => class extends base {
     const r = await this.sendRequest(RequestType.MESH_GET_NETWORK_INFO, null, {
       dontThrow: true
     });
-    if (r.result == RequestResult.NOT_FOUND) {
+    if (r.result == Result.NOT_FOUND) {
       return null; // The device is not a member of a network
     }
-    if (r.result != RequestResult.OK) {
+    if (r.result != Result.OK) {
       throw new RequestError(r.result);
     }
     return {

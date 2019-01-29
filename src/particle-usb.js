@@ -12,7 +12,7 @@ export { FirmwareModule } from './device';
 export { NetworkStatus } from './network-device';
 export { WifiAntenna, WifiSecurity, WifiCipher, EapMethod } from './wifi-device';
 export { ServerProtocol } from './cloud-device';
-export { RequestResult } from './request-result';
+export { Result } from './request-result';
 export { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, UsbError, InternalError,
     RequestError } from './error';
 export { config } from './config';
