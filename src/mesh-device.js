@@ -234,8 +234,18 @@ export const MeshDevice = base => class extends base {
     if (opts.queryChildren && !opts.diagnosticTypes.includes('CHILD_TABLE')) {
       opts.diagnosticTypes.push('CHILD_TABLE');
     }
-    return this.sendProtobufRequest(RequestType.GET_NETWORK_DIAGNOSTICS, {
-      flags: opts.queryChildren ? proto.mesh.GetNetworkDiagnosticsRequest.Flags['QUERY_CHILDREN'] : 0,
+
+    let flags = 0;
+    if (opts.queryChildren) {
+      flags |= proto.mesh.GetNetworkDiagnosticsRequest.Flags['QUERY_CHILDREN'];
+    }
+
+    if (opts.resolveDeviceId) {
+      flags |= proto.mesh.GetNetworkDiagnosticsRequest.Flags['RESOLVE_DEVICE_ID'];
+    }
+
+    return this.sendRequest(RequestType.GET_NETWORK_DIAGNOSTICS, {
+      flags: flags,
       diagnosticTypes: opts.diagnosticTypes.map(DiagnosticType.toProtobuf),
       timeout: timeout
     });
