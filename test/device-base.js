@@ -1,6 +1,6 @@
 import { getDevices, openDeviceById, PollingPolicy } from '../src/device-base';
 import { DeviceType } from '../src/device-type';
-import * as usbImpl from '../src/node-usb';
+import * as usbImpl from '../src/usb-device-node';
 import * as proto from '../src/usb-protocol';
 import * as error from '../src/error';
 
@@ -13,11 +13,11 @@ const REQUEST_2 = 2;
 describe('device-base', () => {
   before(() => {
     // Stub the USB implementation used by the library
-    sinon.stub(usbImpl, 'getDevices').callsFake(fakeUsb.getDevices);
+    sinon.stub(usbImpl, 'getUsbDevices').callsFake(fakeUsb.getDevices);
   });
 
   after(() => {
-    usbImpl.getDevices.restore();
+    usbImpl.getUsbDevices.restore();
   });
 
   beforeEach(function() {

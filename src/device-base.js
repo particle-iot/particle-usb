@@ -1,4 +1,4 @@
-import * as usb from './node-usb';
+import { getUsbDevices } from './usb-device-node';
 import * as proto from './usb-protocol';
 import { DeviceType, DEVICES } from './device-type';
 import { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, assert } from './error';
@@ -653,7 +653,7 @@ export function getDevices(options) {
     types: [], // Include devices of any type
     includeDfu: true // Include devices in the DFU mode
   }, options);
-  return usb.getDevices().then(usbDevs => {
+  return getUsbDevices().then(usbDevs => {
     const devs = []; // Particle devices
     for (let usbDev of usbDevs) {
       let info = USB_DEVICES[usbDev.vendorId];

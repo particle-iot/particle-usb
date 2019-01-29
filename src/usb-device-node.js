@@ -11,7 +11,7 @@ try {
   }
 }
 
-export class Device {
+export class UsbDevice {
   constructor(dev) {
     this._dev = dev;
     this._dev.timeout = 5000; // Use longer timeout for control transfers
@@ -88,7 +88,7 @@ export class Device {
   }
 }
 
-export function getDevices() {
+export function getUsbDevices() {
   return new Promise((resolve, reject) => {
     let devs = null;
     try {
@@ -96,7 +96,7 @@ export function getDevices() {
     } catch (err) {
       return reject(new UsbError(err, 'Unable to enumerate USB devices'));
     }
-    devs = devs.map(dev => new Device(dev));
+    devs = devs.map(dev => new UsbDevice(dev));
     resolve(devs);
   });
 }
