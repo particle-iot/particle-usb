@@ -164,14 +164,14 @@ export class DeviceBase extends EventEmitter {
   }
 
   /**
-   * Send a USB request.
+   * Send a USB control request.
    *
    * @param {Number} type Request type.
    * @param {Buffer|String} data Request data.
    * @param {Object} options Request options.
    * @return {Promise}
    */
-  sendRequest(type, data, options) {
+  sendControlRequest(type, data, options) {
     options = Object.assign({
       pollingPolicy: PollingPolicy.DEFAULT, // Polling policy
       timeout: globalOptions.requestTimeout // Request timeout

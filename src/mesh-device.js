@@ -16,7 +16,7 @@ const MAX_NETWORK_PASSWORD_LENGTH = 255;
  */
 export const MeshDevice = base => class extends base {
   async meshAuth(pwd) {
-    return this.sendProtobufRequest(RequestType.MESH_AUTH, {
+    return this.sendRequest(RequestType.MESH_AUTH, {
       password: pwd
     });
   }
@@ -34,7 +34,7 @@ export const MeshDevice = base => class extends base {
       throw new RangeError('Invalid length of the network password');
     }
     return this._runInListeningMode(async () => {
-      const r = await this.sendProtobufRequest(RequestType.MESH_CREATE_NETWORK, {
+      const r = await this.sendRequest(RequestType.MESH_CREATE_NETWORK, {
         name: network.name,
         password: network.password,
         networkId: network.id,
@@ -50,12 +50,12 @@ export const MeshDevice = base => class extends base {
 
   async leaveMeshNetwork() {
     return this._runInListeningMode(() => {
-      return this.sendProtobufRequest(RequestType.MESH_LEAVE_NETWORK);
+      return this.sendRequest(RequestType.MESH_LEAVE_NETWORK);
     });
   }
 
   async getMeshNetworkInfo() {
-    const r = await this.sendProtobufRequest(RequestType.MESH_GET_NETWORK_INFO, null, {
+    const r = await this.sendRequest(RequestType.MESH_GET_NETWORK_INFO, null, {
       dontThrow: true
     });
     if (r.result == RequestResult.NOT_FOUND) {
@@ -74,35 +74,35 @@ export const MeshDevice = base => class extends base {
   }
 
   async startCommissioner(timeout) {
-    return this.sendProtobufRequest(RequestType.MESH_START_COMMISSIONER, {
+    return this.sendRequest(RequestType.MESH_START_COMMISSIONER, {
       timeout: timeout
     });
   }
 
   async stopCommissioner() {
-    return this.sendProtobufRequest(RequestType.MESH_STOP_COMMISSIONER);
+    return this.sendRequest(RequestType.MESH_STOP_COMMISSIONER);
   }
 
   async joinMeshNetwork(commDev) {
     return this._runInListeningMode(async () => {
       // TODO: Start the commissioner role automatically
-      let r = await commDev.sendProtobufRequest(RequestType.MESH_GET_NETWORK_INFO);
+      let r = await commDev.sendRequest(RequestType.MESH_GET_NETWORK_INFO);
       const network = r.network;
-      r = await this.sendProtobufRequest(RequestType.MESH_PREPARE_JOINER, {
+      r = await this.sendRequest(RequestType.MESH_PREPARE_JOINER, {
         network: network
       });
       const eui64 = r.eui64;
       const joinPwd = r.password;
-      await commDev.sendProtobufRequest(RequestType.MESH_ADD_JOINER, {
+      await commDev.sendRequest(RequestType.MESH_ADD_JOINER, {
         eui64: eui64,
         password: joinPwd
       });
-      await this.sendProtobufRequest(RequestType.MESH_JOIN_NETWORK);
+      await this.sendRequest(RequestType.MESH_JOIN_NETWORK);
     });
   }
 
   async scanMeshNetworks() {
-    const r = await this.sendProtobufRequest(RequestType.MESH_SCAN_NETWORKS);
+    const r = await this.sendRequest(RequestType.MESH_SCAN_NETWORKS);
     return r.networks.map(network => ({
       name: network.name,
       panId: network.panId,

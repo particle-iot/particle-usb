@@ -23,7 +23,7 @@ export const NetworkDevice = base => class extends base {
    * @return {Promise<String>}
    */
   getNetworkStatus() {
-    return this.sendProtobufRequest(RequestType.NETWORK_GET_STATUS, {
+    return this.sendRequest(RequestType.NETWORK_GET_STATUS, {
       interface: DEFAULT_INTERFACE
     }).then(rep => NetworkStatus.fromProtobuf(rep.config.state));
   }
@@ -34,7 +34,7 @@ export const NetworkDevice = base => class extends base {
    * @return {Promise<Object>}
    */
   getNetworkConfig() {
-    return this.sendProtobufRequest(RequestType.NETWORK_GET_CONFIGURATION, { // TODO
+    return this.sendRequest(RequestType.NETWORK_GET_CONFIGURATION, { // TODO
       interface: DEFAULT_INTERFACE
     });
   }
@@ -46,6 +46,6 @@ export const NetworkDevice = base => class extends base {
    * @return {Promise}
    */
   setNetworkConfig(config) {
-    return this.sendProtobufRequest(RequestType.NETWORK_SET_CONFIGURATION, config); // TODO
+    return this.sendRequest(RequestType.NETWORK_SET_CONFIGURATION, config); // TODO
   }
 }
