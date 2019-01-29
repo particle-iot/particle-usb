@@ -1,7 +1,7 @@
 import proto from './protocol';
 
 // Mapping of request types to Protobuf messages
-export const RequestType = {
+export const Request = {
   RESET: {
     id: 40
   },

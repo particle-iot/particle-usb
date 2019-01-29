@@ -1,5 +1,5 @@
 import { NetworkDevice } from './network-device';
-import { RequestType } from './request-type';
+import { Request } from './request-index';
 import { fromProtobufEnum, fromProtobufMessage, toProtobufMessage } from './protobuf-util';
 
 import proto from './protocol';
@@ -85,7 +85,7 @@ export const WifiDevice = base => class extends NetworkDevice(base) {
    * @return {Promise}
    */
   setWifiAntenna(antenna) {
-    return this.sendRequest(RequestType.WIFI_SET_ANTENNA, {
+    return this.sendRequest(Request.WIFI_SET_ANTENNA, {
       antenna: WifiAntenna.toProtobuf(antenna)
     });
   }
@@ -96,7 +96,7 @@ export const WifiDevice = base => class extends NetworkDevice(base) {
    * @return {Promise<String>}
    */
   getWifiAntenna(antenna) {
-    return this.sendRequest(RequestType.WIFI_GET_ANTENNA).then(rep => {
+    return this.sendRequest(Request.WIFI_GET_ANTENNA).then(rep => {
       return WifiAntenna.fromProtobuf(rep.antenna)
     });
   }
@@ -107,7 +107,7 @@ export const WifiDevice = base => class extends NetworkDevice(base) {
    * @return {Promise<Array>}
    */
   scanWifiNetworks() {
-    return this.sendRequest(RequestType.WIFI_SCAN).then(rep => {
+    return this.sendRequest(Request.WIFI_SCAN).then(rep => {
       if (!rep.list) {
         return [];
       }
@@ -122,7 +122,7 @@ export const WifiDevice = base => class extends NetworkDevice(base) {
    * @return {Promise}
    */
   setWifiCredentials(credentials) {
-    return this.sendRequest(RequestType.WIFI_SET_CREDENTIALS, {
+    return this.sendRequest(Request.WIFI_SET_CREDENTIALS, {
       ap: accessPointToProtobuf(credentials)
     });
   }
@@ -133,7 +133,7 @@ export const WifiDevice = base => class extends NetworkDevice(base) {
    * @return {Promise<Array>}
    */
   getWifiCredentials() {
-    return this.sendRequest(RequestType.WIFI_GET_CREDENTIALS).then(rep => {
+    return this.sendRequest(Request.WIFI_GET_CREDENTIALS).then(rep => {
       if (!rep.list) {
         return [];
       }
@@ -147,6 +147,6 @@ export const WifiDevice = base => class extends NetworkDevice(base) {
    * @return {Promise}
    */
   clearWifiCredentials() {
-    return this.sendRequest(RequestType.WIFI_CLEAR_CREDENTIALS);
+    return this.sendRequest(Request.WIFI_CLEAR_CREDENTIALS);
   }
 };
