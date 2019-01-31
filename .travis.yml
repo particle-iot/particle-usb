@@ -13,7 +13,7 @@ addons:
       - libusb-dev
       - libudev-dev
 install:
-  - npm install -g npm@latest
+  - npm install -g npm@5
   - npm install
   - npm prune
 script:
