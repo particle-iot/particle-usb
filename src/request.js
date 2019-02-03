@@ -25,6 +25,11 @@ export const Request = {
     request: proto.GetDeviceModeRequest,
     reply: proto.GetDeviceModeReply
   },
+  SET_DEVICE_SETUP_DONE: {
+    id: 73,
+    request: proto.SetDeviceSetupDoneRequest,
+    reply: proto.SetDeviceSetupDoneReply
+  },
   LOG_CONFIG: {
     id: 80
   },

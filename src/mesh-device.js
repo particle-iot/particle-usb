@@ -159,6 +159,21 @@ export const MeshDevice = base => class extends base {
   }
 
   /**
+   * Set the setup done flag.
+   *
+   * @param {Boolean} [done] Flag value.
+   * @return {Promise}
+   */
+  async setSetupDone(done) {
+    if (done === undefined) {
+      done = true;
+    }
+    return this.sendRequest(Request.SET_DEVICE_SETUP_DONE, {
+      done: done
+    });
+  }
+
+  /**
    * Set to `true` if this is a mesh device.
    */
   get isMeshDevice() {
