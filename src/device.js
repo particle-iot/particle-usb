@@ -1,6 +1,6 @@
 import { DeviceBase } from './device-base';
-import { Request } from './request-index';
-import { Result, messageForResultCode } from './request-result';
+import { Request } from './request';
+import { Result, messageForResultCode } from './result';
 import { fromProtobufEnum } from './protobuf-util';
 import { RequestError, NotFoundError, TimeoutError } from './error';
 import { globalOptions } from './config';

@@ -1,6 +1,6 @@
 import { DeviceMode } from './device';
-import { Request } from './request-index';
-import { Result } from './request-result';
+import { Request } from './request';
+import { Result } from './result';
 import { fromProtobufEnum } from './protobuf-util';
 import { RequestError } from './error';
 

@@ -1,5 +1,5 @@
 import { getDevices, openDeviceById } from '../src/particle-usb';
-import { RequestResult } from '../src/request-result';
+import { RequestResult } from '../src/result';
 import { RequestError } from '../src/error';
 
 import { expect } from './support';

@@ -1,4 +1,4 @@
-import { Request } from './request-index';
+import { Request } from './request';
 import { fromProtobufEnum } from './protobuf-util';
 
 import proto from './protocol';

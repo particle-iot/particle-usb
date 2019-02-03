@@ -1,5 +1,5 @@
 import { NetworkDevice } from './network-device';
-import { Request } from './request-index';
+import { Request } from './request';
 import { fromProtobufEnum, fromProtobufMessage, toProtobufMessage } from './protobuf-util';
 
 import proto from './protocol';
