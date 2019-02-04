@@ -1,4 +1,3 @@
-import { NetworkDevice } from './network-device';
 import { Request } from './request';
 import { fromProtobufEnum, fromProtobufMessage, toProtobufMessage } from './protobuf-util';
 
@@ -77,7 +76,7 @@ const accessPointToProtobuf = toProtobufMessage(proto.WiFiAccessPoint, accessPoi
 /**
  * Mixin class for a WiFi device.
  */
-export const WifiDevice = base => class extends NetworkDevice(base) {
+export const WifiDevice = base => class extends base {
   /**
    * Set the WiFi antenna to use.
    *

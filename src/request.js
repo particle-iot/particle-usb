@@ -180,6 +180,12 @@ export const Request = {
     request: proto.GetSectionDataSizeRequest,
     reply: proto.GetSectionDataSizeReply
   },
+  // Cellular-specific requests
+  CELLULAR_GET_ICCID: {
+    id: 554,
+    request: proto.cellular.GetIccidRequest,
+    reply: proto.cellular.GetIccidReply
+  },
   // Mesh network management
   MESH_AUTH: {
     id: 1001,

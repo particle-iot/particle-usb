@@ -1,5 +1,4 @@
-import { getDevices, openDeviceById } from '../src/particle-usb';
-import { RequestResult } from '../src/result';
+import { getDevices } from '../src/particle-usb';
 import { RequestError } from '../src/error';
 
 import { expect } from './support';
@@ -11,7 +10,7 @@ const NETWORK_CHANNEL = 11; // Network channel
 
 // Note: This test requires physical devices to be connected to the host via USB and is skipped by default
 describe.skip('mesh-device', function() {
-  // Mesh network operations take a while
+  // Mesh device operations may take a while
   this.timeout(60000);
   this.slow(45000);
 
