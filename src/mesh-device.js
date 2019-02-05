@@ -246,7 +246,7 @@ export const MeshDevice = base => class extends base {
       flags |= proto.mesh.GetNetworkDiagnosticsRequest.Flags['RESOLVE_DEVICE_ID'];
     }
 
-    return this.sendRequest(Request.GET_NETWORK_DIAGNOSTICS, {
+    return this.sendRequest(Request.MESH_GET_NETWORK_DIAGNOSTICS, {
       flags: flags,
       diagnosticTypes: opts.diagnosticTypes.map(DiagnosticType.toProtobuf),
       timeout: opts.timeout
