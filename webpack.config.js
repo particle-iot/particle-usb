@@ -7,6 +7,7 @@ module.exports = {
     path: path.resolve(__dirname, 'dist'),
     filename: 'particle-usb.bundle.js',
     library: 'ParticleUsb',
-    libraryTarget: 'var'
+    libraryTarget: 'umd',
+    umdNamedDefine: true
   }
 };
