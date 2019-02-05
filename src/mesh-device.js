@@ -226,11 +226,13 @@ export const MeshDevice = base => class extends base {
    * @param {Object} opts Request options
    * @return {Promise}
    */
-  async getNetworkDiagnostics(opts = {
+  async getNetworkDiagnostics(
+    opts = {
       timeout: DIAGNOSTIC_DEFAULT_TIMEOUT,
       queryChildren: false,
-      diagnosticTypes: ['RLOC']
-  }) {
+      diagnosticTypes: ["RLOC"]
+    }
+  ) {
     if (opts.queryChildren && !opts.diagnosticTypes.includes('CHILD_TABLE')) {
       opts.diagnosticTypes.push('CHILD_TABLE');
     }
@@ -244,10 +246,10 @@ export const MeshDevice = base => class extends base {
       flags |= proto.mesh.GetNetworkDiagnosticsRequest.Flags['RESOLVE_DEVICE_ID'];
     }
 
-    return this.sendRequest(RequestType.GET_NETWORK_DIAGNOSTICS, {
+    return this.sendRequest(Request.GET_NETWORK_DIAGNOSTICS, {
       flags: flags,
       diagnosticTypes: opts.diagnosticTypes.map(DiagnosticType.toProtobuf),
-      timeout: timeout
+      timeout: opts.timeout
     });
   }
 }

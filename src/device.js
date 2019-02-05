@@ -65,7 +65,7 @@ export class Device extends DeviceBase {
    * @return {Promise}
    */
   getSerialNumber() {
-    return this.sendRequest(RequestType.GET_SERIAL_NUMBER);
+    return this.sendRequest(Request.GET_SERIAL_NUMBER);
   }
 
   /**
