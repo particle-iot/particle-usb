@@ -1,4 +1,4 @@
-import { RequestType } from './request-type';
+import { Request } from './request';
 import { fromProtobufEnum } from './protobuf-util';
 
 import proto from './protocol';
@@ -22,7 +22,7 @@ export const CloudDevice = base => class extends base {
    * @return {Promise}
    */
   setClaimCode(code) {
-    return this.sendProtobufRequest(RequestType.SET_CLAIM_CODE, {
+    return this.sendRequest(Request.SET_CLAIM_CODE, {
       code: code
     });
   }
@@ -33,7 +33,7 @@ export const CloudDevice = base => class extends base {
    * @return {Promise<Boolean>}
    */
   isClaimed() {
-    return this.sendProtobufRequest(RequestType.IS_CLAIMED).then(rep => rep.claimed);
+    return this.sendRequest(Request.IS_CLAIMED).then(rep => rep.claimed);
   }
 
   /**
@@ -133,7 +133,7 @@ export const CloudDevice = base => class extends base {
    */
   setServerAddress(address, port, protocol) {
     return this._getServerProtocol(protocol).then(protocol => {
-      return this.sendProtobufRequest(RequestType.SET_SERVER_ADDRESS, {
+      return this.sendRequest(Request.SET_SERVER_ADDRESS, {
         protocol: protocol,
         address: address,
         port: port // TODO: Make port number optional
@@ -149,7 +149,7 @@ export const CloudDevice = base => class extends base {
    */
   getServerAddress(protocol) {
     return this._getServerProtocol(protocol).then(protocol => {
-      return this.sendProtobufRequest(RequestType.GET_SERVER_ADDRESS, {
+      return this.sendRequest(Request.GET_SERVER_ADDRESS, {
         protocol: protocol
       });
     });
@@ -162,7 +162,7 @@ export const CloudDevice = base => class extends base {
    * @return {Promise}
    */
   setServerProtocol(protocol) {
-    return this.sendProtobufRequest(RequestType.SET_SERVER_PROTOCOL, {
+    return this.sendRequest(Request.SET_SERVER_PROTOCOL, {
       protocol: ServerProtocol.toProtobuf(protocol)
     });
   }
@@ -177,17 +177,17 @@ export const CloudDevice = base => class extends base {
   }
 
   _setSecurityKey(type, data) {
-    return this.sendProtobufRequest(RequestType.SET_SECURITY_KEY, { type: type, data: data });
+    return this.sendRequest(Request.SET_SECURITY_KEY, { type: type, data: data });
   }
 
   _getSecurityKey(type) {
-    return this.sendProtobufRequest(RequestType.GET_SECURITY_KEY, { type: type }).then(rep => rep.data);
+    return this.sendRequest(Request.GET_SECURITY_KEY, { type: type }).then(rep => rep.data);
   }
 
   _getServerProtocol(protocol) {
     if (protocol) {
       return Promise.resolve(ServerProtocol.toProtobuf(protocol));
     }
-    return this.sendProtobufRequest(RequestType.GET_SERVER_PROTOCOL).then(rep => rep.protocol);
+    return this.sendRequest(Request.GET_SERVER_PROTOCOL).then(rep => rep.protocol);
   }
 }

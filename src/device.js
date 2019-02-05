@@ -1,8 +1,9 @@
 import { DeviceBase } from './device-base';
-import { RequestType } from './request-type';
-import { RequestResult, messageForResultCode } from './request-result';
+import { Request } from './request';
+import { Result, messageForResultCode } from './result';
 import { fromProtobufEnum } from './protobuf-util';
-import { RequestError, NotFoundError } from './error';
+import { RequestError, NotFoundError, TimeoutError } from './error';
+import { globalOptions } from './config';
 
 import proto from './protocol';
 
@@ -17,6 +18,44 @@ export const FirmwareModule = fromProtobufEnum(proto.FirmwareModuleType, {
 });
 
 /**
+ * Device modes.
+ */
+export const DeviceMode = fromProtobufEnum(proto.DeviceMode, {
+  NORMAL: 'NORMAL_MODE',
+  LISTENING: 'LISTENING_MODE'
+});
+
+// Helper class used by Device.timeout()
+class RequestSender {
+  constructor(dev, timeout) {
+    this._dev = dev;
+    this._timeoutTime = Date.now() + timeout;
+  }
+
+  async sendRequest(req, msg, opts) {
+    if (!opts || !opts.timeout) {
+      const t = this._timeoutTime - Date.now();
+      if (t <= 0) {
+        throw new TimeoutError();
+      }
+      opts = Object.assign({}, opts, { timeout: t });
+    } else if (Date.now() + opts.timeout >= this._timeoutTime) {
+      throw new TimeoutError();
+    }
+    return this._dev.sendRequest(req, msg, opts);
+  }
+
+  async delay(ms) {
+    if (Date.now() + ms >= this._timeoutTime) {
+      throw new TimeoutError();
+    }
+    return new Promise((resolve, reject) => {
+      setTimeout(() => resolve(), ms);
+    });
+  }
+}
+
+/**
  * Basic functionality supported by all Particle devices.
  */
 export class Device extends DeviceBase {
@@ -26,7 +65,7 @@ export class Device extends DeviceBase {
    * @return {Promise}
    */
   reset() {
-    return this.sendProtobufRequest(RequestType.RESET);
+    return this.sendRequest(Request.RESET);
   }
 
   /**
@@ -35,7 +74,7 @@ export class Device extends DeviceBase {
    * @return {Promise}
    */
   factoryReset() {
-    return this.sendProtobufRequest(RequestType.FACTORY_RESET);
+    return this.sendRequest(Request.FACTORY_RESET);
   }
 
   /**
@@ -44,7 +83,7 @@ export class Device extends DeviceBase {
    * @return {Promise}
    */
   enterDfuMode() {
-    return this.sendProtobufRequest(RequestType.DFU_MODE);
+    return this.sendRequest(Request.DFU_MODE);
   }
 
   /**
@@ -53,7 +92,7 @@ export class Device extends DeviceBase {
    * @return {Promise}
    */
   enterSafeMode() {
-    return this.sendProtobufRequest(RequestType.SAFE_MODE);
+    return this.sendRequest(Request.SAFE_MODE);
   }
 
   /**
@@ -61,8 +100,20 @@ export class Device extends DeviceBase {
    *
    * @return {Promise}
    */
-  enterListeningMode() {
-    return this.sendProtobufRequest(RequestType.START_LISTENING);
+  async enterListeningMode() {
+    return this.timeout(async (s) => {
+      await s.sendRequest(Request.START_LISTENING);
+      // Wait until the device enters the listening mode
+      while (true) {
+        const r = await s.sendRequest(Request.GET_DEVICE_MODE, null, {
+          dontThrow: true // This request may not be supported by the device
+        });
+        if (r.result != Result.OK || r.mode == proto.DeviceMode.LISTENING_MODE) {
+          break;
+        }
+        await s.delay(500);
+      }
+    });
   }
 
   /**
@@ -71,7 +122,27 @@ export class Device extends DeviceBase {
    * @return {Promise}
    */
   leaveListeningMode() {
-    return this.sendProtobufRequest(RequestType.STOP_LISTENING);
+    return this.timeout(async (s) => {
+      await s.sendRequest(Request.STOP_LISTENING);
+      // Wait until the device leaves the listening mode
+      while (true) {
+        const r = await s.sendRequest(Request.GET_DEVICE_MODE, null, {
+          dontThrow: true // This request may not be supported by the device
+        });
+        if (r.result != Result.OK || r.mode != proto.DeviceMode.LISTENING_MODE) {
+          break;
+        }
+        await s.delay(500);
+      }
+    });
+  }
+
+  /**
+   * Get device mode.
+   */
+  async getDeviceMode() {
+    const r = await this.sendRequest(Request.GET_DEVICE_MODE);
+    return DeviceMode.fromProtobuf(r.mode);
   }
 
   /**
@@ -80,7 +151,7 @@ export class Device extends DeviceBase {
    * @return {Promise}
    */
   startNyanSignal() {
-    return this.sendProtobufRequest(RequestType.START_NYAN_SIGNAL);
+    return this.sendRequest(Request.START_NYAN_SIGNAL);
   }
 
   /**
@@ -89,7 +160,7 @@ export class Device extends DeviceBase {
    * @return {Promise}
    */
   stopNyanSignal() {
-    return this.sendProtobufRequest(RequestType.STOP_NYAN_SIGNAL);
+    return this.sendRequest(Request.STOP_NYAN_SIGNAL);
   }
 
   /**
@@ -99,7 +170,7 @@ export class Device extends DeviceBase {
    * @return {Promise}
    */
   updateFirmware(data) {
-    return this.sendProtobufRequest(RequestType.START_FIRMWARE_UPDATE, {
+    return this.sendRequest(Request.START_FIRMWARE_UPDATE, {
       size: data.length
     }).then(rep => {
       let chunkSize = rep.chunkSize;
@@ -111,7 +182,7 @@ export class Device extends DeviceBase {
         if (chunkSize == 0) {
           return Promise.resolve();
         }
-        return this.sendProtobufRequest(RequestType.FIRMWARE_UPDATE_DATA, {
+        return this.sendRequest(Request.FIRMWARE_UPDATE_DATA, {
           data: data.slice(chunkOffs, chunkOffs + chunkSize)
         }).then(() => {
           chunkOffs += chunkSize;
@@ -120,7 +191,7 @@ export class Device extends DeviceBase {
       };
       return writeChunk();
     }).then(() => {
-      return this.sendProtobufRequest(RequestType.FINISH_FIRMWARE_UPDATE, {
+      return this.sendRequest(Request.FINISH_FIRMWARE_UPDATE, {
         validateOnly: false
       });
     });
@@ -298,24 +369,40 @@ export class Device extends DeviceBase {
   }
 
   // Sends a Protobuf-encoded request
-  sendProtobufRequest(type, props) {
+  sendRequest(req, msg, opts) {
     let buf = null;
-    if (props && type.request) {
-      const msg = type.request.create(props);
-      buf = type.request.encode(msg).finish();
+    if (msg && req.request) {
+      const m = req.request.create(msg); // Protobuf message object
+      buf = req.request.encode(m).finish();
     }
-    return this.sendRequest(type.id, buf).then(rep => {
-      if (rep.result != RequestResult.OK) {
+    return this.sendControlRequest(req.id, buf, opts).then(rep => {
+      let r = undefined;
+      if (opts && opts.dontThrow) {
+        r = { result: rep.result };
+      } else if (rep.result != Result.OK) {
         throw new RequestError(rep.result, messageForResultCode(rep.result));
       }
-      if (type.reply) {
-        if (!rep.data) {
-          // Return a reply object containing default-initialized properties
-          return type.reply.create();
+      if (req.reply) {
+        if (rep.data) {
+          r = Object.assign({}, r, req.reply.decode(rep.data));
+        } else {
+          // Return a message with default-initialized properties
+          r = Object.assign({}, r, req.reply.create());
         }
-        return type.reply.decode(rep.data);
       }
+      return r;
     });
+  }
+
+  // This method is used to send multiple requests to the device. The overall execution time can be
+  // limited via the `ms` argument (optional)
+  async timeout(ms, fn) {
+    if (typeof ms == 'function') {
+      fn = ms;
+      ms = globalOptions.requestTimeout; // Default timeout
+    }
+    const s = new RequestSender(this, ms);
+    return fn(s);
   }
 
   _readSectionData(section, offset, size) {
@@ -329,7 +416,7 @@ export class Device extends DeviceBase {
       if (chunkSize == 0) {
         return Promise.resolve(data);
       }
-      return this.sendProtobufRequest(RequestType.READ_SECTION_DATA, {
+      return this.sendRequest(Request.READ_SECTION_DATA, {
         storage: section.storageIndex,
         section: section.sectionIndex,
         offset: offset + chunkOffs,
@@ -358,7 +445,7 @@ export class Device extends DeviceBase {
         if (chunkSize == 0) {
           return Promise.resolve();
         }
-        return this.sendProtobufRequest(RequestType.WRITE_SECTION_DATA, {
+        return this.sendRequest(Request.WRITE_SECTION_DATA, {
           storage: section.storageIndex,
           section: section.sectionIndex,
           offset: offset + chunkOffs,
@@ -373,14 +460,14 @@ export class Device extends DeviceBase {
   }
 
   _clearSectionData(section) {
-    return this.sendProtobufRequest(RequestType.CLEAR_SECTION_DATA, {
+    return this.sendRequest(Request.CLEAR_SECTION_DATA, {
       storage: section.storageIndex,
       section: section.sectionIndex
     });
   }
 
   _getSectionDataSize(section) {
-    return this.sendProtobufRequest(RequestType.GET_SECTION_DATA_SIZE, {
+    return this.sendRequest(Request.GET_SECTION_DATA_SIZE, {
       storage: section.storageIndex,
       section: section.sectionIndex
     }).then(rep => rep.size);
@@ -392,7 +479,7 @@ export class Device extends DeviceBase {
       return Promise.resolve(this._storageInfo);
     }
     // Request storage info from the device
-    return this.sendProtobufRequest(RequestType.DESCRIBE_STORAGE).then(rep => {
+    return this.sendRequest(Request.DESCRIBE_STORAGE).then(rep => {
       const storage = {
         modules: [],
         factory: null,

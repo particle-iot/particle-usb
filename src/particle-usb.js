@@ -5,6 +5,7 @@ import { WifiDevice } from './wifi-device';
 import { CellularDevice } from './cellular-device';
 import { CloudDevice } from './cloud-device';
 import { MeshDevice } from './mesh-device';
+import { NetworkDevice } from './network-device';
 
 export { DeviceType } from './device-type';
 export { PollingPolicy } from './device-base';
@@ -12,7 +13,7 @@ export { FirmwareModule } from './device';
 export { NetworkStatus } from './network-device';
 export { WifiAntenna, WifiSecurity, WifiCipher, EapMethod } from './wifi-device';
 export { ServerProtocol } from './cloud-device';
-export { RequestResult } from './request-result';
+export { Result } from './result';
 export { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, UsbError, InternalError,
     RequestError } from './error';
 export { config } from './config';
@@ -20,25 +21,25 @@ export { config } from './config';
 export class Core extends DeviceBase {
 }
 
-export class Photon extends CloudDevice(WifiDevice(Device)) {
+export class Photon extends CloudDevice(WifiDevice(NetworkDevice(Device))) {
 }
 
-export class P1 extends CloudDevice(WifiDevice(Device)) {
+export class P1 extends CloudDevice(WifiDevice(NetworkDevice(Device))) {
 }
 
-export class Electron extends CloudDevice(CellularDevice(Device)) {
+export class Electron extends CloudDevice(CellularDevice(NetworkDevice(Device))) {
 }
 
-export class Duo extends CloudDevice(WifiDevice(Device)) {
+export class Duo extends CloudDevice(WifiDevice(NetworkDevice(Device))) {
 }
 
-export class Xenon extends CloudDevice(MeshDevice(Device)) {
+export class Xenon extends CloudDevice(MeshDevice(NetworkDevice(Device))) {
 }
 
-export class Argon extends CloudDevice(MeshDevice(Device)) {
+export class Argon extends CloudDevice(WifiDevice(MeshDevice(NetworkDevice(Device)))) {
 }
 
-export class Boron extends CloudDevice(MeshDevice(Device)) {
+export class Boron extends CloudDevice(CellularDevice(MeshDevice(NetworkDevice(Device)))) {
 }
 
 const DEVICE_PROTOTYPES = {

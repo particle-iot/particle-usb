@@ -1,4 +1,4 @@
-import * as usb from './node-usb';
+import { getUsbDevices } from './usb-device-node';
 import * as proto from './usb-protocol';
 import { DeviceType, DEVICES } from './device-type';
 import { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, assert } from './error';
@@ -164,17 +164,17 @@ export class DeviceBase extends EventEmitter {
   }
 
   /**
-   * Send a USB request.
+   * Send a USB control request.
    *
    * @param {Number} type Request type.
    * @param {Buffer|String} data Request data.
    * @param {Object} options Request options.
    * @return {Promise}
    */
-  sendRequest(type, data, options) {
+  sendControlRequest(type, data, options) {
     options = Object.assign({
       pollingPolicy: PollingPolicy.DEFAULT, // Polling policy
-      timeout: 30000 // Request timeout
+      timeout: globalOptions.requestTimeout // Request timeout
     }, options);
     return new Promise((resolve, reject) => {
       if (this._state == DeviceState.CLOSED) {
@@ -653,7 +653,7 @@ export function getDevices(options) {
     types: [], // Include devices of any type
     includeDfu: true // Include devices in the DFU mode
   }, options);
-  return usb.getDevices().then(usbDevs => {
+  return getUsbDevices().then(usbDevs => {
     const devs = []; // Particle devices
     for (let usbDev of usbDevs) {
       let info = USB_DEVICES[usbDev.vendorId];
