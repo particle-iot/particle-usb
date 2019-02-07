@@ -2,6 +2,11 @@ import proto from './protocol';
 
 // Mapping of request types to Protobuf messages
 export const Request = {
+  GET_SERIAL_NUMBER: {
+    id: 21,
+    request: proto.GetSerialNumberRequest,
+    reply: proto.GetSerialNumberReply
+  },
   RESET: {
     id: 40
   },
@@ -241,5 +246,10 @@ export const Request = {
     id: 1011,
     request: proto.mesh.ScanNetworksRequest,
     reply: proto.mesh.ScanNetworksReply
+  },
+  MESH_GET_NETWORK_DIAGNOSTICS: {
+    id: 1012,
+    request: proto.mesh.GetNetworkDiagnosticsRequest,
+    reply: proto.mesh.GetNetworkDiagnosticsReply
   }
 };

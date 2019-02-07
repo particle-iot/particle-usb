@@ -60,6 +60,15 @@ class RequestSender {
  */
 export class Device extends DeviceBase {
   /**
+   * Get device serial number
+   *
+   * @return {Promise}
+   */
+  getSerialNumber() {
+    return this.sendRequest(Request.GET_SERIAL_NUMBER);
+  }
+
+  /**
    * Perform the system reset.
    *
    * @return {Promise}
