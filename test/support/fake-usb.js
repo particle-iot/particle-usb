@@ -338,8 +338,25 @@ export class Device {
   }
 }
 
-export async function getDevices() {
-  return Array.from(devices.values());
+export async function getDevices(filters) {
+  // Validate the filtering options
+  filters = !filters ? [] : filters.map(f => {
+    if (f.productId && !f.vendorId) {
+      throw new RangeError('Vendor ID is missing');
+    }
+    if (f.serialNumber) {
+      f = Object.assign({}, f);
+      f.serialNumber = f.serialNumber.toLowerCase();
+    }
+    return f;
+  });
+  let devs = Array.from(devices.values());
+  if (filters.length > 0) {
+    devs = devs.filter(dev => filters.some(f => ((!f.vendorId || dev.vendorId == f.vendorId) &&
+        (!f.productId || dev.productId == f.productId) &&
+        (!f.serialNumber || dev.serialNumber.toLowerCase() == f.serialNumber))));
+  }
+  return devs;
 }
 
 export function addDevice(options) {
@@ -353,7 +370,7 @@ export function addDevice(options) {
       // Generate ID for a Particle device
       options.id = String(devices.size).padStart(24, '0');
     }
-    // Particle devices expose the device ID via the serial number descriptor
+    // Particle devices expose their IDs via the serial number descriptor
     options.serialNumber = options.id;
   }
   const objId = ++lastDeviceId; // Internal object ID

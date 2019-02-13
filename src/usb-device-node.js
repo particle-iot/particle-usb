@@ -1,4 +1,5 @@
 import { UsbError } from './error';
+import { globalOptions } from './config';
 
 let usb = null;
 
@@ -15,7 +16,11 @@ export class UsbDevice {
   constructor(dev) {
     this._dev = dev;
     this._dev.timeout = 5000; // Use longer timeout for control transfers
+    // There's no way to check if a device is open, so we're storing the state in an additional
+    // property of the node-usb device object
+    this._dev.particle = { isOpen: false };
     this._serialNum = null;
+    this._log = globalOptions.log;
   }
 
   open() {
@@ -32,11 +37,13 @@ export class UsbDevice {
           try {
             this._dev.close();
           } catch (err) {
+            this._log.error(`Unable to close device: ${err.message}`);
             // Ignore error
           }
           return reject(new UsbError(err, 'Unable to get serial number descriptor'));
         }
         this._serialNum = serialNum;
+        this._dev.particle.isOpen = true;
         resolve();
       });
     });
@@ -46,6 +53,7 @@ export class UsbDevice {
     return new Promise((resolve, reject) => {
       try {
         this._dev.close();
+        this._dev.particle.isOpen = false;
       } catch (err) {
         return reject(new UsbError(err, 'Unable to close USB device'));
       }
@@ -75,6 +83,10 @@ export class UsbDevice {
     });
   }
 
+  get isOpen() {
+    return this._dev.particleUsb.isOpen;
+  }
+
   get vendorId() {
     return this._dev.deviceDescriptor.idVendor;
   }
@@ -88,15 +100,60 @@ export class UsbDevice {
   }
 }
 
-export function getUsbDevices() {
-  return new Promise((resolve, reject) => {
-    let devs = null;
-    try {
-      devs = usb.getDeviceList();
-    } catch (err) {
-      return reject(new UsbError(err, 'Unable to enumerate USB devices'));
+export async function getUsbDevices(filters) {
+  const log = globalOptions.log;
+  // Validate the filtering options
+  filters = !filters ? [] : filters.map(f => {
+    if (f.productId && !f.vendorId) {
+      throw new RangeError('Vendor ID is missing');
     }
-    devs = devs.map(dev => new UsbDevice(dev));
-    resolve(devs);
+    if (f.serialNumber) {
+      // Filtering by serial number works in a case-insensitive manner. This is not necessarily
+      // true for other backends
+      f = Object.assign({}, f);
+      f.serialNumber = f.serialNumber.toLowerCase();
+    }
+    return f;
   });
+  let devs = null;
+  try {
+    devs = usb.getDeviceList().map(dev => new UsbDevice(dev));
+  } catch (err) {
+    throw new UsbError(err, 'Unable to enumerate USB devices');
+  }
+  if (filters.length > 0) {
+    devs = devs.filter(dev => filters.some(async f => {
+      if (f.vendorId && dev.vendorId != f.vendorId) {
+        return false;
+      }
+      if (f.productId && dev.productId != f.productId) {
+        return false;
+      }
+      if (f.serialNumber) {
+        // Open the device to query its serial number
+        const wasOpen = dev.isOpen;
+        if (!wasOpen) {
+          try {
+            await dev.open();
+          } catch (e) {
+            log.error(`Unable to open device: ${e.message}`);
+            return false;
+          }
+        }
+        const match = (dev.serialNumber.toLowerCase() == f.serialNumber);
+        // Don't close the device if it was opened elsewhere. node-usb caches device objects
+        if (!wasOpen) {
+          try {
+            await dev.close();
+          } catch (e) {
+            log.error(`Unable to close device: ${e.message}`);
+            return false;
+          }
+        }
+        return match;
+      }
+      return true;
+    }));
+  }
+  return devs;
 }
