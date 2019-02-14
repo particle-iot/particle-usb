@@ -57,8 +57,10 @@ describe('device-base', () => {
       usbDevs.push(fakeUsb.addBoron());
       // Enumerate detected devices
       let devs = await getDevices();
-      devs = devs.map(dev => dev.usbDevice);
-      expect(devs).to.have.all.members(usbDevs);
+      expect(devs.map(dev => dev.usbDevice)).to.have.all.members(usbDevs);
+      // Validate device types and platform IDs
+      expect(devs.map(dev => dev.type)).to.have.all.members(usbDevs.map(dev => dev.options.type));
+      expect(devs.map(dev => dev.platformId)).to.have.all.members(usbDevs.map(dev => dev.options.platformId));
     });
 
     it('includes devices in the DFU mode by default', async () => {
@@ -404,14 +406,14 @@ describe('device-base', () => {
 
       it('fails if the request type is not within the range of valid values', async () => {
         const req1 = dev.sendControlRequest(-1);
-        await expect(req1).to.be.rejectedWith(error.DeviceError);
+        await expect(req1).to.be.rejectedWith(RangeError);
         const req2 = dev.sendControlRequest(65536);
-        await expect(req2).to.be.rejectedWith(error.DeviceError);
+        await expect(req2).to.be.rejectedWith(RangeError);
       });
 
       it('fails if the request data is too large', async () => {
         const req = dev.sendControlRequest(REQUEST_1, Buffer.alloc(65536));
-        await expect(req).to.be.rejectedWith(error.DeviceError);
+        await expect(req).to.be.rejectedWith(RangeError);
       });
     });
   });

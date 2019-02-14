@@ -193,14 +193,14 @@ export class DeviceBase extends EventEmitter {
         throw new StateError('Device is being closed');
       }
       if (type < 0 || type > proto.MAX_REQUEST_TYPE) {
-        throw new DeviceError('Invalid request type');
+        throw new RangeError('Invalid request type');
       }
       const dataIsStr = (typeof data == 'string');
       if (dataIsStr) {
         data = Buffer.from(data);
       }
       if (data && data.length > proto.MAX_PAYLOAD_SIZE) {
-        throw new DeviceError('Request data is too large');
+        throw new RangeError('Request data is too large');
       }
       const req = {
         id: ++this._lastReqId, // Internal request ID
