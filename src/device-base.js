@@ -1,31 +1,31 @@
 import { getUsbDevices } from './usb-device-node';
 import * as proto from './usb-protocol';
-import { DeviceType, DEVICE_INFO } from './device-type';
+import { DeviceType, DEVICES } from './device-type';
 import { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, assert } from './error';
 import { globalOptions } from './config';
 
 import EventEmitter from 'events';
 
 // Device descriptions arranged by vendor/product IDs
-const DEVICE_INFO_MAP = DEVICE_INFO.reduce((map, dev) => {
+const DEVICE_INFO = DEVICES.reduce((obj, dev) => {
   dev = Object.assign({}, dev);
   const ids = dev.usbIds;
   delete dev.usbIds;
   const dfuIds = dev.dfuUsbIds;
   delete dev.dfuUsbIds;
-  if (!(ids.vendorId in map)) {
-    map[ids.vendorId] = {};
+  if (!(ids.vendorId in obj)) {
+    obj[ids.vendorId] = {};
   }
-  map[ids.vendorId][ids.productId] = Object.assign({ dfu: false }, dev);
-  if (!(dfuIds.vendorId in map)) {
-    map[dfuIds.vendorId] = {};
+  obj[ids.vendorId][ids.productId] = Object.assign({ dfu: false }, dev);
+  if (!(dfuIds.vendorId in obj)) {
+    obj[dfuIds.vendorId] = {};
   }
-  map[dfuIds.vendorId][dfuIds.productId] = Object.assign({ dfu: true }, dev);
-  return map;
+  obj[dfuIds.vendorId][dfuIds.productId] = Object.assign({ dfu: true }, dev);
+  return obj;
 }, {});
 
 function deviceInfoForUsbIds(vendorId, productId) {
-  let info = DEVICE_INFO_MAP[vendorId];
+  let info = DEVICE_INFO[vendorId];
   if (info) {
     info = info[productId];
   }
@@ -258,6 +258,13 @@ export class DeviceBase extends EventEmitter {
    */
   get type() {
     return this._info.type;
+  }
+
+  /**
+   * Platform ID.
+   */
+  get platformId() {
+    return this._info.platformId;
   }
 
   /**
@@ -662,7 +669,7 @@ export class DeviceBase extends EventEmitter {
 export async function getDevices({ types = [], includeDfu = true } = {}) {
   types = types.map(type => type.toLowerCase());
   const filters = [];
-  DEVICE_INFO.forEach(dev => {
+  DEVICES.forEach(dev => {
     if (types.length == 0 || types.includes(dev.type.toLowerCase())) {
       filters.push(dev.usbIds);
       if (includeDfu) {

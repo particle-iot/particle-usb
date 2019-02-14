@@ -13,9 +13,10 @@ export const DeviceType = {
 };
 
 // Descriptions of all devices supported by the library
-export const DEVICE_INFO = [
+export const DEVICES = [
   {
     type: DeviceType.CORE,
+    platformId: 0,
     usbIds: {
       vendorId: 0x1d50,
       productId: 0x607d,
@@ -27,6 +28,7 @@ export const DEVICE_INFO = [
   },
   {
     type: DeviceType.PHOTON,
+    platformId: 6,
     usbIds: {
       vendorId: 0x2b04,
       productId: 0xc006,
@@ -38,6 +40,7 @@ export const DEVICE_INFO = [
   },
   {
     type: DeviceType.P1,
+    platformId: 8,
     usbIds: {
       vendorId: 0x2b04,
       productId: 0xc008,
@@ -49,6 +52,7 @@ export const DEVICE_INFO = [
   },
   {
     type: DeviceType.ELECTRON,
+    platformId: 10,
     usbIds: {
       vendorId: 0x2b04,
       productId: 0xc00a,
@@ -59,29 +63,8 @@ export const DEVICE_INFO = [
     }
   },
   {
-    type: DeviceType.DUO,
-    usbIds: {
-      vendorId: 0x2b04,
-      productId: 0xc058,
-    },
-    dfuUsbIds: {
-      vendorId: 0x2b04,
-      productId: 0xd058
-    }
-  },
-  {
-    type: DeviceType.XENON,
-    usbIds: {
-      vendorId: 0x2b04,
-      productId: 0xc00e,
-    },
-    dfuUsbIds: {
-      vendorId: 0x2b04,
-      productId: 0xd00e
-    }
-  },
-  {
     type: DeviceType.ARGON,
+    platformId: 12,
     usbIds: {
       vendorId: 0x2b04,
       productId: 0xc00c,
@@ -93,6 +76,7 @@ export const DEVICE_INFO = [
   },
   {
     type: DeviceType.BORON,
+    platformId: 13,
     usbIds: {
       vendorId: 0x2b04,
       productId: 0xc00d,
@@ -100,6 +84,30 @@ export const DEVICE_INFO = [
     dfuUsbIds: {
       vendorId: 0x2b04,
       productId: 0xd00d
+    }
+  },
+  {
+    type: DeviceType.XENON,
+    platformId: 14,
+    usbIds: {
+      vendorId: 0x2b04,
+      productId: 0xc00e,
+    },
+    dfuUsbIds: {
+      vendorId: 0x2b04,
+      productId: 0xd00e
+    }
+  },
+  {
+    type: DeviceType.DUO,
+    platformId: 88,
+    usbIds: {
+      vendorId: 0x2b04,
+      productId: 0xc058,
+    },
+    dfuUsbIds: {
+      vendorId: 0x2b04,
+      productId: 0xd058
     }
   }
 ];
