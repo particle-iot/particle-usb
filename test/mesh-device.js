@@ -1,15 +1,14 @@
 import { getDevices } from '../src/particle-usb';
 import { RequestError } from '../src/error';
 
-import { expect } from './support';
+import { expect, optionalTest } from './support';
 
 const NETWORK_ID = '000000000000000000000000'; // Dummy network ID
 const NETWORK_NAME = 'TestNetwork'; // Test network name
 const NETWORK_PASSWORD = '123456'; // Commissioner password
 const NETWORK_CHANNEL = 11; // Network channel
 
-// Note: This test requires physical devices to be connected to the host via USB and is skipped by default
-describe.skip('mesh-device', function() {
+describe('mesh-device', function() {
   // Mesh device operations may take a while
   this.timeout(60000);
   this.slow(45000);
@@ -17,25 +16,31 @@ describe.skip('mesh-device', function() {
   let dev1 = null;
   let dev2 = null;
 
-  before(async () => {
-    let devs = await getDevices();
-    devs = devs.filter(dev => dev.isMeshDevice);
-    if (devs.length != 2) {
-      throw new Error('Make sure exactly 2 mesh devices are connected to the host via USB');
-    }
-    dev1 = devs[0];
-    await dev1.open();
-    await dev1.enterListeningMode();
-    dev2 = devs[1];
-    await dev2.open();
-    await dev2.enterListeningMode();
+  before(function() {
+    return optionalTest(this, async () => {
+      let devs = await getDevices();
+      devs = devs.filter(dev => dev.isMeshDevice);
+      if (devs.length < 2) {
+        throw new Error('This test requires 2 mesh devices connected to the host via USB');
+      }
+      dev1 = devs[0];
+      await dev1.open();
+      await dev1.enterListeningMode();
+      dev2 = devs[1];
+      await dev2.open();
+      await dev2.enterListeningMode();
+    });
   });
 
   after(async () => {
-    await dev1.leaveMeshNetwork();
-    await dev1.close();
-    await dev2.leaveMeshNetwork();
-    await dev2.close();
+    if (dev1) {
+      await dev1.leaveMeshNetwork();
+      await dev1.close();
+    }
+    if (dev2) {
+      await dev2.leaveMeshNetwork();
+      await dev2.close();
+    }
   });
 
   describe('MeshDevice', () => {
@@ -163,6 +168,44 @@ describe.skip('mesh-device', function() {
         await dev1.stopCommissioner(); // Device 1
       });
     });
+
+    describe('getNetworkDiagnostics()', () => {
+      it('gets diagnostic info about the current mesh network from one of the nodes', async () => {
+        const diag = await dev1.getNetworkDiagnostics({
+          queryChildren: true,
+          resolveDeviceId: true,
+          diagnosticTypes: [
+            'MAC_EXTENDED_ADDRESS',
+            'RLOC',
+            'MAC_ADDRESS',
+            'MODE',
+            'TIMEOUT',
+            'CONNECTIVITY',
+            'ROUTE64',
+            'LEADER_DATA',
+            'NETWORK_DATA',
+            'IPV6_ADDRESS_LIST',
+            'MAC_COUNTERS',
+            'BATTERY_LEVEL',
+            'SUPPLY_VOLTAGE',
+            'CHILD_TABLE',
+            'CHANNEL_PAGES',
+            'MAX_CHILD_TIMEOUT'
+          ]
+        });
+        expect(diag).to.be.an('object');
+        expect(diag).to.have.key('nodes');
+        expect(diag.nodes).to.be.an('array');
+        expect(diag.nodes).to.have.lengthOf(2);
+        diag.nodes.forEach(node => {
+            expect(node).to.have.property('rloc');
+        });
+        expect(diag.nodes).to.containSubset([
+          { deviceId: Buffer.from(dev1.id, 'hex') },
+          { deviceId: Buffer.from(dev2.id, 'hex') },
+        ]);
+      });
+    })
 
     describe('leaveMeshNetwork()', () => {
       it('erases the network credentials', async () => {

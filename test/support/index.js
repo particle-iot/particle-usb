@@ -9,8 +9,6 @@ import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import 'mocha-sinon';
 
-import * as util from 'util';
-
 chai.use(chaiAsPromised);
 chai.use(sinonChai);
 chai.use(chaiSubset);
@@ -33,14 +31,21 @@ class Logger {
   }
 }
 
+function optionalTest(test, check) {
+  if (!process.env.RUN_OPTIONAL_TESTS) {
+    console.log(`    This test is skipped by default, define RUN_OPTIONAL_TESTS to run it`);
+    // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
+    test.test.parent.pending = true;
+    test.skip();
+  } else if (check) {
+    return check();
+  }
+}
+
 function nextTick() {
   return new Promise(resolve => {
     setImmediate(resolve);
   });
-}
-
-function dump(val) {
-  console.log(util.inspect(val, { depth: null }));
 }
 
 config({
@@ -56,5 +61,5 @@ export {
   expect,
   assert,
   nextTick,
-  dump
+  optionalTest
 };
