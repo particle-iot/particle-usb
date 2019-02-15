@@ -88,10 +88,6 @@ export class UsbDevice {
     }
   }
 
-  get isOpen() {
-    return this._dev.opened;
-  }
-
   get vendorId() {
     return this._dev.vendorId;
   }
@@ -102,6 +98,10 @@ export class UsbDevice {
 
   get serialNumber() {
     return this._dev.serialNumber;
+  }
+
+  get isOpen() {
+    return this._dev.opened;
   }
 }
 

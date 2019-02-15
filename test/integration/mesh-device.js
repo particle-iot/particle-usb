@@ -1,7 +1,7 @@
-import { getDevices } from '../src/particle-usb';
-import { RequestError } from '../src/error';
+import { getDevices } from '../../src/particle-usb';
+import { RequestError } from '../../src/error';
 
-import { expect, optionalTest } from './support';
+import { expect, optionalTest } from '../support';
 
 const NETWORK_ID = '000000000000000000000000'; // Dummy network ID
 const NETWORK_NAME = 'TestNetwork'; // Test network name

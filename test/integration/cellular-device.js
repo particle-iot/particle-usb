@@ -1,6 +1,6 @@
-import { getDevices } from '../src/particle-usb';
+import { getDevices } from '../../src/particle-usb';
 
-import { expect, optionalTest } from './support';
+import { expect, optionalTest } from '../support';
 
 describe('cellular-device', function() {
   // Cellular device operations may take a while
@@ -9,7 +9,7 @@ describe('cellular-device', function() {
 
   let dev = null;
 
-  before(() => {
+  before(function() {
     return optionalTest(this, async () => {
       let devs = await getDevices();
       devs = devs.filter(dev => dev.isCellularDevice);

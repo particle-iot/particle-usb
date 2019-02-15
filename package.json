@@ -27,7 +27,7 @@
     "compile-proto": "mkdir -p lib && pbjs proto/control/*.proto -t static-module -o lib/pb-message.js --no-beautify --no-comments --no-delimited --no-convert --no-verify",
     "compile-babel": "babel src -s -d lib",
     "docs": "documentation build src/** -g -f md -o docs/reference.md",
-    "test": "mocha -r babel-register -r babel-polyfill",
+    "test": "mocha -r babel-register -r babel-polyfill test test/integration",
     "web": "webpack-cli"
   },
   "dependencies": {

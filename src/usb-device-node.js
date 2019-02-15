@@ -16,11 +16,16 @@ export class UsbDevice {
   constructor(dev) {
     this._dev = dev;
     this._dev.timeout = 5000; // Use longer timeout for control transfers
-    // There's no way to check if a device is open, so we're storing the state in an additional
-    // property of the node-usb device object
-    this._dev.particle = { isOpen: false };
-    this._serialNum = null;
     this._log = globalOptions.log;
+    // node-usb doesn't provide a way to check if a device is open, so we're storing the state in
+    // an additional property of the node-usb device object. Device objects are cached, so this
+    // property persists between calls to getDeviceList()
+    if (!this._dev.particle) {
+      this._dev.particle = {
+        isOpen: false,
+        serialNumber: null
+      };
+    }
   }
 
   open() {
@@ -42,7 +47,7 @@ export class UsbDevice {
           }
           return reject(new UsbError(err, 'Unable to get serial number descriptor'));
         }
-        this._serialNum = serialNum;
+        this._dev.particle.serialNumber = serialNum;
         this._dev.particle.isOpen = true;
         resolve();
       });
@@ -83,10 +88,6 @@ export class UsbDevice {
     });
   }
 
-  get isOpen() {
-    return this._dev.particleUsb.isOpen;
-  }
-
   get vendorId() {
     return this._dev.deviceDescriptor.idVendor;
   }
@@ -96,7 +97,11 @@ export class UsbDevice {
   }
 
   get serialNumber() {
-    return this._serialNum;
+    return this._dev.particle.serialNumber;
+  }
+
+  get isOpen() {
+    return this._dev.particle.isOpen;
   }
 }
 
@@ -145,12 +150,12 @@ export async function getUsbDevices(filters) {
               try {
                 await dev.open();
               } catch (e) {
-                log.error(`Unable to open device: ${e.message}`);
+                log.trace(`Unable to open device: ${e.message}`);
                 break;
               }
             }
             serialNum = dev.serialNumber.toLowerCase();
-            // Don't close the device if it was opened elsewhere. node-usb caches device objects
+            // Don't close the device if it was opened elsewhere
             if (!wasOpen) {
               try {
                 await dev.close();
