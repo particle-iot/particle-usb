@@ -103,18 +103,22 @@ export class UsbDevice {
 export async function getUsbDevices(filters) {
   const log = globalOptions.log;
   // Validate the filtering options
-  filters = !filters ? [] : filters.map(f => {
-    if (f.productId && !f.vendorId) {
-      throw new RangeError('Vendor ID is missing');
-    }
-    if (f.serialNumber) {
-      // Filtering by serial number works in a case-insensitive manner. This is not necessarily
-      // true for other backends
-      f = Object.assign({}, f);
-      f.serialNumber = f.serialNumber.toLowerCase();
-    }
-    return f;
-  });
+  if (filters) {
+    filters = filters.map(f => {
+      if (f.productId && !f.vendorId) {
+        throw new RangeError('Vendor ID is missing');
+      }
+      if (f.serialNumber) {
+        // Filtering by serial number works in a case-insensitive manner. This is not necessarily
+        // true for other backends
+        f = Object.assign({}, f);
+        f.serialNumber = f.serialNumber.toLowerCase();
+      }
+      return f;
+    });
+  } else {
+    filters = [];
+  }
   let devs = null;
   try {
     devs = usb.getDeviceList().map(dev => new UsbDevice(dev));
@@ -122,38 +126,49 @@ export async function getUsbDevices(filters) {
     throw new UsbError(err, 'Unable to enumerate USB devices');
   }
   if (filters.length > 0) {
-    devs = devs.filter(dev => filters.some(async f => {
-      if (f.vendorId && dev.vendorId != f.vendorId) {
-        return false;
-      }
-      if (f.productId && dev.productId != f.productId) {
-        return false;
-      }
-      if (f.serialNumber) {
-        // Open the device to query its serial number
-        const wasOpen = dev.isOpen;
-        if (!wasOpen) {
-          try {
-            await dev.open();
-          } catch (e) {
-            log.error(`Unable to open device: ${e.message}`);
-            return false;
+    // Filter the list of devices
+    const filtDevs = [];
+    for (let dev of devs) {
+      let serialNum = null
+      for (let f of filters) {
+        if (f.vendorId && dev.vendorId != f.vendorId) {
+          continue;
+        }
+        if (f.productId && dev.productId != f.productId) {
+          continue;
+        }
+        if (f.serialNumber) {
+          if (!serialNum) {
+            // Open the device and get its serial number
+            const wasOpen = dev.isOpen;
+            if (!wasOpen) {
+              try {
+                await dev.open();
+              } catch (e) {
+                log.error(`Unable to open device: ${e.message}`);
+                break;
+              }
+            }
+            serialNum = dev.serialNumber.toLowerCase();
+            // Don't close the device if it was opened elsewhere. node-usb caches device objects
+            if (!wasOpen) {
+              try {
+                await dev.close();
+              } catch (e) {
+                log.error(`Unable to close device: ${e.message}`);
+                break;
+              }
+            }
+          }
+          if (serialNum != f.serialNumber) {
+            continue;
           }
         }
-        const match = (dev.serialNumber.toLowerCase() == f.serialNumber);
-        // Don't close the device if it was opened elsewhere. node-usb caches device objects
-        if (!wasOpen) {
-          try {
-            await dev.close();
-          } catch (e) {
-            log.error(`Unable to close device: ${e.message}`);
-            return false;
-          }
-        }
-        return match;
+        filtDevs.push(dev);
+        break;
       }
-      return true;
-    }));
+    }
+    devs = filtDevs;
   }
   return devs;
 }
