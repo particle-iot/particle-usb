@@ -7,21 +7,30 @@ import { globalOptions } from './config';
 import EventEmitter from 'events';
 
 // Device descriptions arranged by vendor/product IDs
-const USB_DEVICES = Object.entries(DEVICES).reduce((obj, dev) => {
-  const type = dev[0]; // Device type
-  dev = Object.assign({}, dev[1]); // Device info
-  const usb = dev.usb;
-  delete dev.usb;
-  if (!(usb.vendorId in obj)) {
-    obj[usb.vendorId] = {};
+const DEVICE_INFO = DEVICES.reduce((obj, dev) => {
+  dev = Object.assign({}, dev);
+  const ids = dev.usbIds;
+  delete dev.usbIds;
+  const dfuIds = dev.dfuUsbIds;
+  delete dev.dfuUsbIds;
+  if (!(ids.vendorId in obj)) {
+    obj[ids.vendorId] = {};
   }
-  obj[usb.vendorId][usb.productId] = Object.assign({ type: type, dfu: false }, dev);
-  if (!(usb.dfu.vendorId in obj)) {
-    obj[usb.dfu.vendorId] = {};
+  obj[ids.vendorId][ids.productId] = Object.assign({ dfu: false }, dev);
+  if (!(dfuIds.vendorId in obj)) {
+    obj[dfuIds.vendorId] = {};
   }
-  obj[usb.dfu.vendorId][usb.dfu.productId] = Object.assign({ type: type, dfu: true }, dev);
+  obj[dfuIds.vendorId][dfuIds.productId] = Object.assign({ dfu: true }, dev);
   return obj;
 }, {});
+
+function deviceInfoForUsbIds(vendorId, productId) {
+  let info = DEVICE_INFO[vendorId];
+  if (info) {
+    info = info[productId];
+  }
+  return info;
+}
 
 // Default backoff intervals for the CHECK service request
 const DEFAULT_CHECK_INTERVALS = [50, 50, 100, 100, 250, 250, 500, 500, 1000];
@@ -184,14 +193,14 @@ export class DeviceBase extends EventEmitter {
         throw new StateError('Device is being closed');
       }
       if (type < 0 || type > proto.MAX_REQUEST_TYPE) {
-        throw new DeviceError('Invalid request type');
+        throw new RangeError('Invalid request type');
       }
       const dataIsStr = (typeof data == 'string');
       if (dataIsStr) {
         data = Buffer.from(data);
       }
       if (data && data.length > proto.MAX_PAYLOAD_SIZE) {
-        throw new DeviceError('Request data is too large');
+        throw new RangeError('Request data is too large');
       }
       const req = {
         id: ++this._lastReqId, // Internal request ID
@@ -249,6 +258,13 @@ export class DeviceBase extends EventEmitter {
    */
   get type() {
     return this._info.type;
+  }
+
+  /**
+   * Platform ID.
+   */
+  get platformId() {
+    return this._info.platformId;
   }
 
   /**
@@ -646,25 +662,26 @@ export class DeviceBase extends EventEmitter {
  * Enumerate Particle USB devices connected to the host.
  *
  * @param {Object} options Options.
+ * @param {Array<String>} options.types Device types.
+ * @param {Boolean} options.includeDfu `true` to include devices in DFU mode.
  * @return {Promise}
  */
-export function getDevices(options) {
-  options = Object.assign({
-    types: [], // Include devices of any type
-    includeDfu: true // Include devices in the DFU mode
-  }, options);
-  return getUsbDevices().then(usbDevs => {
-    const devs = []; // Particle devices
-    for (let usbDev of usbDevs) {
-      let info = USB_DEVICES[usbDev.vendorId];
-      if (info) {
-        info = info[usbDev.productId];
-        if (info && (!info.dfu || options.includeDfu) && (!options.types.length || options.types.includes(info.type))) {
-          devs.push(new DeviceBase(usbDev, info));
-        }
+export async function getDevices({ types = [], includeDfu = true } = {}) {
+  types = types.map(type => type.toLowerCase());
+  const filters = [];
+  DEVICES.forEach(dev => {
+    if (types.length == 0 || types.includes(dev.type.toLowerCase())) {
+      filters.push(dev.usbIds);
+      if (includeDfu) {
+        filters.push(dev.dfuUsbIds);
       }
     }
-    return devs;
+  });
+  const devs = await getUsbDevices(filters);
+  return devs.map(dev => {
+    const info = deviceInfoForUsbIds(dev.vendorId, dev.productId);
+    assert(info);
+    return new DeviceBase(dev, info);
   });
 }
 
@@ -675,35 +692,22 @@ export function getDevices(options) {
  * @param {Object} options Options.
  * @return {Promise}
  */
-export function openDeviceById(id, options) {
-  id = id.toLowerCase();
-  // Get all Particle devices
-  return getDevices().then(devs => {
-    // Open each device and check its ID
-    const p = devs.map(dev => {
-      return dev.open(options).then(() => {
-        if (dev.id != id) {
-          return dev.close();
-        }
-        return dev;
-      }).catch(ignore); // Ignore error
-    });
-    return Promise.all(p);
-  }).then(devs => {
-    devs = devs.filter(dev => !!dev);
-    if (devs.length == 0) {
-      throw new NotFoundError('Device is not found');
-    }
-    const dev = devs.shift();
-    if (devs.length != 0) {
-      globalOptions.log.warn(`Found multiple devices with the same ID: ${id}`); // lol
-      const p = devs.map(dev => {
-        return dev.close().catch(ignore); // Ignore error
-      });
-      return Promise.all(p).then(() => {
-        return dev;
-      });
-    }
-    return dev;
-  });
+export async function openDeviceById(id, options) {
+  const log = globalOptions.log;
+  const devs = await getUsbDevices([{ serialNumber: id }]);
+  if (devs.length == 0) {
+    throw new NotFoundError('Device is not found');
+  }
+  if (devs.length != 1) {
+    log.warn(`Found multiple devices with the same ID: ${id}`); // lol
+  }
+  let dev = devs[0];
+  // Make sure it's a Particle device
+  const info = deviceInfoForUsbIds(dev.vendorId, dev.productId);
+  if (!info) {
+    throw new NotFoundError('Device is not found');
+  }
+  dev = new DeviceBase(dev, info);
+  await dev.open(options);
+  return dev;
 }

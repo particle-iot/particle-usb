@@ -1,4 +1,5 @@
 import { UsbError } from './error';
+import { globalOptions } from './config';
 
 let usb = null;
 
@@ -15,7 +16,16 @@ export class UsbDevice {
   constructor(dev) {
     this._dev = dev;
     this._dev.timeout = 5000; // Use longer timeout for control transfers
-    this._serialNum = null;
+    this._log = globalOptions.log;
+    // node-usb doesn't provide a way to check if a device is open, so we're storing the state in
+    // an additional property of the node-usb device object. Device objects are cached, so this
+    // property persists between calls to getDeviceList()
+    if (!this._dev.particle) {
+      this._dev.particle = {
+        isOpen: false,
+        serialNumber: null
+      };
+    }
   }
 
   open() {
@@ -32,11 +42,13 @@ export class UsbDevice {
           try {
             this._dev.close();
           } catch (err) {
+            this._log.error(`Unable to close device: ${err.message}`);
             // Ignore error
           }
           return reject(new UsbError(err, 'Unable to get serial number descriptor'));
         }
-        this._serialNum = serialNum;
+        this._dev.particle.serialNumber = serialNum;
+        this._dev.particle.isOpen = true;
         resolve();
       });
     });
@@ -46,6 +58,7 @@ export class UsbDevice {
     return new Promise((resolve, reject) => {
       try {
         this._dev.close();
+        this._dev.particle.isOpen = false;
       } catch (err) {
         return reject(new UsbError(err, 'Unable to close USB device'));
       }
@@ -84,19 +97,83 @@ export class UsbDevice {
   }
 
   get serialNumber() {
-    return this._serialNum;
+    return this._dev.particle.serialNumber;
+  }
+
+  get isOpen() {
+    return this._dev.particle.isOpen;
   }
 }
 
-export function getUsbDevices() {
-  return new Promise((resolve, reject) => {
-    let devs = null;
-    try {
-      devs = usb.getDeviceList();
-    } catch (err) {
-      return reject(new UsbError(err, 'Unable to enumerate USB devices'));
+export async function getUsbDevices(filters) {
+  const log = globalOptions.log;
+  // Validate the filtering options
+  if (filters) {
+    filters = filters.map(f => {
+      if (f.productId && !f.vendorId) {
+        throw new RangeError('Vendor ID is missing');
+      }
+      if (f.serialNumber) {
+        // Filtering by serial number works in a case-insensitive manner. This is not necessarily
+        // true for other backends
+        f = Object.assign({}, f);
+        f.serialNumber = f.serialNumber.toLowerCase();
+      }
+      return f;
+    });
+  } else {
+    filters = [];
+  }
+  let devs = null;
+  try {
+    devs = usb.getDeviceList().map(dev => new UsbDevice(dev));
+  } catch (err) {
+    throw new UsbError(err, 'Unable to enumerate USB devices');
+  }
+  if (filters.length > 0) {
+    // Filter the list of devices
+    const filtDevs = [];
+    for (let dev of devs) {
+      let serialNum = null
+      for (let f of filters) {
+        if (f.vendorId && dev.vendorId != f.vendorId) {
+          continue;
+        }
+        if (f.productId && dev.productId != f.productId) {
+          continue;
+        }
+        if (f.serialNumber) {
+          if (!serialNum) {
+            // Open the device and get its serial number
+            const wasOpen = dev.isOpen;
+            if (!wasOpen) {
+              try {
+                await dev.open();
+              } catch (e) {
+                log.trace(`Unable to open device: ${e.message}`);
+                break;
+              }
+            }
+            serialNum = dev.serialNumber.toLowerCase();
+            // Don't close the device if it was opened elsewhere
+            if (!wasOpen) {
+              try {
+                await dev.close();
+              } catch (e) {
+                log.error(`Unable to close device: ${e.message}`);
+                break;
+              }
+            }
+          }
+          if (serialNum != f.serialNumber) {
+            continue;
+          }
+        }
+        filtDevs.push(dev);
+        break;
+      }
     }
-    devs = devs.map(dev => new UsbDevice(dev));
-    resolve(devs);
-  });
+    devs = filtDevs;
+  }
+  return devs;
 }

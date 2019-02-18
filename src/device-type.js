@@ -12,86 +12,102 @@ export const DeviceType = {
   BORON: 'Boron'
 };
 
-// Descriptions of the devices supported by the library
-export const DEVICES = {
-  [DeviceType.CORE]: {
-    usb: {
+// Descriptions of all devices supported by the library
+export const DEVICES = [
+  {
+    type: DeviceType.CORE,
+    platformId: 0,
+    usbIds: {
       vendorId: 0x1d50,
       productId: 0x607d,
-      dfu: {
-        vendorId: 0x1d50,
-        productId: 0x607f
-      }
+    },
+    dfuUsbIds: {
+      vendorId: 0x1d50,
+      productId: 0x607f
     }
   },
-  [DeviceType.PHOTON]: {
-    usb: {
+  {
+    type: DeviceType.PHOTON,
+    platformId: 6,
+    usbIds: {
       vendorId: 0x2b04,
       productId: 0xc006,
-      dfu: {
-        vendorId: 0x2b04,
-        productId: 0xd006
-      }
+    },
+    dfuUsbIds: {
+      vendorId: 0x2b04,
+      productId: 0xd006
     }
   },
-  [DeviceType.P1]: {
-    usb: {
+  {
+    type: DeviceType.P1,
+    platformId: 8,
+    usbIds: {
       vendorId: 0x2b04,
       productId: 0xc008,
-      dfu: {
-        vendorId: 0x2b04,
-        productId: 0xd008
-      }
+    },
+    dfuUsbIds: {
+      vendorId: 0x2b04,
+      productId: 0xd008
     }
   },
-  [DeviceType.ELECTRON]: {
-    usb: {
+  {
+    type: DeviceType.ELECTRON,
+    platformId: 10,
+    usbIds: {
       vendorId: 0x2b04,
       productId: 0xc00a,
-      dfu: {
-        vendorId: 0x2b04,
-        productId: 0xd00a
-      }
-    }
-  },
-  [DeviceType.DUO]: {
-    usb: {
+    },
+    dfuUsbIds: {
       vendorId: 0x2b04,
-      productId: 0xc058,
-      dfu: {
-        vendorId: 0x2b04,
-        productId: 0xd058
-      }
+      productId: 0xd00a
     }
   },
-  [DeviceType.XENON]: {
-    usb: {
-      vendorId: 0x2b04,
-      productId: 0xc00e,
-      dfu: {
-        vendorId: 0x2b04,
-        productId: 0xd00e
-      }
-    }
-  },
-  [DeviceType.ARGON]: {
-    usb: {
+  {
+    type: DeviceType.ARGON,
+    platformId: 12,
+    usbIds: {
       vendorId: 0x2b04,
       productId: 0xc00c,
-      dfu: {
-        vendorId: 0x2b04,
-        productId: 0xd00c
-      }
+    },
+    dfuUsbIds: {
+      vendorId: 0x2b04,
+      productId: 0xd00c
     }
   },
-  [DeviceType.BORON]: {
-    usb: {
+  {
+    type: DeviceType.BORON,
+    platformId: 13,
+    usbIds: {
       vendorId: 0x2b04,
       productId: 0xc00d,
-      dfu: {
-        vendorId: 0x2b04,
-        productId: 0xd00d
-      }
+    },
+    dfuUsbIds: {
+      vendorId: 0x2b04,
+      productId: 0xd00d
+    }
+  },
+  {
+    type: DeviceType.XENON,
+    platformId: 14,
+    usbIds: {
+      vendorId: 0x2b04,
+      productId: 0xc00e,
+    },
+    dfuUsbIds: {
+      vendorId: 0x2b04,
+      productId: 0xd00e
+    }
+  },
+  {
+    type: DeviceType.DUO,
+    platformId: 88,
+    usbIds: {
+      vendorId: 0x2b04,
+      productId: 0xc058,
+    },
+    dfuUsbIds: {
+      vendorId: 0x2b04,
+      productId: 0xd058
     }
   }
-};
+];

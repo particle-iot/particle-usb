@@ -1,24 +1,23 @@
 import * as proto from '../../src/usb-protocol';
-import { DeviceType } from '../../src/device-type';
 import { ProtocolError, UsbError } from '../../src/error';
 
 const USB_DEVICES = [
-  { type: DeviceType.CORE, vendorId: 0x1d50, productId: 0x607d, dfu: false },
-  { type: DeviceType.CORE, vendorId: 0x1d50, productId: 0x607f, dfu: true },
-  { type: DeviceType.PHOTON, vendorId: 0x2b04, productId: 0xc006, dfu: false },
-  { type: DeviceType.PHOTON, vendorId: 0x2b04, productId: 0xd006, dfu: true },
-  { type: DeviceType.P1, vendorId: 0x2b04, productId: 0xc008, dfu: false },
-  { type: DeviceType.P1, vendorId: 0x2b04, productId: 0xd008, dfu: true },
-  { type: DeviceType.ELECTRON, vendorId: 0x2b04, productId: 0xc00a, dfu: false },
-  { type: DeviceType.ELECTRON, vendorId: 0x2b04, productId: 0xd00a, dfu: true },
-  { type: DeviceType.DUO, vendorId: 0x2b04, productId: 0xc058, dfu: false },
-  { type: DeviceType.DUO, vendorId: 0x2b04, productId: 0xd058, dfu: true },
-  { type: DeviceType.XENON, vendorId: 0x2b04, productId: 0xc00e, dfu: false },
-  { type: DeviceType.XENON, vendorId: 0x2b04, productId: 0xd00e, dfu: true },
-  { type: DeviceType.ARGON, vendorId: 0x2b04, productId: 0xc00c, dfu: false },
-  { type: DeviceType.ARGON, vendorId: 0x2b04, productId: 0xd00c, dfu: true },
-  { type: DeviceType.BORON, vendorId: 0x2b04, productId: 0xc00d, dfu: false },
-  { type: DeviceType.BORON, vendorId: 0x2b04, productId: 0xd00d, dfu: true }
+  { type: 'Core', platformId: 0, vendorId: 0x1d50, productId: 0x607d, dfu: false },
+  { type: 'Core', platformId: 0, vendorId: 0x1d50, productId: 0x607f, dfu: true },
+  { type: 'Photon', platformId: 6, vendorId: 0x2b04, productId: 0xc006, dfu: false },
+  { type: 'Photon', platformId: 6, vendorId: 0x2b04, productId: 0xd006, dfu: true },
+  { type: 'P1', platformId: 8, vendorId: 0x2b04, productId: 0xc008, dfu: false },
+  { type: 'P1', platformId: 8, vendorId: 0x2b04, productId: 0xd008, dfu: true },
+  { type: 'Electron', platformId: 10, vendorId: 0x2b04, productId: 0xc00a, dfu: false },
+  { type: 'Electron', platformId: 10, vendorId: 0x2b04, productId: 0xd00a, dfu: true },
+  { type: 'Argon', platformId: 12, vendorId: 0x2b04, productId: 0xc00c, dfu: false },
+  { type: 'Argon', platformId: 12, vendorId: 0x2b04, productId: 0xd00c, dfu: true },
+  { type: 'Boron', platformId: 13, vendorId: 0x2b04, productId: 0xc00d, dfu: false },
+  { type: 'Boron', platformId: 13, vendorId: 0x2b04, productId: 0xd00d, dfu: true },
+  { type: 'Xenon', platformId: 14, vendorId: 0x2b04, productId: 0xc00e, dfu: false },
+  { type: 'Xenon', platformId: 14, vendorId: 0x2b04, productId: 0xd00e, dfu: true },
+  { type: 'Duo', platformId: 88, vendorId: 0x2b04, productId: 0xc058, dfu: false },
+  { type: 'Duo', platformId: 88, vendorId: 0x2b04, productId: 0xd058, dfu: true }
 ];
 
 // Low-level vendor requests
@@ -338,8 +337,25 @@ export class Device {
   }
 }
 
-export async function getDevices() {
-  return Array.from(devices.values());
+export async function getDevices(filters) {
+  // Validate the filtering options
+  filters = !filters ? [] : filters.map(f => {
+    if (f.productId && !f.vendorId) {
+      throw new RangeError('Vendor ID is missing');
+    }
+    if (f.serialNumber) {
+      f = Object.assign({}, f);
+      f.serialNumber = f.serialNumber.toLowerCase();
+    }
+    return f;
+  });
+  let devs = Array.from(devices.values());
+  if (filters.length > 0) {
+    devs = devs.filter(dev => filters.some(f => ((!f.vendorId || dev.vendorId == f.vendorId) &&
+        (!f.productId || dev.productId == f.productId) &&
+        (!f.serialNumber || dev.serialNumber.toLowerCase() == f.serialNumber))));
+  }
+  return devs;
 }
 
 export function addDevice(options) {
@@ -353,7 +369,7 @@ export function addDevice(options) {
       // Generate ID for a Particle device
       options.id = String(devices.size).padStart(24, '0');
     }
-    // Particle devices expose the device ID via the serial number descriptor
+    // Particle devices expose their IDs via the serial number descriptor
     options.serialNumber = options.id;
   }
   const objId = ++lastDeviceId; // Internal object ID
@@ -371,42 +387,42 @@ export function addDevices(options) {
 }
 
 export function addCore(options) {
-  const opts = Object.assign({}, options, { type: DeviceType.CORE });
+  const opts = Object.assign({}, options, { type: 'Core' });
   return addDevice(opts);
 }
 
 export function addPhoton(options) {
-  const opts = Object.assign({}, options, { type: DeviceType.PHOTON });
+  const opts = Object.assign({}, options, { type: 'Photon' });
   return addDevice(opts);
 }
 
 export function addP1(options) {
-  const opts = Object.assign({}, options, { type: DeviceType.P1 });
+  const opts = Object.assign({}, options, { type: 'P1' });
   return addDevice(opts);
 }
 
 export function addElectron(options) {
-  const opts = Object.assign({}, options, { type: DeviceType.ELECTRON });
+  const opts = Object.assign({}, options, { type: 'Electron' });
   return addDevice(opts);
 }
 
 export function addDuo(options) {
-  const opts = Object.assign({}, options, { type: DeviceType.DUO });
+  const opts = Object.assign({}, options, { type: 'Duo' });
   return addDevice(opts);
 }
 
 export function addXenon(options) {
-  const opts = Object.assign({}, options, { type: DeviceType.XENON });
+  const opts = Object.assign({}, options, { type: 'Xenon' });
   return addDevice(opts);
 }
 
 export function addArgon(options) {
-  const opts = Object.assign({}, options, { type: DeviceType.ARGON });
+  const opts = Object.assign({}, options, { type: 'Argon' });
   return addDevice(opts);
 }
 
 export function addBoron(options) {
-  const opts = Object.assign({}, options, { type: DeviceType.BORON });
+  const opts = Object.assign({}, options, { type: 'Boron' });
   return addDevice(opts);
 }
 

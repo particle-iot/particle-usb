@@ -131,19 +131,7 @@ export class Device extends DeviceBase {
    * @return {Promise}
    */
   leaveListeningMode() {
-    return this.timeout(async (s) => {
-      await s.sendRequest(Request.STOP_LISTENING);
-      // Wait until the device leaves the listening mode
-      while (true) {
-        const r = await s.sendRequest(Request.GET_DEVICE_MODE, null, {
-          dontThrow: true // This request may not be supported by the device
-        });
-        if (r.result != Result.OK || r.mode != proto.DeviceMode.LISTENING_MODE) {
-          break;
-        }
-        await s.delay(500);
-      }
-    });
+    return this.sendRequest(Request.STOP_LISTENING);
   }
 
   /**

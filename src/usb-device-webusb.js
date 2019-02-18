@@ -99,30 +99,56 @@ export class UsbDevice {
   get serialNumber() {
     return this._dev.serialNumber;
   }
+
+  get isOpen() {
+    return this._dev.opened;
+  }
 }
 
-async function getDeviceList() {
+export async function getUsbDevices(filters) {
+  if (filters) {
+    // Validate filtering options
+    filters.forEach(f => {
+      if (f.productId && !f.vendorId) {
+        throw new RangeError('Vendor ID is missing');
+      }
+    });
+  } else {
+    filters = [];
+  }
   let devs = [];
   try {
+    // Fow now, always ask the user to grant access to the device, even if we already have a
+    // permission to access it. The permissions API for USB is not yet implemented in Chrome,
+    // and calling requestDevice() after getDevices() causes a SecurityError.
+    // TODO: Implement a separate API to request a permission from the user
+    let newDev = null;
+    try {
+      newDev = await navigator.usb.requestDevice({ filters });
+    } catch (e) {
+      // Ignore NotFoundError which means that the user has cancelled the request
+      if (e.name != 'NotFoundError') {
+        throw e;
+      }
+    }
+    // Get the list of known devices and filter them according to the provided options
     devs = await navigator.usb.getDevices();
+    if (filters.length > 0) {
+      devs = devs.filter(dev => filters.some(f => ((!f.vendorId || dev.vendorId == f.vendorId) &&
+          (!f.productId || dev.productId == f.productId) &&
+          (!f.serialNumber || dev.serialNumber == f.serialNumber))));
+    }
+    if (newDev) {
+      // Avoid listing the same device twice
+      const hasNewDev = devs.some(dev => dev.vendorId == newDev.vendorId && dev.productId == newDev.productId &&
+          dev.serialNumber == newDev.serialNumber);
+      if (!hasNewDev) {
+        devs.push(newDev);
+      }
+    }
   } catch (err) {
     throw new UsbError(err, 'Unable to enumerate USB devices');
   }
-  return devs;
-}
-
-export async function getUsbDevices() {
-  // Attempt to request permission to access device
-  let d = await navigator.usb.requestDevice({
-    filters: [{
-      vendorId: 0x2b04,
-      classCode: 0xff
-    }]
-  });
-
-  // Get device list
-  let devs = await getDeviceList();
-
   devs = devs.map(dev => new UsbDevice(dev));
   return devs;
 }
