@@ -1,21 +1,35 @@
 language: node_js
+
 node_js:
   - '6'
   - '8'
   - '10'
+  - '11'
+
 cache:
   directories:
     - node_modules
+
 sudo: false
-addons:
-  apt:
-    packages:
-      - libusb-dev
-      - libudev-dev
-install:
-  - npm install -g npm@5
-  - npm install
-  - npm prune
+
 script:
   - npm test
   - npm run web
+
+jobs:
+  include:
+  - stage: npm publish
+    script: skip
+    node_js: 10
+    if: tag =~ ^v\d+\.\d+\.\d+$
+    deploy:
+      provider: npm
+      api_key:
+        secure: Iofy7uOE7SInhaBi3tvWL5cvthHvdGx1zcuXZb/Q7OsU7h7JrkuQvPa7bsTXu8VsVOgzAdFfcIfrjAMZckO2EPKHuJVGxS3JP7uDFzWzNxRUARdNmlJ82It7Nm31l7FnBXnsKXm9Ux4fRTfVVpu/J2mTXLs3LNQow0hhlrIhk/Aj7wkS1eQYgq+p314OveqaF83m32e+j8U4Wh/P4Ud2JgPVdJ3JE3h6zbkPEWDuu/+vcqgQTEXTK+lwGP0BfT33LE6IDrWCiQofj1DMhbgrEVtksLBhUz9qSO0/WjDeJEO2L4b057o9wAQ1q9P+iIkrP69SxK8Nv9DpBew4oZShPG6okap39KlNeKyM4Edf2Afk580O1SoGk0qybLbcJ1gAxYUxjI/SmbtM46UGcJv1il6aQogCW+8GnkO4DhbC39UFarmTXaB5VJvpvPoSBZh4vy01LmY8/y60TcHUbsE4hbmlYcad/cxLRCmX8fSiBSqGmFaOaz+dMUxQ4UWmbB3eRn14NRyYqJ69REV63e4UYE+01pWtfoH+oMGw651CFgI8wzDP39yFMlgTU5eLudbL0METTu+wqim22DZHEbWMGgZLIcIV0qwOEYw41WqGAROH+BIArpsfZS9Fktgv/ALP8xa/fuf+bZShQv2f2cBwwiVJG60q8tsYaBsGWeYihwA=
+      email: engineering+npm@particle.io
+      skip_cleanup: true
+      on:
+        tags: true
+
+notifications:
+  email: false
