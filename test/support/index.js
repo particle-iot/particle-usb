@@ -31,9 +31,9 @@ class Logger {
   }
 }
 
-function optionalTest(test, check) {
-  if (!process.env.RUN_OPTIONAL_TESTS) {
-    console.log(`    This test is skipped by default, define RUN_OPTIONAL_TESTS to run it`);
+function integrationTest(test, check) {
+  if (!process.env.RUN_INTEGRATION_TESTS) {
+    console.log(`    This test is skipped by default, define RUN_INTEGRATION_TESTS to run it`);
     // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
     test.test.parent.pending = true;
     test.skip();
@@ -61,5 +61,5 @@ export {
   expect,
   assert,
   nextTick,
-  optionalTest
+  integrationTest
 };
