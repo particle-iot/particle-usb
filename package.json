@@ -33,7 +33,7 @@
   "dependencies": {
     "babel-runtime": "^6.26.0",
     "protobufjs": "^6.8.3",
-    "usb": "^1.2.0",
+    "usb": "https://github.com/particle-iot/node-usb/archive/particle-1.5.0.tar.gz",
     "verror": "^1.10.0"
   },
   "devDependencies": {
