@@ -21,7 +21,6 @@
   ],
   "scripts": {
     "prepublish": "git submodule update --init && npm run compile",
-    "preversion": "npm run prepublish && npm run test",
     "version": "npm run docs && git add docs",
     "compile": "npm run compile-proto && npm run compile-babel",
     "compile-proto": "mkdir -p lib && pbjs proto/control/*.proto -t static-module -o lib/pb-message.js --no-beautify --no-comments --no-delimited --no-convert --no-verify",
