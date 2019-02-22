@@ -1,7 +1,7 @@
 import { getDevices } from '../../src/particle-usb';
 import { RequestError } from '../../src/error';
 
-import { expect, optionalTest } from '../support';
+import { expect, integrationTest } from '../support';
 
 const NETWORK_ID = '000000000000000000000000'; // Dummy network ID
 const NETWORK_NAME = 'TestNetwork'; // Test network name
@@ -17,7 +17,7 @@ describe('mesh-device', function() {
   let dev2 = null;
 
   before(function() {
-    return optionalTest(this, async () => {
+    return integrationTest(this, async () => {
       let devs = await getDevices();
       devs = devs.filter(dev => dev.isMeshDevice);
       if (devs.length < 2) {

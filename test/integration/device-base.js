@@ -1,6 +1,6 @@
 import { getDevices, openDeviceById } from '../../src/particle-usb';
 
-import { expect, optionalTest } from '../support';
+import { expect, integrationTest } from '../support';
 
 describe('device-base', function() {
   // Mesh device operations may take a while
@@ -11,7 +11,7 @@ describe('device-base', function() {
   let devIds = [];
 
   before(function() {
-    return optionalTest(this, async () => {
+    return integrationTest(this, async () => {
       devs = await getDevices();
       if (devs.length < 2) {
         throw new Error('This test requires 2 devices connected to the host via USB');
