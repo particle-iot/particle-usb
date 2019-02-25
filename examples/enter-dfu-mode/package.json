@@ -1,0 +1,22 @@
+{
+  "name": "enter-dfu-mode",
+  "version": "1.0.0",
+  "description": "A simple example of putting a Particle device in DFU mode",
+  "main": "dfu.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/particle-iot/particle-usb.git"
+  },
+  "author": "James Hagerman (https://github.com/JamesHagerman)",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/particle-iot/particle-usb/issues"
+  },
+  "homepage": "https://github.com/particle-iot/particle-usb#readme",
+  "dependencies": {
+    "particle-usb": "^0.4.0"
+  }
+}
