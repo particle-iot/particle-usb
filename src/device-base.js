@@ -659,11 +659,11 @@ export class DeviceBase extends EventEmitter {
 }
 
 /**
- * Enumerate Particle USB devices connected to the host.
+ * Enumerate Particle devices attached to the host.
  *
  * @param {Object} options Options.
- * @param {Array<String>} options.types Device types.
- * @param {Boolean} options.includeDfu `true` to include devices in DFU mode.
+ * @param {Array<String>} [options.types] Device types.
+ * @param {Boolean} [options.includeDfu] `true` to include devices in DFU mode.
  * @return {Promise}
  */
 export async function getDevices({ types = [], includeDfu = true } = {}) {
@@ -689,12 +689,17 @@ export async function getDevices({ types = [], includeDfu = true } = {}) {
  * Open a device with the specified ID.
  *
  * @param {String} id Device ID.
- * @param {Object} options Options.
+ * @param {Object} [options] Options.
  * @return {Promise}
  */
-export async function openDeviceById(id, options) {
+export async function openDeviceById(id, options = null) {
   const log = globalOptions.log;
-  const devs = await getUsbDevices([{ serialNumber: id }]);
+  const filters = [];
+  DEVICES.forEach(dev => {
+    filters.push(Object.assign({ serialNumber: id }, dev.usbIds));
+    filters.push(Object.assign({ serialNumber: id }, dev.dfuUsbIds));
+  });
+  const devs = await getUsbDevices(filters);
   if (devs.length == 0) {
     throw new NotFoundError('Device is not found');
   }
@@ -702,11 +707,8 @@ export async function openDeviceById(id, options) {
     log.warn(`Found multiple devices with the same ID: ${id}`); // lol
   }
   let dev = devs[0];
-  // Make sure it's a Particle device
   const info = deviceInfoForUsbIds(dev.vendorId, dev.productId);
-  if (!info) {
-    throw new NotFoundError('Device is not found');
-  }
+  assert(info);
   dev = new DeviceBase(dev, info);
   await dev.open(options);
   return dev;

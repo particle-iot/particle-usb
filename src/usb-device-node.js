@@ -1,4 +1,4 @@
-import { UsbError } from './error';
+import { UsbError, NotAllowedError } from './error';
 import { globalOptions } from './config';
 
 let usb = null;
@@ -10,6 +10,13 @@ try {
   if (!process.env.TRAVIS) {
     throw err;
   }
+}
+
+function wrapUsbError(err, message) {
+  if (err.message == 'LIBUSB_ERROR_ACCESS') {
+    return new NotAllowedError(err, message);
+  }
+  return new UsbError(err, message);
 }
 
 export class UsbDevice {
@@ -33,7 +40,7 @@ export class UsbDevice {
       try {
         this._dev.open();
       } catch (err) {
-        return reject(new UsbError(err, 'Unable to open USB device'));
+        return reject(wrapUsbError(err, 'Unable to open USB device'));
       }
       // Get serial number string
       const descr = this._dev.deviceDescriptor;
@@ -45,7 +52,7 @@ export class UsbDevice {
             this._log.error(`Unable to close device: ${err.message}`);
             // Ignore error
           }
-          return reject(new UsbError(err, 'Unable to get serial number descriptor'));
+          return reject(wrapUsbError(err, 'Unable to get serial number descriptor'));
         }
         this._dev.particle.serialNumber = serialNum;
         this._dev.particle.isOpen = true;
@@ -60,7 +67,7 @@ export class UsbDevice {
         this._dev.close();
         this._dev.particle.isOpen = false;
       } catch (err) {
-        return reject(new UsbError(err, 'Unable to close USB device'));
+        return reject(wrapUsbError(err, 'Unable to close USB device'));
       }
       resolve();
     });
@@ -70,7 +77,7 @@ export class UsbDevice {
     return new Promise((resolve, reject) => {
       this._dev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, setup.wLength, (err, data) => {
         if (err) {
-          return reject(new UsbError(err, 'IN control transfer failed'));
+          return reject(wrapUsbError(err, 'IN control transfer failed'));
         }
         resolve(data);
       });
@@ -81,7 +88,7 @@ export class UsbDevice {
     return new Promise((resolve, reject) => {
       this._dev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, data, err => {
         if (err) {
-          return reject(new UsbError(err, 'OUT control transfer failed'));
+          return reject(wrapUsbError(err, 'OUT control transfer failed'));
         }
         resolve();
       });
@@ -128,7 +135,7 @@ export async function getUsbDevices(filters) {
   try {
     devs = usb.getDeviceList().map(dev => new UsbDevice(dev));
   } catch (err) {
-    throw new UsbError(err, 'Unable to enumerate USB devices');
+    throw wrapUsbError(err, 'Unable to enumerate USB devices');
   }
   if (filters.length > 0) {
     // Filter the list of devices
@@ -147,22 +154,12 @@ export async function getUsbDevices(filters) {
             // Open the device and get its serial number
             const wasOpen = dev.isOpen;
             if (!wasOpen) {
-              try {
-                await dev.open();
-              } catch (e) {
-                log.trace(`Unable to open device: ${e.message}`);
-                break;
-              }
+              await dev.open();
             }
             serialNum = dev.serialNumber.toLowerCase();
             // Don't close the device if it was opened elsewhere
             if (!wasOpen) {
-              try {
-                await dev.close();
-              } catch (e) {
-                log.error(`Unable to close device: ${e.message}`);
-                break;
-              }
+              await dev.close();
             }
           }
           if (serialNum != f.serialNumber) {
