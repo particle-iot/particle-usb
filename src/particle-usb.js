@@ -14,8 +14,8 @@ export { NetworkStatus } from './network-device';
 export { WifiAntenna, WifiSecurity, WifiCipher, EapMethod } from './wifi-device';
 export { ServerProtocol } from './cloud-device';
 export { Result } from './result';
-export { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, UsbError, InternalError,
-    RequestError } from './error';
+export { DeviceError, NotFoundError, NotAllowedError, StateError, TimeoutError, MemoryError, ProtocolError, UsbError,
+    InternalError, RequestError } from './error';
 export { config } from './config';
 
 export class Core extends DeviceBase {
