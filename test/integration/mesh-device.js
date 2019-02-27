@@ -33,11 +33,11 @@ describe('mesh-device', function() {
   });
 
   after(async () => {
-    if (dev1) {
+    if (dev1 && dev1.isOpen) {
       await dev1.leaveMeshNetwork();
       await dev1.close();
     }
-    if (dev2) {
+    if (dev2 && dev2.isOpen) {
       await dev2.leaveMeshNetwork();
       await dev2.close();
     }
