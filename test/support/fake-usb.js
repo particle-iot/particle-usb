@@ -16,8 +16,12 @@ const USB_DEVICES = [
   { type: 'Boron', platformId: 13, vendorId: 0x2b04, productId: 0xd00d, dfu: true },
   { type: 'Xenon', platformId: 14, vendorId: 0x2b04, productId: 0xc00e, dfu: false },
   { type: 'Xenon', platformId: 14, vendorId: 0x2b04, productId: 0xd00e, dfu: true },
-  { type: 'Duo', platformId: 88, vendorId: 0x2b04, productId: 0xc058, dfu: false },
-  { type: 'Duo', platformId: 88, vendorId: 0x2b04, productId: 0xd058, dfu: true }
+  { type: 'Argon-SoM', platformId: 22, vendorId: 0x2b04, productId: 0xc016, dfu: false },
+  { type: 'Argon-SoM', platformId: 22, vendorId: 0x2b04, productId: 0xd016, dfu: true },
+  { type: 'Boron-SoM', platformId: 23, vendorId: 0x2b04, productId: 0xc017, dfu: false },
+  { type: 'Boron-SoM', platformId: 23, vendorId: 0x2b04, productId: 0xd017, dfu: true },
+  { type: 'Xenon-SoM', platformId: 24, vendorId: 0x2b04, productId: 0xc018, dfu: false },
+  { type: 'Xenon-SoM', platformId: 24, vendorId: 0x2b04, productId: 0xd018, dfu: true }
 ];
 
 // Low-level vendor requests
@@ -406,8 +410,13 @@ export function addElectron(options) {
   return addDevice(opts);
 }
 
-export function addDuo(options) {
-  const opts = Object.assign({}, options, { type: 'Duo' });
+export function addArgon(options) {
+  const opts = Object.assign({}, options, { type: 'Argon' });
+  return addDevice(opts);
+}
+
+export function addBoron(options) {
+  const opts = Object.assign({}, options, { type: 'Boron' });
   return addDevice(opts);
 }
 
@@ -416,13 +425,18 @@ export function addXenon(options) {
   return addDevice(opts);
 }
 
-export function addArgon(options) {
-  const opts = Object.assign({}, options, { type: 'Argon' });
+export function addArgonSom(options) {
+  const opts = Object.assign({}, options, { type: 'Argon-SoM' });
   return addDevice(opts);
 }
 
-export function addBoron(options) {
-  const opts = Object.assign({}, options, { type: 'Boron' });
+export function addBoronSom(options) {
+  const opts = Object.assign({}, options, { type: 'Boron-SoM' });
+  return addDevice(opts);
+}
+
+export function addXenonSom(options) {
+  const opts = Object.assign({}, options, { type: 'Xenon-SoM' });
   return addDevice(opts);
 }
 

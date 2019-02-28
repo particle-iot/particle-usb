@@ -6,10 +6,12 @@ export const DeviceType = {
   PHOTON: 'Photon',
   P1: 'P1',
   ELECTRON: 'Electron',
-  DUO: 'Duo',
-  XENON: 'Xenon',
   ARGON: 'Argon',
-  BORON: 'Boron'
+  BORON: 'Boron',
+  XENON: 'Xenon',
+  ARGON_SOM: 'Argon-SoM',
+  BORON_SOM: 'Boron-SoM',
+  XENON_SOM: 'Xenon-SoM'
 };
 
 // Descriptions of all devices supported by the library
@@ -19,7 +21,7 @@ export const DEVICES = [
     platformId: 0,
     usbIds: {
       vendorId: 0x1d50,
-      productId: 0x607d,
+      productId: 0x607d
     },
     dfuUsbIds: {
       vendorId: 0x1d50,
@@ -31,7 +33,7 @@ export const DEVICES = [
     platformId: 6,
     usbIds: {
       vendorId: 0x2b04,
-      productId: 0xc006,
+      productId: 0xc006
     },
     dfuUsbIds: {
       vendorId: 0x2b04,
@@ -43,7 +45,7 @@ export const DEVICES = [
     platformId: 8,
     usbIds: {
       vendorId: 0x2b04,
-      productId: 0xc008,
+      productId: 0xc008
     },
     dfuUsbIds: {
       vendorId: 0x2b04,
@@ -55,7 +57,7 @@ export const DEVICES = [
     platformId: 10,
     usbIds: {
       vendorId: 0x2b04,
-      productId: 0xc00a,
+      productId: 0xc00a
     },
     dfuUsbIds: {
       vendorId: 0x2b04,
@@ -67,7 +69,7 @@ export const DEVICES = [
     platformId: 12,
     usbIds: {
       vendorId: 0x2b04,
-      productId: 0xc00c,
+      productId: 0xc00c
     },
     dfuUsbIds: {
       vendorId: 0x2b04,
@@ -79,7 +81,7 @@ export const DEVICES = [
     platformId: 13,
     usbIds: {
       vendorId: 0x2b04,
-      productId: 0xc00d,
+      productId: 0xc00d
     },
     dfuUsbIds: {
       vendorId: 0x2b04,
@@ -91,7 +93,7 @@ export const DEVICES = [
     platformId: 14,
     usbIds: {
       vendorId: 0x2b04,
-      productId: 0xc00e,
+      productId: 0xc00e
     },
     dfuUsbIds: {
       vendorId: 0x2b04,
@@ -99,15 +101,39 @@ export const DEVICES = [
     }
   },
   {
-    type: DeviceType.DUO,
-    platformId: 88,
+    type: DeviceType.ARGON_SOM,
+    platformId: 22,
     usbIds: {
       vendorId: 0x2b04,
-      productId: 0xc058,
+      productId: 0xc016
     },
     dfuUsbIds: {
       vendorId: 0x2b04,
-      productId: 0xd058
+      productId: 0xd016
+    }
+  },
+  {
+    type: DeviceType.BORON_SOM,
+    platformId: 23,
+    usbIds: {
+      vendorId: 0x2b04,
+      productId: 0xc017
+    },
+    dfuUsbIds: {
+      vendorId: 0x2b04,
+      productId: 0xd017
+    }
+  },
+  {
+    type: DeviceType.XENON_SOM,
+    platformId: 24,
+    usbIds: {
+      vendorId: 0x2b04,
+      productId: 0xc018
+    },
+    dfuUsbIds: {
+      vendorId: 0x2b04,
+      productId: 0xd018
     }
   }
 ];

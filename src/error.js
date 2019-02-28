@@ -11,7 +11,7 @@ export class DeviceError extends VError {
 }
 
 /**
- * Error reported when a requested entity cannot be found.
+ * An error reported when a requested resource cannot be found.
  */
 export class NotFoundError extends DeviceError {
   constructor(...args) {
@@ -21,7 +21,17 @@ export class NotFoundError extends DeviceError {
 }
 
 /**
- * Error reported when an object is not in an appropriate state to perform an operation.
+ * An error reported when a requested operation is not permitted.
+ */
+export class NotAllowedError extends DeviceError {
+  constructor(...args) {
+    super(...args);
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+/**
+ * An error reported when an object is not in an appropriate state to perform an operation.
  */
 export class StateError extends DeviceError {
   constructor(...args) {
@@ -41,7 +51,7 @@ export class TimeoutError extends DeviceError {
 }
 
 /**
- * Error reported when an endpoint device has no enough memory to perform an operation.
+ * An error reported when a device has no enough memory to perform an operation.
  */
 export class MemoryError extends DeviceError {
   constructor(...args) {
