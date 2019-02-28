@@ -30,16 +30,22 @@ export class P1 extends CloudDevice(WifiDevice(NetworkDevice(Device))) {
 export class Electron extends CloudDevice(CellularDevice(NetworkDevice(Device))) {
 }
 
-export class Duo extends CloudDevice(WifiDevice(NetworkDevice(Device))) {
+export class Argon extends CloudDevice(WifiDevice(MeshDevice(NetworkDevice(Device)))) {
+}
+
+export class Boron extends CloudDevice(CellularDevice(MeshDevice(NetworkDevice(Device)))) {
 }
 
 export class Xenon extends CloudDevice(MeshDevice(NetworkDevice(Device))) {
 }
 
-export class Argon extends CloudDevice(WifiDevice(MeshDevice(NetworkDevice(Device)))) {
+export class ArgonSom extends CloudDevice(WifiDevice(MeshDevice(NetworkDevice(Device)))) {
 }
 
-export class Boron extends CloudDevice(CellularDevice(MeshDevice(NetworkDevice(Device)))) {
+export class BoronSom extends CloudDevice(CellularDevice(MeshDevice(NetworkDevice(Device)))) {
+}
+
+export class XenonSom extends CloudDevice(MeshDevice(NetworkDevice(Device))) {
 }
 
 const DEVICE_PROTOTYPES = {
@@ -47,10 +53,12 @@ const DEVICE_PROTOTYPES = {
   [DeviceType.PHOTON]: Photon.prototype,
   [DeviceType.P1]: P1.prototype,
   [DeviceType.ELECTRON]: Electron.prototype,
-  [DeviceType.DUO]: Duo.prototype,
-  [DeviceType.XENON]: Xenon.prototype,
   [DeviceType.ARGON]: Argon.prototype,
   [DeviceType.BORON]: Boron.prototype,
+  [DeviceType.XENON]: Xenon.prototype,
+  [DeviceType.ARGON_SOM]: ArgonSom.prototype,
+  [DeviceType.BORON_SOM]: BoronSom.prototype,
+  [DeviceType.XENON_SOM]: XenonSom.prototype
 };
 
 function setDevicePrototype(dev) {

@@ -677,6 +677,9 @@ export async function getDevices({ types = [], includeDfu = true } = {}) {
       }
     }
   });
+  if (filters.length == 0) {
+    return [];
+  }
   const devs = await getUsbDevices(filters);
   return devs.map(dev => {
     const info = deviceInfoForUsbIds(dev.vendorId, dev.productId);
