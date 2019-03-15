@@ -19,6 +19,9 @@
     "Sergey Polyakov <sergeuz@gmail.com>",
     "Andrey Tolstoy <avtolstoy@gmail.com>"
   ],
+  "engines": {
+    "node": ">=6"
+  },
   "scripts": {
     "prepublish": "git submodule update --init && npm run compile",
     "version": "npm run docs && git add docs",
@@ -26,21 +29,22 @@
     "compile-proto": "pbjs proto/control/*.proto -t static-module -o lib/pb-message.js --no-beautify --no-comments --no-delimited --no-convert --no-verify",
     "compile-babel": "babel src -s -d lib",
     "docs": "documentation build src/** -g -f md -o docs/reference.md",
-    "test": "mocha -r babel-register -r babel-polyfill test test/integration",
+    "test": "mocha -r @babel/register -r @babel/polyfill test test/integration",
     "webpack": "webpack-cli"
   },
   "dependencies": {
-    "babel-runtime": "^6.26.0",
+    "@babel/runtime-corejs2": "^7.3.4",
     "protobufjs": "^6.8.3",
     "usb": "https://github.com/particle-iot/node-usb/archive/particle-1.5.0.tar.gz",
     "verror": "^1.10.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-polyfill": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
-    "babel-register": "^6.26.0",
+    "@babel/cli": "^7.2.3",
+    "@babel/core": "^7.3.4",
+    "@babel/plugin-transform-runtime": "^7.3.4",
+    "@babel/polyfill": "^7.2.5",
+    "@babel/preset-env": "^7.3.4",
+    "@babel/register": "^7.0.0",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
     "chai-subset": "^1.6.0",
