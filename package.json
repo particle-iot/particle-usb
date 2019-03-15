@@ -19,6 +19,9 @@
     "Sergey Polyakov <sergeuz@gmail.com>",
     "Andrey Tolstoy <avtolstoy@gmail.com>"
   ],
+  "engines": {
+    "node": ">=6"
+  },
   "scripts": {
     "prepublish": "git submodule update --init && npm run compile",
     "version": "npm run docs && git add docs",
