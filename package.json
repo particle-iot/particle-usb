@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@babel/runtime-corejs2": "^7.3.4",
-    "protobufjs": "^6.8.3",
+    "protobufjs": "^6.8.8",
     "usb": "https://github.com/particle-iot/node-usb/archive/particle-1.5.0.tar.gz",
     "verror": "^1.10.0"
   },
@@ -45,15 +45,15 @@
     "@babel/polyfill": "^7.2.5",
     "@babel/preset-env": "^7.3.4",
     "@babel/register": "^7.0.0",
-    "chai": "^4.1.2",
+    "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chai-subset": "^1.6.0",
-    "documentation": "^5.3.5",
-    "mocha": "^4.0.1",
-    "mocha-sinon": "^2.0.0",
-    "sinon": "^4.1.2",
-    "sinon-chai": "^2.14.0",
-    "webpack": "^4.29.1",
+    "documentation": "^9.3.1",
+    "mocha": "^6.0.2",
+    "mocha-sinon": "^2.1.0",
+    "sinon": "^7.2.7",
+    "sinon-chai": "^3.3.0",
+    "webpack": "^4.29.6",
     "webpack-cli": "^3.2.3"
   }
 }
