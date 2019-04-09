@@ -251,5 +251,21 @@ export const Request = {
     id: 1012,
     request: proto.mesh.GetNetworkDiagnosticsRequest,
     reply: proto.mesh.GetNetworkDiagnosticsReply
+  },
+  // Device diagnostics
+  ADD_LOG_HANDLER: {
+    id: 1100,
+    request: proto.diagnostics.AddLogHandlerRequest,
+    reply: proto.diagnostics.AddLogHandlerReply
+  },
+  REMOVE_LOG_HANDLER: {
+    id: 1101,
+    request: proto.diagnostics.RemoveLogHandlerRequest,
+    reply: proto.diagnostics.RemoveLogHandlerReply
+  },
+  GET_LOG_HANDLERS: {
+    id: 1102,
+    request: proto.diagnostics.GetLogHandlersRequest,
+    reply: proto.diagnostics.GetLogHandlersReply
   }
 };

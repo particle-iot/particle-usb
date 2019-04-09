@@ -25,6 +25,18 @@ export const DeviceMode = fromProtobufEnum(proto.DeviceMode, {
   LISTENING: 'LISTENING_MODE'
 });
 
+/**
+ * Logging levels.
+ */
+export const LogLevel = fromProtobufEnum(proto.diagnostics.LogLevel, {
+  ALL: 'ALL',
+  TRACE: 'TRACE',
+  INFO: 'INFO',
+  WARN: 'WARN',
+  ERROR: 'ERROR',
+  NONE: 'NONE'
+});
+
 // Helper class used by Device.timeout()
 class RequestSender {
   constructor(dev, timeout) {
@@ -363,6 +375,81 @@ export class Device extends DeviceBase {
       }
       return storage.eeprom.size;
     });
+  }
+
+  /**
+   * Add a log handler.
+   *
+   * @param {Object} options Options.
+   * @param {String} options.id Handler ID.
+   * @param {String} options.type Handler type: `Serial`, `Serial1`, `USBSerial1`, etc.
+   * @param {String} [options.level] Default logging level: `trace`, `info`, `warn`, `error`, `none`, `all`.
+   * @param {Array} [options.filters] Category filters.
+   * @param {Number} [options.baudRate] Baud rate.
+   * @return {Promise}
+   */
+  async addLogHandler({ id, type, level, filters, baudRate }) {
+    const req = {
+      id,
+      level: LogLevel.toProtobuf(level)
+    };
+    switch (type.toLowerCase()) {
+      case 'serial': {
+        req.type = proto.diagnostics.LogHandlerType.USB_SERIAL;
+        req.serial = {
+          index: 0
+        };
+        break;
+      }
+      case 'usbserial1': {
+        req.type = proto.diagnostics.LogHandlerType.USB_SERIAL;
+        req.serial = {
+          index: 1
+        };
+        break;
+      }
+      case 'serial1': {
+        req.type = proto.diagnostics.LogHandlerType.HW_SERIAL;
+        req.serial = {
+          index: 1,
+          baudRate
+        };
+        break;
+      }
+      default: {
+        throw new RangeError(`Unknown handler type: ${handlerType}`);
+      }
+    }
+    if (filters) {
+      req.filters = filters.map(f => ({
+        category: f.category,
+        level: LogLevel.toProtobuf(f.level)
+      }));
+    }
+    return this.sendRequest(Request.ADD_LOG_HANDLER, req);
+  }
+
+  /**
+   * Remove a log handler.
+   *
+   * @param {Object} options Options.
+   * @param {String} options.id Handler ID.
+   * @return {Promise}
+   */
+  async removeLogHandler({ id }) {
+    return this.sendRequest(Request.REMOVE_LOG_HANDLER, { id });
+  }
+
+  /**
+   * Get the list of active log handlers.
+   *
+   * @return {Promise<Object>}
+   */
+  async getLogHandlers() {
+    const rep = await this.sendRequest(Request.GET_LOG_HANDLERS);
+    return rep.handlers.map(h => ({
+      id: h.id
+    }));
   }
 
   // Sends a Protobuf-encoded request
