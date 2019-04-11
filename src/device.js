@@ -28,7 +28,7 @@ export const DeviceMode = fromProtobufEnum(proto.DeviceMode, {
 /**
  * Logging levels.
  */
-export const LogLevel = fromProtobufEnum(proto.diagnostics.LogLevel, {
+export const LogLevel = fromProtobufEnum(proto.logging.LogLevel, {
   ALL: 'ALL',
   TRACE: 'TRACE',
   INFO: 'INFO',
@@ -382,34 +382,51 @@ export class Device extends DeviceBase {
    *
    * @param {Object} options Options.
    * @param {String} options.id Handler ID.
-   * @param {String} options.type Handler type: `Serial`, `Serial1`, `USBSerial1`, etc.
+   * @param {String} options.stream Output stream: `Serial`, `Serial1`, `USBSerial1`, etc.
+   * @param {String} [options.format] Message format: `default`, `json`.
    * @param {String} [options.level] Default logging level: `trace`, `info`, `warn`, `error`, `none`, `all`.
    * @param {Array} [options.filters] Category filters.
    * @param {Number} [options.baudRate] Baud rate.
    * @return {Promise}
    */
-  async addLogHandler({ id, type, level, filters, baudRate }) {
+  async addLogHandler({ id, stream, format, level, filters, baudRate }) {
     const req = {
       id,
       level: LogLevel.toProtobuf(level)
     };
-    switch (type.toLowerCase()) {
+    switch ((format || 'default').toLowerCase()) {
+      case 'default': {
+        req.handlerType = proto.logging.LogHandlerType.DEFAULT_STREAM_HANDLER;
+        break;
+      }
+      case 'json': {
+        req.handlerType = proto.logging.LogHandlerType.JSON_STREAM_HANDLER;
+        break;
+      }
+      default: {
+        throw new RangeError(`Unknown message format: ${format}`);
+      }
+    }
+    if (!stream) {
+      throw new RangeError('Output stream is not specified');
+    }
+    switch (stream.toLowerCase()) {
       case 'serial': {
-        req.type = proto.diagnostics.LogHandlerType.USB_SERIAL;
+        req.streamType = proto.logging.StreamType.USB_SERIAL_STREAM;
         req.serial = {
           index: 0
         };
         break;
       }
       case 'usbserial1': {
-        req.type = proto.diagnostics.LogHandlerType.USB_SERIAL;
+        req.streamType = proto.logging.StreamType.USB_SERIAL_STREAM;
         req.serial = {
           index: 1
         };
         break;
       }
       case 'serial1': {
-        req.type = proto.diagnostics.LogHandlerType.HW_SERIAL;
+        req.streamType = proto.logging.StreamType.HW_SERIAL_STREAM;
         req.serial = {
           index: 1,
           baudRate
@@ -417,7 +434,7 @@ export class Device extends DeviceBase {
         break;
       }
       default: {
-        throw new RangeError(`Unknown handler type: ${handlerType}`);
+        throw new RangeError(`Unknown output stream: ${stream}`);
       }
     }
     if (filters) {
