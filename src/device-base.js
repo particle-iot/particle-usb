@@ -324,6 +324,20 @@ export class DeviceBase extends EventEmitter {
   }
 
   /**
+   * USB vendor ID.
+   */
+  get vendorId() {
+    return this._dev.vendorId;
+  }
+
+  /**
+   * USB product ID.
+   */
+  get productId() {
+    return this._dev.productId;
+  }
+
+  /**
    * Set to `true` if this device is in the DFU mode.
    */
   get isInDfuMode() {
