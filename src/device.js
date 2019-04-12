@@ -392,7 +392,7 @@ export class Device extends DeviceBase {
   async addLogHandler({ id, stream, format, level, filters, baudRate }) {
     const req = {
       id,
-      level: LogLevel.toProtobuf(level)
+      level: LogLevel.toProtobuf(level || 'all')
     };
     switch ((format || 'default').toLowerCase()) {
       case 'default': {
