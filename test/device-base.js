@@ -222,6 +222,18 @@ describe('device-base', () => {
         expect(dev.firmwareVersion).to.equal('1.0.0');
       });
 
+      it('filters out non-printable ASCII characters from the device ID string', async () => {
+        usbDev.options.serialNumber = '222222222222222222222222\x00'
+        await dev.open();
+        expect(dev.id).to.equal('222222222222222222222222');
+      });
+
+      it('converts the device ID string to lower case', async () => {
+        usbDev.options.serialNumber = 'AAAAAAAAAAAAAAAAAAAAAAAA'
+        await dev.open();
+        expect(dev.id).to.equal('aaaaaaaaaaaaaaaaaaaaaaaa');
+      });
+
       it('does not require the USB device to support the firmware version request', async () => {
         usbDev.options.firmwareVersion = null;
         await dev.open();

@@ -108,8 +108,8 @@ export class DeviceBase extends EventEmitter {
     this._log.trace('Opening device');
     this._state = DeviceState.OPENING;
     return this._dev.open().then(() => {
-      // Pre-0.7.0 firmwares report the device ID in upper case
-      this._id = this._dev.serialNumber.toLowerCase();
+      // Normalize the device ID string
+      this._id = this._dev.serialNumber.replace(/[^\x20-\x7e]/g, '').toLowerCase();
       this._log.trace(`Device ID: ${this._id}`);
       // Get firmware version
       return this._getFirmwareVersion().then(ver => {
