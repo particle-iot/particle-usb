@@ -25,6 +25,18 @@ export const DeviceMode = fromProtobufEnum(proto.DeviceMode, {
   LISTENING: 'LISTENING_MODE'
 });
 
+/**
+ * Logging levels.
+ */
+export const LogLevel = fromProtobufEnum(proto.logging.LogLevel, {
+  ALL: 'ALL',
+  TRACE: 'TRACE',
+  INFO: 'INFO',
+  WARN: 'WARN',
+  ERROR: 'ERROR',
+  NONE: 'NONE'
+});
+
 // Helper class used by Device.timeout()
 class RequestSender {
   constructor(dev, timeout) {
@@ -363,6 +375,98 @@ export class Device extends DeviceBase {
       }
       return storage.eeprom.size;
     });
+  }
+
+  /**
+   * Add a log handler.
+   *
+   * @param {Object} options Options.
+   * @param {String} options.id Handler ID.
+   * @param {String} options.stream Output stream: `Serial`, `Serial1`, `USBSerial1`, etc.
+   * @param {String} [options.format] Message format: `default`, `json`.
+   * @param {String} [options.level] Default logging level: `trace`, `info`, `warn`, `error`, `none`, `all`.
+   * @param {Array} [options.filters] Category filters.
+   * @param {Number} [options.baudRate] Baud rate.
+   * @return {Promise}
+   */
+  async addLogHandler({ id, stream, format, level, filters, baudRate }) {
+    const req = {
+      id,
+      level: LogLevel.toProtobuf(level || 'all')
+    };
+    switch ((format || 'default').toLowerCase()) {
+      case 'default': {
+        req.handlerType = proto.logging.LogHandlerType.DEFAULT_STREAM_HANDLER;
+        break;
+      }
+      case 'json': {
+        req.handlerType = proto.logging.LogHandlerType.JSON_STREAM_HANDLER;
+        break;
+      }
+      default: {
+        throw new RangeError(`Unknown message format: ${format}`);
+      }
+    }
+    if (!stream) {
+      throw new RangeError('Output stream is not specified');
+    }
+    switch (stream.toLowerCase()) {
+      case 'serial': {
+        req.streamType = proto.logging.StreamType.USB_SERIAL_STREAM;
+        req.serial = {
+          index: 0
+        };
+        break;
+      }
+      case 'usbserial1': {
+        req.streamType = proto.logging.StreamType.USB_SERIAL_STREAM;
+        req.serial = {
+          index: 1
+        };
+        break;
+      }
+      case 'serial1': {
+        req.streamType = proto.logging.StreamType.HW_SERIAL_STREAM;
+        req.serial = {
+          index: 1,
+          baudRate
+        };
+        break;
+      }
+      default: {
+        throw new RangeError(`Unknown output stream: ${stream}`);
+      }
+    }
+    if (filters) {
+      req.filters = filters.map(f => ({
+        category: f.category,
+        level: LogLevel.toProtobuf(f.level)
+      }));
+    }
+    return this.sendRequest(Request.ADD_LOG_HANDLER, req);
+  }
+
+  /**
+   * Remove a log handler.
+   *
+   * @param {Object} options Options.
+   * @param {String} options.id Handler ID.
+   * @return {Promise}
+   */
+  async removeLogHandler({ id }) {
+    return this.sendRequest(Request.REMOVE_LOG_HANDLER, { id });
+  }
+
+  /**
+   * Get the list of active log handlers.
+   *
+   * @return {Promise<Object>}
+   */
+  async getLogHandlers() {
+    const rep = await this.sendRequest(Request.GET_LOG_HANDLERS);
+    return rep.handlers.map(h => ({
+      id: h.id
+    }));
   }
 
   // Sends a Protobuf-encoded request

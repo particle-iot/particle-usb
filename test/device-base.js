@@ -59,9 +59,10 @@ describe('device-base', () => {
       usbDevs.push(fakeUsb.addArgonSom());
       usbDevs.push(fakeUsb.addBoronSom());
       // Enumerate detected devices
-      let devs = await getDevices();
+      const devs = await getDevices();
       expect(devs.map(dev => dev.usbDevice)).to.have.all.members(usbDevs);
-      // Validate device types and platform IDs
+      expect(devs.map(dev => dev.vendorId)).to.have.all.members(usbDevs.map(dev => dev.vendorId));
+      expect(devs.map(dev => dev.productId)).to.have.all.members(usbDevs.map(dev => dev.productId));
       expect(devs.map(dev => dev.type)).to.have.all.members(usbDevs.map(dev => dev.options.type));
       expect(devs.map(dev => dev.platformId)).to.have.all.members(usbDevs.map(dev => dev.options.platformId));
     });
@@ -79,9 +80,10 @@ describe('device-base', () => {
         fakeUsb.addBoronSom({ dfu: true }),
         fakeUsb.addXenonSom({ dfu: true })
       ];
-      let devs = await getDevices();
-      devs = devs.map(dev => dev.usbDevice);
-      expect(devs).to.have.all.members(usbDevs);
+      const devs = await getDevices();
+      expect(devs.map(dev => dev.usbDevice)).to.have.all.members(usbDevs);
+      expect(devs.map(dev => dev.vendorId)).to.have.all.members(usbDevs.map(dev => dev.vendorId));
+      expect(devs.map(dev => dev.productId)).to.have.all.members(usbDevs.map(dev => dev.productId));
     });
 
     it('can optionally exclude devices in the DFU mode', async () => {
