@@ -88,6 +88,30 @@ export class UsbDevice {
     }
   }
 
+  async claimInterface(intrface) {
+    try {
+      await this._dev.claimInterface(intrface);
+    } catch (err) {
+      throw new UsbError(err, 'Failed to claim interface');
+    }
+  }
+
+  async releaseInterface(intrface) {
+    try {
+      await this._dev.releaseInterface(intrface);
+    } catch (err) {
+      throw new UsbError(err, 'Failed to release interface');
+    }
+  }
+
+  async setAltSetting(intrface, setting) {
+    try {
+      await this._dev.selectAlternateInterface(intrface, setting);
+    } catch (err) {
+      throw new UsbError(err, 'Failed to set alt setting');
+    }
+  }
+
   get vendorId() {
     return this._dev.vendorId;
   }
