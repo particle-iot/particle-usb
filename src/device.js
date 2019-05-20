@@ -86,7 +86,11 @@ export class Device extends DeviceBase {
    * @return {Promise}
    */
   reset() {
-    return this.sendRequest(Request.RESET);
+    if (!this.isInDfuMode) {
+      return this.sendRequest(Request.RESET);
+    } else {
+      return super.reset();
+    }
   }
 
   /**
