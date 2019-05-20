@@ -1,7 +1,7 @@
 import { UsbError } from './error';
 
 function bmRequestTypeToString(type) {
-  type = (type >> 4) & 0x03;
+  type = (type >> 5) & 0x03;
   switch (type) {
     case 0: {
       return 'standard';
