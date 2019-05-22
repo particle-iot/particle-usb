@@ -95,6 +95,59 @@ export class UsbDevice {
     });
   }
 
+  claimInterface(intrface) {
+    return new Promise((resolve, reject) => {
+      try {
+        const iface = this._dev.interface(intrface);
+        if (!iface) {
+          return reject(new UsbError('Unknown interface'));
+        }
+        iface.claim();
+      } catch (err) {
+        return reject(wrapUsbError(err, 'Failed to claim interface'));
+      }
+      resolve();
+    });
+  }
+
+  releaseInterface(intrface) {
+    return new Promise((resolve, reject) => {
+      try {
+        const iface = this._dev.interface(intrface);
+        if (!iface) {
+          return reject(new UsbError('Unknown interface'));
+        }
+        iface.release(err => {
+          if (err) {
+            return reject(wrapUsbError(err, 'Failed to release interface'));
+          }
+          resolve();
+        });
+      } catch (err) {
+        return reject(wrapUsbError(err, 'Unknown interface'));
+      }
+    });
+  }
+
+  setAltSetting(intrface, setting) {
+    return new Promise((resolve, reject) => {
+      try {
+        const iface = this._dev.interface(intrface);
+        if (!iface) {
+          return reject(new UsbError('Unknown interface'));
+        }
+        iface.setAltSetting(setting, err => {
+          if (err) {
+            return reject(wrapUsbError(err, 'Failed to set alt setting'));
+          }
+          resolve();
+        });
+      } catch (err) {
+        return reject(wrapUsbError(err, 'Unknown interface'));
+      }
+    });
+  }
+
   get vendorId() {
     return this._dev.deviceDescriptor.idVendor;
   }

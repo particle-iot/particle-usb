@@ -3,6 +3,7 @@ import * as proto from './usb-protocol';
 import { DeviceType, DEVICES } from './device-type';
 import { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, assert } from './error';
 import { globalOptions } from './config';
+import { Dfu } from './dfu';
 
 import EventEmitter from 'events';
 
@@ -89,6 +90,7 @@ export class DeviceBase extends EventEmitter {
     this._busy = false; // Set to true if there's an activity on the USB connection
     this._fwVer = null; // Firmware version
     this._id = null; // Device ID
+    this._dfu = null; // DFU class implementation
   }
 
   /**
@@ -111,6 +113,7 @@ export class DeviceBase extends EventEmitter {
       // Normalize the device ID string
       this._id = this._dev.serialNumber.replace(/[^\x20-\x7e]/g, '').toLowerCase();
       this._log.trace(`Device ID: ${this._id}`);
+
       // Get firmware version
       return this._getFirmwareVersion().then(ver => {
         this._fwVer = ver;
@@ -121,6 +124,11 @@ export class DeviceBase extends EventEmitter {
           this._log.trace(`Unable to get firmware version: ${err.message}`);
         }
       });
+    }).then(() => {
+      if (this._info.dfu) {
+        this._dfu = new Dfu(this._dev, this._log);
+        return this._dfu.open(options);
+      }
     }).then(() => {
       this._log.trace('Device is open');
       this._maxActiveReqs = options.concurrentRequests;
@@ -230,6 +238,19 @@ export class DeviceBase extends EventEmitter {
       this._log.trace(`Request ${req.id}: Enqueued`);
       this._process();
     });
+  }
+
+  /**
+   * Perform the system reset.
+   * This function only works in DFU mode.
+   *
+   * @return {Promise}
+   */
+  async reset() {
+    if (this._dfu) {
+      return this._dfu.leave();
+    }
+    throw new StateError();
   }
 
   /**
@@ -575,8 +596,15 @@ export class DeviceBase extends EventEmitter {
       clearTimeout(this._closeTimer);
       this._closeTimer = null;
     }
+
+    let p = Promise.resolve();
+    if (this._dfu) {
+      p = p.then(() => this._dfu.close()).catch(err => {
+        this._log.warn(`Unable to close DFU interface: ${err.message}`);
+      });
+    }
     // Close USB device
-    return this._dev.close().catch(err => {
+    return p.then(() => this._dev.close()).catch(err => {
       this._log.warn(`Unable to close USB device: ${err.message}`);
     }).then(() => {
       // Reset device state

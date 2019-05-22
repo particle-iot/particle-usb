@@ -1,5 +1,6 @@
 import * as proto from '../../src/usb-protocol';
 import { ProtocolError, UsbError } from '../../src/error';
+import * as dfu from '../../src/dfu';
 
 const USB_DEVICES = [
   { type: 'Core', platformId: 0, vendorId: 0x1d50, productId: 0x607d, dfu: false },
@@ -259,6 +260,198 @@ export class Protocol {
   }
 }
 
+// Mockable minimal DFU implementation
+export class DfuClass {
+  constructor(options, dev) {
+    this._opts = options;
+    this._dev = dev;
+    this.reset();
+  }
+
+  reset() {
+    this._claimed = [];
+    // Start in some non-trivial state
+    this._state = {
+      status: dfu.DfuDeviceStatus.errUNKNOWN,
+      state: dfu.DfuDeviceState.dfuDNBUSY,
+      pollTimeout: 0
+    };
+  }
+
+  hostToDeviceRequest(setup, data) {
+    if (setup.bmRequestType !== dfu.DfuBmRequestType.HOST_TO_DEVICE) {
+      throw new UsbError('Unknown bmRequestType');
+    }
+
+    if (!(setup.wIndex in this._claimed)) {
+      throw new UsbError('Interface is not claimed');
+    }
+
+    switch (setup.bRequest) {
+      case dfu.DfuRequestType.DFU_DNLOAD: {
+        return this._dnload(setup, data);
+      }
+      case dfu.DfuRequestType.DFU_CLRSTATUS: {
+        return this._clearStatus(setup, data);
+      }
+
+      default: {
+        throw new UsbError('Unknown bRequest');
+      }
+    }
+  }
+
+  deviceToHostRequest(setup) {
+    // Implements DFU_GETSTATUS only
+    if (setup.bmRequestType !== dfu.DfuBmRequestType.DEVICE_TO_HOST) {
+      throw new UsbError('Unknown bmRequestType');
+    }
+
+    if (!(setup.wIndex in this._claimed)) {
+      throw new UsbError('Interface is not claimed');
+    }
+
+    switch (setup.bRequest) {
+      case dfu.DfuRequestType.DFU_GETSTATUS: {
+        return this._getStatus(setup);
+      }
+
+      default: {
+        throw new UsbError('Unknown bRequest');
+      }
+    }
+  }
+
+  claimInterface(iface) {
+    // Already claimed, ignore
+    if (iface in this._claimed) {
+      return;
+    }
+
+    this._claimed.push(iface);
+  }
+
+  releaseInterface(iface) {
+    if (!(iface in this._claimed)) {
+      throw new UsbError('Interface is not claimed');
+    }
+
+    this._claimed.splice(this._claimed.indexOf(iface), 1);
+  }
+
+  setAltSetting(iface, setting) {
+    // Noop for now
+  }
+
+  _getStatus(setup) {
+    if (setup.wValue !== 0) {
+      throw new UsbError('Unknown wValue for DFU_GETSTATUS');
+    }
+
+    if (setup.wLength < dfu.DFU_STATUS_SIZE) {
+      throw new UsbError('Invalid wLength for DFU_GETSTATUS');
+    }
+
+    switch (this._state.state) {
+      case dfu.DfuDeviceState.dfuMANIFEST_SYNC: {
+        this._setError(dfu.DfuDeviceStatus.OK);
+        this._setState(dfu.DfuDeviceState.dfuMANIFEST);
+        break;
+      }
+      case dfu.DfuDeviceState.dfuMANIFEST: {
+        this._setState(dfu.DfuDeviceState.dfuMANIFEST_WAIT_RESET);
+        break;
+      }
+    }
+
+    switch (this._state.state) {
+      /* Imitate fall-through from the previous switch-case */
+      case dfu.DfuDeviceState.dfuDNLOAD_SYNC:
+      case dfu.DfuDeviceState.dfuMANIFEST_SYNC:
+      case dfu.DfuDeviceState.dfuMANIFEST:
+
+      case dfu.DfuDeviceState.appIDLE:
+      case dfu.DfuDeviceState.appDETACH:
+      case dfu.DfuDeviceState.dfuIDLE:
+      case dfu.DfuDeviceState.dfuDNLOAD_IDLE:
+      case dfu.DfuDeviceState.dfuUPLOAD_IDLE:
+      case dfu.DfuDeviceState.dfuERROR: {
+        // Generate DFU_GETSTATUS response
+        const response = new Buffer(dfu.DFU_STATUS_SIZE);
+        response.writeUInt32LE(this._state.pollTimeout, 0);
+        response.writeUInt8(this._state.status, 0);
+
+        if (this._state.state !== dfu.DfuDeviceState.dfuMANIFEST || !this._opts.buggyDfu) {
+          response.writeUInt8(this._state.state, 4);
+        } else {
+          // Gen2 devices in order to please dfu-util report dfuDNLOAD_IDLE :|
+          response.writeUInt8(dfu.DfuDeviceState.dfuDNLOAD_IDLE, 4);
+        }
+
+        if (this._state.state === dfu.DfuDeviceState.dfuMANIFEST) {
+          // Immediately detach
+          this._dev.detach();
+        }
+
+        return response;
+      }
+
+      default: {
+        /* Transition not defined */
+        this._setError(dfu.DfuDeviceStatus.errUNKNOWN);
+        throw new UsbError('Invalid state (endpoint stalled)');
+      }
+    }
+  }
+
+  _clearStatus(setup, data) {
+    if (data && data.length > 0) {
+      throw new UsbError('Invalid request');
+    }
+
+    if (this._state.state === dfu.DfuDeviceState.dfuERROR) {
+      // Clear error
+      this._setState(dfu.DfuDeviceState.dfuIDLE);
+      this._setError(dfu.DfuDeviceStatus.OK);
+    } else {
+      this._setError(dfu.DfuDeviceStatus.errUNKNOWN);
+      throw new UsbError('Invalid state (endpoint stalled)');
+    }
+  }
+
+  _dnload(setup, data) {
+    // Handle only leave request
+    if (data && data.length > 0) {
+      throw new UsbError('Unsupport DFU_DNLOAD request');
+    }
+
+    switch (this._state.state) {
+      case dfu.DfuDeviceState.dfuIDLE:
+      case dfu.DfuDeviceState.dfuDNLOAD_IDLE: {
+        // Go into dfuMANIFEST_SYNC state
+        this._setState(dfu.DfuDeviceState.dfuMANIFEST_SYNC);
+        break;
+      }
+
+      default: {
+        this._setError(dfu.DfuDeviceStatus.errUNKNOWN);
+        throw new UsbError('Invalid state (endpoint stalled)');
+      }
+    }
+  }
+
+  _setState(state) {
+    this._state.state = state;
+  }
+
+  _setError(err) {
+    this._state.status = err;
+    if (err !== dfu.DfuDeviceStatus.OK) {
+      this._state.state = dfu.DfuDeviceState.dfuERROR;
+    }
+  }
+};
+
 // Class implementing a fake USB device
 export class Device {
   constructor(id, options) {
@@ -267,6 +460,9 @@ export class Device {
     this._proto = new Protocol(options); // Protocol implementation
     this._open = false; // Set to true if the device is open
     this._attached = true; // Set to true if the device is "attached" to the host
+    if (options.dfu) {
+      this._dfu = new DfuClass(options, this);
+    }
   }
 
   async open() {
@@ -284,6 +480,9 @@ export class Device {
       throw new UsbError('Device is not found');
     }
     this._proto.reset();
+    if (this._opts.dfu) {
+      this._dfu.reset();
+    }
     this._open = false;
   }
 
@@ -294,7 +493,11 @@ export class Device {
     if (!this._open) {
       throw new UsbError('Device is not open');
     }
-    return this._proto.deviceToHostRequest(setup);
+    if (!this.options.dfu) {
+      return this._proto.deviceToHostRequest(setup);
+    } else {
+      return this._dfu.deviceToHostRequest(setup);
+    }
   }
 
   async transferOut(setup, data) {
@@ -304,11 +507,63 @@ export class Device {
     if (!this._open) {
       throw new UsbError('Device is not open');
     }
-    this._proto.hostToDeviceRequest(setup, data);
+    if (!this.options.dfu) {
+      this._proto.hostToDeviceRequest(setup, data);
+    } else {
+      return this._dfu.hostToDeviceRequest(setup, data);
+    }
+  }
+
+  async claimInterface(iface) {
+    if (!this._attached) {
+      throw new UsbError('Device is not found');
+    }
+    if (!this._open) {
+      throw new UsbError('Device is not open');
+    }
+
+    if (!this.options.dfu) {
+      throw new UsbError('Unsupported command');
+    }
+
+    return this._dfu.claimInterface(iface);
+  }
+
+  async releaseInterface(iface) {
+    if (!this._attached) {
+      throw new UsbError('Device is not found');
+    }
+    if (!this._open) {
+      throw new UsbError('Device is not open');
+    }
+
+    if (!this.options.dfu) {
+      throw new UsbError('Unsupported command');
+    }
+
+    return this._dfu.releaseInterface(iface);
+  }
+
+  async setAltSetting(iface, setting) {
+    if (!this._attached) {
+      throw new UsbError('Device is not found');
+    }
+    if (!this._open) {
+      throw new UsbError('Device is not open');
+    }
+
+    if (!this.options.dfu) {
+      throw new UsbError('Unsupported command');
+    }
+
+    return this._dfu.setAltSetting(iface, setting);
   }
 
   detach() {
     this._proto.reset();
+    if (this._dfu) {
+      this._dfu.reset();
+    }
     this._attached = false;
   }
 
@@ -391,22 +646,22 @@ export function addDevices(options) {
 }
 
 export function addCore(options) {
-  const opts = Object.assign({}, options, { type: 'Core' });
+  const opts = Object.assign({}, options, { type: 'Core', buggyDfu: true });
   return addDevice(opts);
 }
 
 export function addPhoton(options) {
-  const opts = Object.assign({}, options, { type: 'Photon' });
+  const opts = Object.assign({}, options, { type: 'Photon', buggyDfu: true });
   return addDevice(opts);
 }
 
 export function addP1(options) {
-  const opts = Object.assign({}, options, { type: 'P1' });
+  const opts = Object.assign({}, options, { type: 'P1', buggyDfu: true });
   return addDevice(opts);
 }
 
 export function addElectron(options) {
-  const opts = Object.assign({}, options, { type: 'Electron' });
+  const opts = Object.assign({}, options, { type: 'Electron', buggyDfu: true });
   return addDevice(opts);
 }
 

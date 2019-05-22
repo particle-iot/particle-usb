@@ -1,7 +1,7 @@
 import { UsbError } from './error';
 
 function bmRequestTypeToString(type) {
-  type = (type >> 4) & 0x03;
+  type = (type >> 5) & 0x03;
   switch (type) {
     case 0: {
       return 'standard';
@@ -85,6 +85,30 @@ export class UsbDevice {
       }, data);
     } catch (err) {
       throw new UsbError(err, 'OUT control transfer failed');
+    }
+  }
+
+  async claimInterface(intrface) {
+    try {
+      await this._dev.claimInterface(intrface);
+    } catch (err) {
+      throw new UsbError(err, 'Failed to claim interface');
+    }
+  }
+
+  async releaseInterface(intrface) {
+    try {
+      await this._dev.releaseInterface(intrface);
+    } catch (err) {
+      throw new UsbError(err, 'Failed to release interface');
+    }
+  }
+
+  async setAltSetting(intrface, setting) {
+    try {
+      await this._dev.selectAlternateInterface(intrface, setting);
+    } catch (err) {
+      throw new UsbError(err, 'Failed to set alt setting');
     }
   }
 
