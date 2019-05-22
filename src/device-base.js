@@ -580,7 +580,7 @@ export class DeviceBase extends EventEmitter {
     return true;
   }
 
-  async _close(err = null) {
+  _close(err = null) {
     assert(!this._busy);
     // Cancel all requests
     if (this._reqs.size != 0) {
@@ -596,15 +596,15 @@ export class DeviceBase extends EventEmitter {
       clearTimeout(this._closeTimer);
       this._closeTimer = null;
     }
+
+    let p = Promise.resolve();
     if (this._dfu) {
-      try {
-        await this._dfu.close();
-      } catch (err) {
+      p = p.then(() => this._dfu.close()).catch(err => {
         this._log.warn(`Unable to close DFU interface: ${err.message}`);
-      }
+      });
     }
     // Close USB device
-    return this._dev.close().catch(err => {
+    return p.then(() => this._dev.close()).catch(err => {
       this._log.warn(`Unable to close USB device: ${err.message}`);
     }).then(() => {
       // Reset device state
