@@ -35,18 +35,22 @@ export const DiagnosticType = fromProtobufEnum(proto.mesh.DiagnosticType, {
   MAX_CHILD_TIMEOUT: 'MAX_CHILD_TIMEOUT'
 });
 
+function formatIpv6Address(addr) {
+  return ip.toString(Buffer.from(addr));
+}
+
 function formatMacAddress(addr) {
   return [...addr].map(b => Number(b).toString(16).padStart(2, '0')).join(':');
 }
 
 function formatDeviceId(id) {
-  return id.toString('hex');
+  return Buffer.from(id).toString('hex');
 }
 
 function transformNetworkData(data) {
   if (data.prefixes) {
     data.prefixes = data.prefixes.map(p => {
-      const s = Buffer.concat([ p.prefix, Buffer.alloc(16 - p.prefix.length) ]);
+      const s = Buffer.concat([ Buffer.from(p.prefix), Buffer.alloc(16 - p.prefix.length) ]);
       p.prefix = `${ip.toString(s)}/${p.prefixLength}`;
       delete p.prefixLength;
       return p;
@@ -62,7 +66,7 @@ function transformNetworkDiagnosticInfo(info) {
   result.nodes = info.nodes.map(node => {
     if (node.ipv6AddressList) {
       node.ipv6AddressList = node.ipv6AddressList.map(addr => {
-        return ip.toString(addr.address);
+        return formatIpv6Address(addr.address);
       });
     }
     if (node.extMacAddress) {
