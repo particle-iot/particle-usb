@@ -338,6 +338,8 @@ export const MeshDevice = base => class extends base {
       flags: flags,
       diagnosticTypes: opts.diagnosticTypes.map(DiagnosticType.toProtobuf),
       timeout: opts.timeout
+    }, {
+      timeout: 180000 // Request timeout
     });
     return transformNetworkDiagnosticInfo(info);
   }
