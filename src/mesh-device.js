@@ -4,12 +4,15 @@ import { Result } from './result';
 import { fromProtobufEnum } from './protobuf-util';
 import { RequestError } from './error';
 
+import * as ip from 'ip';
+
 import proto from './protocol';
 
 const NETWORK_ID_LENGTH = 24;
 const MAX_NETWORK_NAME_LENGTH = 16;
 const MIN_NETWORK_PASSWORD_LENGTH = 6;
 const MAX_NETWORK_PASSWORD_LENGTH = 255;
+const DIAGNOSTIC_DEFAULT_TIMEOUT = 10000; // 10 seconds
 
 export const DiagnosticType = fromProtobufEnum(proto.mesh.DiagnosticType, {
   MAC_EXTENDED_ADDRESS: 'MAC_EXTENDED_ADDRESS',
@@ -32,7 +35,87 @@ export const DiagnosticType = fromProtobufEnum(proto.mesh.DiagnosticType, {
   MAX_CHILD_TIMEOUT: 'MAX_CHILD_TIMEOUT'
 });
 
-const DIAGNOSTIC_DEFAULT_TIMEOUT = 10000; // 10 seconds
+function formatMacAddress(addr) {
+  return [...addr].map(b => Number(b).toString(16).padStart(2, '0')).join(':');
+}
+
+function formatDeviceId(id) {
+  return id.toString('hex');
+}
+
+function transformNetworkData(data) {
+  if (data.prefixes) {
+    data.prefixes = data.prefixes.map(p => {
+      const s = Buffer.concat([ p.prefix, Buffer.alloc(16 - p.prefix.length) ]);
+      p.prefix = `${ip.toString(s)}/${p.prefixLength}`;
+      delete p.prefixLength;
+      return p;
+    });
+  }
+  return data;
+}
+
+function transformNetworkDiagnosticInfo(info) {
+  const result = {};
+  const leaderRlocs = new Set();
+  const gatewayRlocs = new Set();
+  result.nodes = info.nodes.map(node => {
+    if (node.ipv6AddressList) {
+      node.ipv6AddressList = node.ipv6AddressList.map(addr => {
+        return ip.toString(addr.address);
+      });
+    }
+    if (node.extMacAddress) {
+      node.extMacAddress = formatMacAddress(node.extMacAddress);
+    }
+    if (node.deviceId) {
+      node.deviceId = formatDeviceId(node.deviceId);
+    }
+    if (node.networkData) {
+      const data = node.networkData;
+      if (data.stable) {
+        data.stable = transformNetworkData(data.stable);
+        const prefixes = data.stable.prefixes;
+        if (prefixes) {
+          prefixes.forEach(p => {
+            const entries = p.borderRouter.entries;
+            if (entries) {
+              entries.forEach(e => {
+                gatewayRlocs.add(e.rloc);
+              });
+            }
+          });
+        }
+      }
+      if (data.temporary) {
+        data.temporary = transformNetworkData(data.temporary);
+      }
+    }
+    node.role = [];
+    if (node.rloc & 0x01ff) {
+      node.role.push('endpoint');
+    } else {
+      node.role.push('repeater');
+    }
+    if (node.leaderData) {
+      leaderRlocs.add(node.leaderData.leaderRloc);
+    }
+    return node;
+  });
+  result.nodes.forEach(node => {
+    if (leaderRlocs.has(node.rloc)) {
+      const index = node.role.indexOf('repeater');
+      if (index != -1) {
+        node.role.splice(index, 1);
+      }
+      node.role.push('leader');
+    }
+    if (gatewayRlocs.has(node.rloc)) {
+      node.role.push('gateway');
+    }
+  });
+  return result;
+}
 
 /**
  * Mixin class for a Mesh device.
@@ -226,7 +309,7 @@ export const MeshDevice = base => class extends base {
    * @param {Object} opts Request options
    * @return {Promise}
    */
-  async getNetworkDiagnostics(
+  async getMeshNetworkDiagnosticInfo(
     opts = {
       timeout: DIAGNOSTIC_DEFAULT_TIMEOUT,
       queryChildren: false,
@@ -246,10 +329,11 @@ export const MeshDevice = base => class extends base {
       flags |= proto.mesh.GetNetworkDiagnosticsRequest.Flags['RESOLVE_DEVICE_ID'];
     }
 
-    return this.sendRequest(Request.MESH_GET_NETWORK_DIAGNOSTICS, {
+    const info = await this.sendRequest(Request.MESH_GET_NETWORK_DIAGNOSTICS, {
       flags: flags,
       diagnosticTypes: opts.diagnosticTypes.map(DiagnosticType.toProtobuf),
       timeout: opts.timeout
     });
+    return transformNetworkDiagnosticInfo(info);
   }
 }
