@@ -39,8 +39,8 @@ function formatIpv6Address(addr) {
   return ip.toString(Buffer.from(addr));
 }
 
-function formatMacAddress(addr) {
-  return [...addr].map(b => Number(b).toString(16).padStart(2, '0')).join(':');
+function formatExtMacAddress(addr) {
+  return Buffer.from(addr).toString('hex');
 }
 
 function formatDeviceId(id) {
@@ -70,7 +70,7 @@ function transformNetworkDiagnosticInfo(info) {
       });
     }
     if (node.extMacAddress) {
-      node.extMacAddress = formatMacAddress(node.extMacAddress);
+      node.extMacAddress = formatExtMacAddress(node.extMacAddress);
     }
     if (node.deviceId) {
       node.deviceId = formatDeviceId(node.deviceId);
