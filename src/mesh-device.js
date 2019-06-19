@@ -98,6 +98,7 @@ function transformNetworkDiagnosticInfo(info) {
     node.role = [];
     if (node.rloc & 0x01ff) {
       node.role.push('endpoint');
+      node.parentRloc = node.rloc & 0xfe00;
     } else {
       node.role.push('repeater');
     }
