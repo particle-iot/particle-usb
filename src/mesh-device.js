@@ -109,10 +109,6 @@ function transformNetworkDiagnosticInfo(info) {
   });
   result.nodes.forEach(node => {
     if (leaderRlocs.has(node.rloc)) {
-      const index = node.role.indexOf('repeater');
-      if (index != -1) {
-        node.role.splice(index, 1);
-      }
       node.role.push('leader');
     }
     if (gatewayRlocs.has(node.rloc)) {
