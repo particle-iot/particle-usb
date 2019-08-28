@@ -169,9 +169,9 @@ describe('mesh-device', function() {
       });
     });
 
-    describe('getNetworkDiagnostics()', () => {
+    describe('getMeshNetworkDiagnosticInfo()', () => {
       it('gets diagnostic info about the current mesh network from one of the nodes', async () => {
-        const diag = await dev1.getNetworkDiagnostics({
+        const diag = await dev1.getMeshNetworkDiagnosticInfo({
           queryChildren: true,
           resolveDeviceId: true,
           diagnosticTypes: [
@@ -201,8 +201,8 @@ describe('mesh-device', function() {
             expect(node).to.have.property('rloc');
         });
         expect(diag.nodes).to.containSubset([
-          { deviceId: Buffer.from(dev1.id, 'hex') },
-          { deviceId: Buffer.from(dev2.id, 'hex') },
+          { deviceId: dev1.id },
+          { deviceId: dev2.id }
         ]);
       });
     })
