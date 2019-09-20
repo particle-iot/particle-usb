@@ -157,8 +157,8 @@ export const Request = {
   },
   FIRMWARE_UPDATE_DATA: {
     id: 253,
-    request: proto.SaveFirmwareDataRequest,
-    reply: proto.SaveFirmwareDataReply
+    request: proto.FirmwareUpdateDataRequest,
+    reply: proto.FirmwareUpdateDataReply
   },
   DESCRIBE_STORAGE: {
     id: 260,
