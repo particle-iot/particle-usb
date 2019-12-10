@@ -11,7 +11,8 @@ export const DeviceType = {
   XENON: 'Xenon',
   ARGON_SOM: 'Argon-SoM',
   BORON_SOM: 'Boron-SoM',
-  XENON_SOM: 'Xenon-SoM'
+  XENON_SOM: 'Xenon-SoM',
+  B5_SOM: 'B5-SoM'
 };
 
 // Descriptions of all devices supported by the library
@@ -134,6 +135,18 @@ export const DEVICES = [
     dfuUsbIds: {
       vendorId: 0x2b04,
       productId: 0xd018
+    }
+  },
+  {
+    type: DeviceType.B5_SOM,
+    platformId: 25,
+    usbIds: {
+      vendorId: 0x2b04,
+      productId: 0xc019
+    },
+    dfuUsbIds: {
+      vendorId: 0x2b04,
+      productId: 0xd019
     }
   }
 ];

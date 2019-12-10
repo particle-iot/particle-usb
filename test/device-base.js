@@ -58,6 +58,7 @@ describe('device-base', () => {
       fakeUsb.addDevice({ vendorId: 0xeeee, productId: 0xeeee });
       usbDevs.push(fakeUsb.addArgonSom());
       usbDevs.push(fakeUsb.addBoronSom());
+      usbDevs.push(fakeUsb.addB5Som());
       // Enumerate detected devices
       const devs = await getDevices();
       expect(devs.map(dev => dev.usbDevice)).to.have.all.members(usbDevs);
@@ -78,7 +79,8 @@ describe('device-base', () => {
         fakeUsb.addXenon({ dfu: true }),
         fakeUsb.addArgonSom({ dfu: true }),
         fakeUsb.addBoronSom({ dfu: true }),
-        fakeUsb.addXenonSom({ dfu: true })
+        fakeUsb.addXenonSom({ dfu: true }),
+        fakeUsb.addB5Som({ dfu: true })
       ];
       const devs = await getDevices();
       expect(devs.map(dev => dev.usbDevice)).to.have.all.members(usbDevs);
@@ -104,6 +106,7 @@ describe('device-base', () => {
       const xenonSom = fakeUsb.addXenonSom();
       const argonSom = fakeUsb.addArgonSom();
       const boronSom = fakeUsb.addBoronSom();
+      const b5Som = fakeUsb.addB5Som();
       // Core
       let devs = await getDevices({ types: [ 'core' ] });
       expect(devs).to.be.empty;
@@ -123,10 +126,10 @@ describe('device-base', () => {
       devs = devs.map(dev => dev.usbDevice);
       expect(devs).to.have.all.members([ argon, boron, xenon ]);
       // Argon-SoM, Boron-SoM, Xenon-SoM
-      devs = await getDevices({ types: [ 'argon-som', 'boron-som', 'xenon-som' ] });
-      expect(devs).to.have.lengthOf(3);
+      devs = await getDevices({ types: [ 'argon-som', 'boron-som', 'b5-som', 'xenon-som' ] });
+      expect(devs).to.have.lengthOf(4);
       devs = devs.map(dev => dev.usbDevice);
-      expect(devs).to.have.all.members([ argonSom, boronSom, xenonSom ]);
+      expect(devs).to.have.all.members([ argonSom, boronSom, b5Som, xenonSom ]);
     });
 
     it('matches device types in a case-insensitive manner', async () => {
