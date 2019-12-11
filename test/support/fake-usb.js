@@ -22,7 +22,9 @@ const USB_DEVICES = [
   { type: 'Boron-SoM', platformId: 23, vendorId: 0x2b04, productId: 0xc017, dfu: false },
   { type: 'Boron-SoM', platformId: 23, vendorId: 0x2b04, productId: 0xd017, dfu: true },
   { type: 'Xenon-SoM', platformId: 24, vendorId: 0x2b04, productId: 0xc018, dfu: false },
-  { type: 'Xenon-SoM', platformId: 24, vendorId: 0x2b04, productId: 0xd018, dfu: true }
+  { type: 'Xenon-SoM', platformId: 24, vendorId: 0x2b04, productId: 0xd018, dfu: true },
+  { type: 'B5-SoM', platformId: 25, vendorId: 0x2b04, productId: 0xc019, dfu: false },
+  { type: 'B5-SoM', platformId: 25, vendorId: 0x2b04, productId: 0xd019, dfu: true }
 ];
 
 // Low-level vendor requests
@@ -687,6 +689,11 @@ export function addArgonSom(options) {
 
 export function addBoronSom(options) {
   const opts = Object.assign({}, options, { type: 'Boron-SoM' });
+  return addDevice(opts);
+}
+
+export function addB5Som(options) {
+  const opts = Object.assign({}, options, { type: 'B5-SoM' });
   return addDevice(opts);
 }
 
