@@ -12,6 +12,9 @@ try {
   }
 }
 
+// Maximum size of a control transfer's data stage
+export const MAX_CONTROL_TRANSFER_DATA_SIZE = 4096;
+
 function wrapUsbError(err, message) {
   if (err.message == 'LIBUSB_ERROR_ACCESS') {
     return new NotAllowedError(err, message);

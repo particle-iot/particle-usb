@@ -1,5 +1,8 @@
 import { UsbError } from './error';
 
+// Maximum size of a control transfer's data stage
+export const MAX_CONTROL_TRANSFER_DATA_SIZE = 4096;
+
 function bmRequestTypeToString(type) {
   type = (type >> 5) & 0x03;
   switch (type) {
