@@ -7,22 +7,22 @@ describe('cellular-device', function() {
   this.timeout(60000);
   this.slow(45000);
 
-  let dev = null;
+  let devs = [];
+  let dev = null
 
   before(function() {
     return integrationTest(this, async () => {
       let devs = await getDevices();
       devs = devs.filter(dev => dev.isCellularDevice);
-      if (devs.length < 1) {
-        throw new Error('This test requires a cellular device connected to the host via USB');
+      if (!devs.length) {
+        throw new Error('This test suite requires at least one cellular device');
       }
       dev = devs[0];
-      await dev.open();
     });
   });
 
-  after(async () => {
-    if (dev) {
+  afterEach(async () => {
+    for (let dev of devs) {
       await dev.close();
     }
   });
@@ -30,6 +30,7 @@ describe('cellular-device', function() {
   describe('CellularDevice', () => {
     describe('getIccid()', () => {
       it('gets ICCID of the active SIM card', async () => {
+        await dev.open();
         const iccid = await dev.getIccid();
         expect(iccid).to.have.lengthOf.within(20, 22);
       });
