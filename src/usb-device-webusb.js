@@ -71,7 +71,7 @@ export class UsbDevice {
         value: setup.wValue,
         index: setup.wIndex
       }, setup.wLength);
-      return new Buffer(res.data.buffer);
+      return Buffer.from(res.data.buffer);
     } catch (err) {
       throw new UsbError(err, 'IN control transfer failed');
     }

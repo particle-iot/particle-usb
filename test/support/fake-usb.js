@@ -420,7 +420,7 @@ export class DfuClass {
       case dfu.DfuDeviceState.dfuUPLOAD_IDLE:
       case dfu.DfuDeviceState.dfuERROR: {
         // Generate DFU_GETSTATUS response
-        const response = new Buffer(dfu.DFU_STATUS_SIZE);
+        const response = Buffer.alloc(dfu.DFU_STATUS_SIZE);
         response.writeUInt32LE(this._state.pollTimeout, 0);
         response.writeUInt8(this._state.status, 0);
 
