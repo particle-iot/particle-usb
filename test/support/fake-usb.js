@@ -32,6 +32,9 @@ const VendorRequest = {
   SYSTEM_VERSION: 30 // Get system version
 };
 
+// Maximum request ID value
+const MAX_REQUEST_ID = 0xffff;
+
 // USB devices "attached" to the host
 let devices = new Map();
 
@@ -117,19 +120,25 @@ export class Protocol {
     if (size < 0 || size > proto.MAX_PAYLOAD_SIZE) {
       throw new ProtocolError(`Invalid payload size: ${size}`);
     }
-    const id = this._lastReqId + 1; // Request ID
+    const id = this.nextRequestId;
     const req = { // Request object
       id: id,
       type: type,
       size: size,
+      offset: 0,
       data: null,
-      reply: null
+      reply: null,
+      received: false
     };
     const srep = {}; // Service reply
-    srep.status = this.initRequest(req);
+    srep.status = this.initRequest({ id, type, size });
     if (srep.status == proto.Status.OK || srep.status == proto.Status.PENDING) {
-      if (srep.status == proto.Status.OK && req.size && !req.data) {
-        req.data = Buffer.alloc(req.size);
+      if (srep.status == proto.Status.OK) {
+        if (!req.size) {
+          req.received = true;
+        } else if (!req.data) {
+          req.data = Buffer.alloc(req.size);
+        }
       }
       this._reqs.set(id, req);
       this._lastReqId = id;
@@ -144,7 +153,7 @@ export class Protocol {
     if (req) {
       if (req.size && !req.data) {
         // Buffer allocation is pending
-        srep.status = this.checkBuffer(req);
+        srep.status = this.checkBuffer({ id });
         if (srep.status == proto.Status.OK) {
           req.data = Buffer.alloc(req.size);
         } else if (srep.status != proto.Status.PENDING) {
@@ -152,11 +161,11 @@ export class Protocol {
         }
       } else {
         // Request processing is pending
-        srep.status = this.checkRequest(req);
+        srep.status = this.checkRequest({ id });
         if (srep.status == proto.Status.OK) {
           const rep = { // Application reply
-            result: this.replyResult(req),
-            data: this.replyData(req)
+            result: this.replyResult({ id }),
+            data: this.replyData({ id })
           };
           srep.result = rep.result;
           if (rep.data && rep.data.length != 0) {
@@ -181,13 +190,22 @@ export class Protocol {
       // This is a host-to-device request, so we can't reply with a status code
       throw new ProtocolError(`Request not found: ${id}`);
     }
+    if (req.received) {
+      throw new ProtocolError('Unexpected service request');
+    }
     if (!req.data) {
       throw new ProtocolError('Request buffer is not allocated');
     }
-    if (!data || data.length != req.data.length) {
-      throw new ProtocolError('Unexpected size of the request data');
+    if (!data || !data.length || req.offset + data.length > req.data.length) {
+      throw new ProtocolError('Unexpected size of the control transfer');
     }
-    data.copy(req.data);
+    this.sendRequest({ id, data: Buffer.from(data) });
+    data.copy(req.data, req.offset);
+    req.offset += data.length;
+    if (req.offset == req.data.length) {
+      req.offset = 0;
+      req.received = true;
+    }
   }
 
   recvServiceRequest(id, size) {
@@ -196,14 +214,19 @@ export class Protocol {
       // Payload data is application-specific, so we can't reply with a status code
       throw new ProtocolError(`Request not found: ${id}`);
     }
-    const data = req.reply ? req.reply.data : null;
-    if (!data) {
+    const repData = req.reply ? req.reply.data : null;
+    if (!repData) {
       throw new ProtocolError('Reply data is not available');
     }
-    if (size != data.length) {
-      throw new ProtocolError('Unexpected size of the reply data');
+    if (!size || req.offset + size > repData.length) {
+      throw new ProtocolError('Unexpected size of the control transfer');
     }
-    this._reqs.delete(id); // Request completed
+    this.recvRequest({ id, size });
+    const data = repData.slice(req.offset, req.offset + size);
+    req.offset += size;
+    if (req.offset == repData.size) {
+      this._reqs.delete(id); // Request completed
+    }
     return data;
   }
 
@@ -212,7 +235,7 @@ export class Protocol {
     if (id) {
       const req = this._reqs.get(id);
       if (req) {
-        srep.status = this.resetRequest(req);
+        srep.status = this.resetRequest({ id: req.id });
         if (srep.status == proto.Status.OK) {
           this._reqs.delete(id);
         }
@@ -228,19 +251,25 @@ export class Protocol {
     return proto.encodeReply(srep);
   }
 
-  initRequest(req) {
+  initRequest({ id, type, size }) {
     return proto.Status.OK;
   }
 
-  checkBuffer(req) {
+  checkBuffer({ id }) {
     return proto.Status.OK;
   }
 
-  checkRequest(req) {
+  checkRequest({ id }) {
     return proto.Status.OK;
   }
 
-  resetRequest(req) {
+  sendRequest({ id, data }) {
+  }
+
+  recvRequest({ id, size }) {
+  }
+
+  resetRequest({ id }) {
     return proto.Status.OK;
   }
 
@@ -248,17 +277,29 @@ export class Protocol {
     return proto.Status.OK;
   }
 
-  replyResult(req) {
+  replyResult({ id }) {
     return 0; // OK
   }
 
-  replyData(req) {
+  replyData({ id }) {
     return null;
   }
 
   reset() {
     this._reqs.clear();
     this._lastReqId = 0;
+  }
+
+  get lastRequestId() {
+    return this._lastReqId;
+  }
+
+  get nextRequestId() {
+    let id = this._lastReqId + 1
+    if (id > MAX_REQUEST_ID) {
+      id = 0;
+    }
+    return id;
   }
 }
 
