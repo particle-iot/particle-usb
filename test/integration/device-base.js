@@ -1,7 +1,7 @@
 import { getDevices, openDeviceById } from '../../src/particle-usb';
 import { MAX_CONTROL_TRANSFER_DATA_SIZE } from '../../src/usb-device-node';
 
-import { expect, integrationTest } from '../support';
+import { expect, randomString, integrationTest } from '../support';
 
 const RequestType = {
   ECHO: 1 // ctrl_request_type::CTRL_REQUEST_ECHO
@@ -54,11 +54,28 @@ describe('device-base', function() {
 
   describe('DeviceBase', () => {
     describe('sendControlRequest()', async () => {
+      it('can process multiple requests', async () => {
+        await dev.open();
+        const ps = [];
+        for (let i = 0; i < 100; ++i) {
+          const data = randomString(0, 512);
+          const p = dev.sendControlRequest(RequestType.ECHO, data).then(rep => {
+            expect(rep.data).to.equal(data);
+          });
+          ps.push(p);
+        }
+        await Promise.all(ps);
+      });
+    });
+
+    describe('sendControlRequest()', async () => {
       it('can send a request and receive a reply larger than 4096 bytes', async () => {
         await dev.open();
-        const reqData = 'A'.repeat(MAX_CONTROL_TRANSFER_DATA_SIZE) + 'B'.repeat(MAX_CONTROL_TRANSFER_DATA_SIZE);
-        const rep = await dev.sendControlRequest(RequestType.ECHO, reqData);
-        expect(rep.data).to.equal(reqData);
+        for (let i = 0; i < 10; ++i) {
+          const data = randomString(MAX_CONTROL_TRANSFER_DATA_SIZE + 1);
+          const rep = await dev.sendControlRequest(RequestType.ECHO, data);
+          expect(rep.data).to.equal(data);
+        }
       });
     });
   });
