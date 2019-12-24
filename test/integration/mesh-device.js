@@ -21,7 +21,7 @@ describe('mesh-device', function() {
       let devs = await getDevices();
       devs = devs.filter(dev => dev.isMeshDevice);
       if (devs.length < 2) {
-        throw new Error('This test requires 2 mesh devices connected to the host via USB');
+        throw new Error('This test suite requires at least 2 mesh devices');
       }
       dev1 = devs[0];
       await dev1.open();

@@ -1,4 +1,4 @@
-import { getUsbDevices } from './usb-device-node';
+import { getUsbDevices, MAX_CONTROL_TRANSFER_DATA_SIZE } from './usb-device-node';
 import * as proto from './usb-protocol';
 import { DeviceType, DEVICES } from './device-type';
 import { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, assert } from './error';
@@ -460,10 +460,7 @@ export class DeviceBase extends EventEmitter {
             };
             if (srep.size) {
               // Receive payload data
-              this._log.trace(`Request ${req.id}: Sending RECV`);
-              const setup = proto.recvRequest(req.protoId, srep.size);
-              return this._dev.transferIn(setup).then(data => {
-                this._log.trace(`Request ${req.id}: Received payload data (${data.length} bytes)`);
+              return this._recvReplyData(req, srep.size).then(data => {
                 rep.data = req.dataIsStr ? data.toString() : data;
                 this._resolveRequest(req, rep);
               });
@@ -472,10 +469,7 @@ export class DeviceBase extends EventEmitter {
             }
           } else {
             // Buffer allocation is completed, send payload data
-            this._log.trace(`Request ${req.id}: Sending SEND`);
-            const setup = proto.sendRequest(req.protoId, req.data.length);
-            return this._dev.transferOut(setup, req.data).then(() => {
-              this._log.trace(`Request ${req.id}: Sent payload data (${req.data.length} bytes)`);
+            return this._sendRequestData(req).then(() => {
               req.dataSent = true;
               req.checkCount = 0; // Reset check counter
               this._startCheckTimer(req);
@@ -536,10 +530,7 @@ export class DeviceBase extends EventEmitter {
         case proto.Status.OK: {
           if (req.data && req.data.length > 0) {
             // Send payload data
-            this._log.trace(`Request ${req.id}: Sending SEND`);
-            const setup = proto.sendRequest(req.protoId, req.data.length);
-            return this._dev.transferOut(setup, req.data).then(() => {
-              this._log.trace(`Request ${req.id}: Sent payload data (${req.data.length} bytes)`);
+            return this._sendRequestData(req).then(() => {
               req.dataSent = true;
               this._startCheckTimer(req);
             });
@@ -578,6 +569,55 @@ export class DeviceBase extends EventEmitter {
       this._process();
     });
     return true;
+  }
+
+  _sendRequestData(req) {
+    assert(req.data && req.data.length > 0);
+    let offs = 0;
+    const sendNextChunk = () => {
+      const chunkSize = Math.min(MAX_CONTROL_TRANSFER_DATA_SIZE, req.data.length - offs);
+      const chunk = req.data.slice(offs, offs + chunkSize);
+      this._log.trace(`Request ${req.id}: Sending SEND`);
+      const setup = proto.sendRequest(req.protoId, chunkSize);
+      return this._dev.transferOut(setup, chunk).then(() => {
+        this._log.trace(`Request ${req.id}: Sent ${chunkSize} bytes`);
+        offs += chunkSize;
+        if (offs < req.data.length) {
+          if (req.done) {
+            throw new Error('Control transfer cancelled');
+          }
+          return sendNextChunk();
+        }
+      });
+    };
+    return sendNextChunk();
+  }
+
+  _recvReplyData(req, size) {
+    assert(size > 0);
+    const buf = Buffer.alloc(size);
+    let offs = 0;
+    const recvNextChunk = () => {
+      const chunkSize = Math.min(MAX_CONTROL_TRANSFER_DATA_SIZE, size - offs);
+      this._log.trace(`Request ${req.id}: Sending RECV`);
+      const setup = proto.recvRequest(req.protoId, chunkSize);
+      return this._dev.transferIn(setup).then(data => {
+        this._log.trace(`Request ${req.id}: Received ${data.length} bytes`);
+        if (data.length != chunkSize) {
+          throw new Error('Unexpected size of the control transfer');
+        }
+        data.copy(buf, offs);
+        offs += chunkSize;
+        if (offs < size) {
+          if (req.done) {
+            throw new Error('Control transfer cancelled');
+          }
+          return recvNextChunk();
+        }
+        return buf;
+      });
+    };
+    return recvNextChunk();
   }
 
   _close(err = null) {

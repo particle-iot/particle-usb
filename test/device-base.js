@@ -323,22 +323,105 @@ describe('device-base', () => {
         it('can send a request without payload data', async function() {
           this.sinon.useFakeTimers();
           const initRequest = this.sinon.spy(usbDev.protocol, 'initRequest');
+          const sendRequest = this.sinon.spy(usbDev.protocol, 'sendRequest');
           const req = dev.sendControlRequest(REQUEST_1);
           await this.checkTimeout();
           await req;
-          expect(initRequest).to.have.been.calledWith(sinon.match({ type: REQUEST_1 }));
+          expect(initRequest).to.have.been.calledWith(sinon.match({
+            type: REQUEST_1,
+            size: 0
+          }));
+          expect(sendRequest).to.have.not.been.called;
         });
 
         it('can send a request with payload data', async function() {
           this.sinon.useFakeTimers();
           const initRequest = this.sinon.spy(usbDev.protocol, 'initRequest');
-          const req = dev.sendControlRequest(REQUEST_1, Buffer.from('request data'));
+          const sendRequest = this.sinon.spy(usbDev.protocol, 'sendRequest');
+          const reqData = Buffer.from('request data');
+          const reqId = usbDev.protocol.nextRequestId;
+          const req = dev.sendControlRequest(REQUEST_1, reqData);
           await this.checkTimeout();
           await req;
           expect(initRequest).to.have.been.calledWith(sinon.match({
             type: REQUEST_1,
-            data: Buffer.from('request data')
+            size: reqData.length
           }));
+          expect(sendRequest).to.have.been.calledWith(sinon.match({
+            id: reqId,
+            data: reqData
+          }));
+        });
+
+        it('can send request data in multiple chunks', async function() {
+          this.sinon.useFakeTimers();
+          const initRequest = this.sinon.spy(usbDev.protocol, 'initRequest');
+          const sendRequest = this.sinon.spy(usbDev.protocol, 'sendRequest');
+          const chunk1 = Buffer.from('A'.repeat(usbImpl.MAX_CONTROL_TRANSFER_DATA_SIZE));
+          const chunk2 = Buffer.from('B'.repeat(usbImpl.MAX_CONTROL_TRANSFER_DATA_SIZE - 1));
+          const reqId = usbDev.protocol.nextRequestId;
+          const req = dev.sendControlRequest(REQUEST_1, Buffer.concat([chunk1, chunk2]));
+          await this.checkTimeout();
+          await req;
+          expect(initRequest).to.have.been.calledWith(sinon.match({
+            type: REQUEST_1,
+            size: chunk1.length + chunk2.length
+          }));
+          expect(sendRequest).to.have.been.calledTwice;
+          expect(sendRequest.firstCall.args).to.deep.equal([{
+            id: reqId,
+            data: chunk1
+          }]);
+          expect(sendRequest.secondCall.args).to.deep.equal([{
+            id: reqId,
+            data: chunk2
+          }]);
+        });
+
+        it('can receive a reply without payload data', async function() {
+          this.sinon.useFakeTimers();
+          const recvRequest = this.sinon.spy(usbDev.protocol, 'recvRequest');
+          const reqId = usbDev.protocol.nextRequestId;
+          const req = dev.sendControlRequest(REQUEST_1);
+          await this.checkTimeout();
+          await req;
+          expect(recvRequest).to.have.not.been.called;
+        });
+
+        it('can receive a reply with payload data', async function() {
+          this.sinon.useFakeTimers();
+          const repData = Buffer.from('reply data');
+          this.sinon.stub(usbDev.protocol, 'replyData').returns(repData);
+          const recvRequest = this.sinon.spy(usbDev.protocol, 'recvRequest');
+          const reqId = usbDev.protocol.nextRequestId;
+          const req = dev.sendControlRequest(REQUEST_1);
+          await this.checkTimeout();
+          await req;
+          expect(recvRequest).to.have.been.calledWith({
+            id: reqId,
+            size: repData.length
+          });
+        });
+
+        it('can receive reply data in multiple chunks', async function() {
+          this.sinon.useFakeTimers();
+          const chunk1 = Buffer.from('A'.repeat(usbImpl.MAX_CONTROL_TRANSFER_DATA_SIZE));
+          const chunk2 = Buffer.from('B'.repeat(usbImpl.MAX_CONTROL_TRANSFER_DATA_SIZE - 1));
+          this.sinon.stub(usbDev.protocol, 'replyData').returns(Buffer.concat([chunk1, chunk2]));
+          const recvRequest = this.sinon.spy(usbDev.protocol, 'recvRequest');
+          const reqId = usbDev.protocol.nextRequestId;
+          const req = dev.sendControlRequest(REQUEST_1);
+          await this.checkTimeout();
+          await req;
+          expect(recvRequest).to.have.been.calledTwice;
+          expect(recvRequest.firstCall.args).to.deep.equal([{
+            id: reqId,
+            size: chunk1.length
+          }]);
+          expect(recvRequest.secondCall.args).to.deep.equal([{
+            id: reqId,
+            size: chunk2.length
+          }]);
         });
 
         it('polls the USB device until it allocates a buffer for the request data', async function() {
@@ -377,7 +460,7 @@ describe('device-base', () => {
           await req;
         });
 
-        it('resolves to an object containing the result code property', async function() {
+        it('resolves to an object containing the result code', async function() {
           this.sinon.useFakeTimers();
           this.sinon.stub(usbDev.protocol, 'replyResult').returns(1234);
           const req = dev.sendControlRequest(REQUEST_1);
@@ -388,7 +471,7 @@ describe('device-base', () => {
           expect(rep).not.to.have.property('data');
         });
 
-        it('resolves to an object containing the reply data property', async function() {
+        it('resolves to an object containing the reply data', async function() {
           this.sinon.useFakeTimers();
           this.sinon.stub(usbDev.protocol, 'replyResult').returns(0);
           this.sinon.stub(usbDev.protocol, 'replyData').returns(Buffer.from('reply data'));

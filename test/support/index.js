@@ -13,6 +13,8 @@ chai.use(chaiAsPromised);
 chai.use(sinonChai);
 chai.use(chaiSubset);
 
+const PRINTABLE_CHARS = ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~';
+
 class Logger {
   trace(...args) {
     // console.log(...args);
@@ -42,6 +44,18 @@ function integrationTest(test, check) {
   }
 }
 
+function randomString(minLen = 6, maxLen = -1) {
+  if (maxLen < 0) {
+    maxLen = minLen;
+  }
+  const len = minLen + Math.round(Math.random() * (maxLen - minLen));
+  let str = '';
+  for (let i = 0; i < len; ++i) {
+    str += PRINTABLE_CHARS.charAt(Math.floor(Math.random() * PRINTABLE_CHARS.length));
+  }
+  return str;
+}
+
 function nextTick() {
   return new Promise(resolve => {
     setImmediate(resolve);
@@ -61,5 +75,6 @@ export {
   expect,
   assert,
   nextTick,
+  randomString,
   integrationTest
 };

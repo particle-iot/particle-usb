@@ -206,7 +206,7 @@ export class Dfu {
         wIndex: this._interface,
         wValue: req.blockNum
       };
-      return this._dev.transferOut(setup, req.data ? req.data : new Buffer(0));
+      return this._dev.transferOut(setup, req.data ? req.data : Buffer.alloc(0));
     }
 
     throw new DfuError('Unknown DFU_DNLOAD command');
@@ -248,6 +248,6 @@ export class Dfu {
       wIndex: this._interface,
       wValue: 0
     };
-    return this._dev.transferOut(setup, new Buffer(0));
+    return this._dev.transferOut(setup, Buffer.alloc(0));
   }
 };
