@@ -1,4 +1,4 @@
-import { DeviceBase } from './device-base';
+import { DeviceBase, openDeviceById } from './device-base';
 import { Request } from './request';
 import { Result, messageForResultCode } from './result';
 import { fromProtobufEnum } from './protobuf-util';
@@ -41,7 +41,16 @@ export const LogLevel = fromProtobufEnum(proto.logging.LogLevel, {
 class RequestSender {
   constructor(dev, timeout) {
     this._dev = dev;
+    this._id = dev.id;
     this._timeoutTime = Date.now() + timeout;
+  }
+
+  async open(options){
+    return openDeviceById(this._id, options);
+  }
+
+  async close(){
+    this._dev.close();
   }
 
   async sendRequest(req, msg, opts) {
@@ -108,7 +117,27 @@ export class Device extends DeviceBase {
    * @return {Promise}
    */
   enterDfuMode() {
-    return this.sendRequest(Request.DFU_MODE);
+    if (this.isInDfuMode){
+      return;
+    }
+    return this.timeout(async (s) => {
+      await s.sendRequest(Request.DFU_MODE);
+      await s.close();
+      let isInDfuMode;
+
+      while (!isInDfuMode) {
+        let device;
+
+        try {
+          device = await s.open({ includeDfu: true });
+          isInDfuMode = device.isInDfuMode;
+        } catch(error) {
+          // device is reconnecting, ignore
+        }
+        await s.close();
+        await s.delay(500);
+      }
+    });
   }
 
   /**
