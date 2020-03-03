@@ -1,4 +1,4 @@
-import { DeviceBase } from './device-base';
+import { DeviceBase, openDeviceById } from './device-base';
 import { Request } from './request';
 import { Result, messageForResultCode } from './result';
 import { fromProtobufEnum } from './protobuf-util';
@@ -39,9 +39,18 @@ export const LogLevel = fromProtobufEnum(proto.logging.LogLevel, {
 
 // Helper class used by Device.timeout()
 class RequestSender {
-  constructor(dev, timeout) {
-    this._dev = dev;
+  constructor(device, timeout) {
+    this.id = device.id;
+    this.device = device;
     this._timeoutTime = Date.now() + timeout;
+  }
+
+  async open(options) {
+    this.device = await openDeviceById(this.id, options);
+  }
+
+  async close() {
+    await this.device.close();
   }
 
   async sendRequest(req, msg, opts) {
@@ -54,7 +63,7 @@ class RequestSender {
     } else if (Date.now() + opts.timeout >= this._timeoutTime) {
       throw new TimeoutError();
     }
-    return this._dev.sendRequest(req, msg, opts);
+    return this.device.sendRequest(req, msg, opts);
   }
 
   async delay(ms) {
@@ -108,7 +117,25 @@ export class Device extends DeviceBase {
    * @return {Promise}
    */
   enterDfuMode() {
-    return this.sendRequest(Request.DFU_MODE);
+    if (this.isInDfuMode) {
+      return;
+    }
+    return this.timeout(async (s) => {
+      await s.sendRequest(Request.DFU_MODE);
+      await s.close();
+      let isInDfuMode;
+
+      while (!isInDfuMode) {
+        try {
+          await s.open({ includeDfu: true });
+          isInDfuMode = s.device.isInDfuMode;
+        } catch(error) {
+          // device is reconnecting, ignore
+        }
+        await s.close();
+        await s.delay(500);
+      }
+    });
   }
 
   /**
