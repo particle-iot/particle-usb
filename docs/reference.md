@@ -376,7 +376,7 @@ Logging levels.
 
 ## Device
 
-[src/device.js:73-644][157]
+[src/device.js:82-671][157]
 
 **Extends DeviceBase**
 
@@ -384,7 +384,7 @@ Basic functionality supported by all Particle devices.
 
 ### getSerialNumber
 
-[src/device.js:79-81][158]
+[src/device.js:88-90][158]
 
 Get device serial number
 
@@ -392,7 +392,7 @@ Returns **[Promise][125]**
 
 ### reset
 
-[src/device.js:88-94][159]
+[src/device.js:97-103][159]
 
 Perform the system reset.
 
@@ -400,7 +400,7 @@ Returns **[Promise][125]**
 
 ### factoryReset
 
-[src/device.js:101-103][160]
+[src/device.js:110-112][160]
 
 Perform the factory reset.
 
@@ -408,7 +408,7 @@ Returns **[Promise][125]**
 
 ### enterDfuMode
 
-[src/device.js:110-112][161]
+[src/device.js:119-139][161]
 
 Reset and enter the DFU mode.
 
@@ -416,7 +416,7 @@ Returns **[Promise][125]**
 
 ### enterSafeMode
 
-[src/device.js:119-121][162]
+[src/device.js:146-148][162]
 
 Reset and enter the safe mode.
 
@@ -424,7 +424,7 @@ Returns **[Promise][125]**
 
 ### enterListeningMode
 
-[src/device.js:128-142][163]
+[src/device.js:155-169][163]
 
 Enter the listening mode.
 
@@ -432,7 +432,7 @@ Returns **[Promise][125]**
 
 ### leaveListeningMode
 
-[src/device.js:149-151][164]
+[src/device.js:176-178][164]
 
 Leave the listening mode.
 
@@ -440,13 +440,13 @@ Returns **[Promise][125]**
 
 ### getDeviceMode
 
-[src/device.js:156-159][165]
+[src/device.js:183-186][165]
 
 Get device mode.
 
 ### startNyanSignal
 
-[src/device.js:166-168][166]
+[src/device.js:193-195][166]
 
 Start the Nyan LED indication.
 
@@ -454,7 +454,7 @@ Returns **[Promise][125]**
 
 ### stopNyanSignal
 
-[src/device.js:175-177][167]
+[src/device.js:202-204][167]
 
 Stop the Nyan LED indication.
 
@@ -462,7 +462,7 @@ Returns **[Promise][125]**
 
 ### updateFirmware
 
-[src/device.js:185-211][168]
+[src/device.js:212-238][168]
 
 Perform the firmware update.
 
@@ -474,7 +474,7 @@ Returns **[Promise][125]**
 
 ### getFirmwareModule
 
-[src/device.js:220-234][169]
+[src/device.js:247-261][169]
 
 Get firmware module data.
 
@@ -487,7 +487,7 @@ Returns **[Promise][125]&lt;[Buffer][129]>**
 
 ### hasModularFirmware
 
-[src/device.js:241-243][170]
+[src/device.js:268-270][170]
 
 Check if the device runs a modular firmware.
 
@@ -495,7 +495,7 @@ Returns **[Promise][125]&lt;[Boolean][151]>**
 
 ### setFactoryFirmware
 
-[src/device.js:251-258][171]
+[src/device.js:278-285][171]
 
 Set factory firmware.
 
@@ -507,7 +507,7 @@ Returns **[Promise][125]**
 
 ### getFactoryFirmware
 
-[src/device.js:265-276][172]
+[src/device.js:292-303][172]
 
 Get factory firmware.
 
@@ -515,7 +515,7 @@ Returns **[Promise][125]&lt;[Buffer][129]>**
 
 ### readConfigData
 
-[src/device.js:285-292][173]
+[src/device.js:312-319][173]
 
 Read configuration data.
 
@@ -528,7 +528,7 @@ Returns **[Promise][125]&lt;[Buffer][129]>**
 
 ### writeConfigData
 
-[src/device.js:301-308][174]
+[src/device.js:328-335][174]
 
 Write configuration data.
 
@@ -541,7 +541,7 @@ Returns **[Promise][125]**
 
 ### getConfigDataSize
 
-[src/device.js:315-322][175]
+[src/device.js:342-349][175]
 
 Get size of the configuration data.
 
@@ -549,7 +549,7 @@ Returns **[Promise][125]&lt;[Number][128]>**
 
 ### readEeprom
 
-[src/device.js:331-338][176]
+[src/device.js:358-365][176]
 
 Read from EEPROM.
 
@@ -562,7 +562,7 @@ Returns **[Promise][125]&lt;[Buffer][129]>**
 
 ### writeEeprom
 
-[src/device.js:347-354][177]
+[src/device.js:374-381][177]
 
 Write to EEPROM.
 
@@ -575,7 +575,7 @@ Returns **[Promise][125]**
 
 ### clearEeprom
 
-[src/device.js:361-368][178]
+[src/device.js:388-395][178]
 
 Clear EEPROM.
 
@@ -583,7 +583,7 @@ Returns **[Promise][125]**
 
 ### getEepromSize
 
-[src/device.js:375-382][179]
+[src/device.js:402-409][179]
 
 Get size of the EEPROM.
 
@@ -591,7 +591,7 @@ Returns **[Promise][125]&lt;[Number][128]>**
 
 ### addLogHandler
 
-[src/device.js:396-451][180]
+[src/device.js:423-478][180]
 
 Add a log handler.
 
@@ -609,7 +609,7 @@ Returns **[Promise][125]**
 
 ### removeLogHandler
 
-[src/device.js:460-462][181]
+[src/device.js:487-489][181]
 
 Remove a log handler.
 
@@ -622,7 +622,7 @@ Returns **[Promise][125]**
 
 ### getLogHandlers
 
-[src/device.js:469-474][182]
+[src/device.js:496-501][182]
 
 Get the list of active log handlers.
 
@@ -1093,27 +1093,27 @@ Mixin class for a WiFi device.
 
 [116]: #parameters-32
 
-[117]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/cellular-device.js#L6-L23 "Source code on GitHub"
+[117]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/cellular-device.js#L6-L23 "Source code on GitHub"
 
-[118]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/cloud-device.js#L9-L12 "Source code on GitHub"
+[118]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/cloud-device.js#L9-L12 "Source code on GitHub"
 
-[119]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/cloud-device.js#L17-L193 "Source code on GitHub"
+[119]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/cloud-device.js#L17-L193 "Source code on GitHub"
 
-[120]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/config.js#L19-L21 "Source code on GitHub"
+[120]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/config.js#L19-L21 "Source code on GitHub"
 
 [121]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
 
-[122]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L49-L51 "Source code on GitHub"
+[122]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L49-L51 "Source code on GitHub"
 
-[123]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L73-L741 "Source code on GitHub"
+[123]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L73-L741 "Source code on GitHub"
 
-[124]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L102-L144 "Source code on GitHub"
+[124]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L102-L144 "Source code on GitHub"
 
 [125]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise
 
-[126]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L152-L181 "Source code on GitHub"
+[126]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L152-L181 "Source code on GitHub"
 
-[127]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L191-L241 "Source code on GitHub"
+[127]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L191-L241 "Source code on GitHub"
 
 [128]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
 
@@ -1121,154 +1121,154 @@ Mixin class for a WiFi device.
 
 [130]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
 
-[131]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L249-L254 "Source code on GitHub"
+[131]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L249-L254 "Source code on GitHub"
 
-[132]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L259-L261 "Source code on GitHub"
+[132]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L259-L261 "Source code on GitHub"
 
-[133]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L266-L268 "Source code on GitHub"
+[133]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L266-L268 "Source code on GitHub"
 
-[134]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L273-L275 "Source code on GitHub"
+[134]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L273-L275 "Source code on GitHub"
 
-[135]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L280-L282 "Source code on GitHub"
+[135]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L280-L282 "Source code on GitHub"
 
-[136]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L287-L289 "Source code on GitHub"
+[136]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L287-L289 "Source code on GitHub"
 
-[137]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L294-L296 "Source code on GitHub"
+[137]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L294-L296 "Source code on GitHub"
 
-[138]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L301-L303 "Source code on GitHub"
+[138]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L301-L303 "Source code on GitHub"
 
-[139]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L308-L310 "Source code on GitHub"
+[139]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L308-L310 "Source code on GitHub"
 
-[140]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L315-L317 "Source code on GitHub"
+[140]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L315-L317 "Source code on GitHub"
 
-[141]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L322-L324 "Source code on GitHub"
+[141]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L322-L324 "Source code on GitHub"
 
-[142]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L329-L331 "Source code on GitHub"
+[142]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L329-L331 "Source code on GitHub"
 
-[143]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L336-L338 "Source code on GitHub"
+[143]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L336-L338 "Source code on GitHub"
 
-[144]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L343-L345 "Source code on GitHub"
+[144]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L343-L345 "Source code on GitHub"
 
-[145]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L350-L352 "Source code on GitHub"
+[145]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L350-L352 "Source code on GitHub"
 
-[146]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L357-L359 "Source code on GitHub"
+[146]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L357-L359 "Source code on GitHub"
 
-[147]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L364-L366 "Source code on GitHub"
+[147]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L364-L366 "Source code on GitHub"
 
-[148]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L371-L373 "Source code on GitHub"
+[148]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L371-L373 "Source code on GitHub"
 
-[149]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L751-L771 "Source code on GitHub"
+[149]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L751-L771 "Source code on GitHub"
 
 [150]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
 
 [151]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
 
-[152]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-base.js#L780-L800 "Source code on GitHub"
+[152]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-base.js#L780-L800 "Source code on GitHub"
 
-[153]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device-type.js#L4-L16 "Source code on GitHub"
+[153]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device-type.js#L4-L16 "Source code on GitHub"
 
-[154]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L13-L18 "Source code on GitHub"
+[154]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L13-L18 "Source code on GitHub"
 
-[155]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L23-L26 "Source code on GitHub"
+[155]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L23-L26 "Source code on GitHub"
 
-[156]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L31-L38 "Source code on GitHub"
+[156]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L31-L38 "Source code on GitHub"
 
-[157]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L73-L644 "Source code on GitHub"
+[157]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L82-L671 "Source code on GitHub"
 
-[158]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L79-L81 "Source code on GitHub"
+[158]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L88-L90 "Source code on GitHub"
 
-[159]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L88-L94 "Source code on GitHub"
+[159]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L97-L103 "Source code on GitHub"
 
-[160]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L101-L103 "Source code on GitHub"
+[160]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L110-L112 "Source code on GitHub"
 
-[161]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L110-L112 "Source code on GitHub"
+[161]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L119-L139 "Source code on GitHub"
 
-[162]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L119-L121 "Source code on GitHub"
+[162]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L146-L148 "Source code on GitHub"
 
-[163]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L128-L142 "Source code on GitHub"
+[163]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L155-L169 "Source code on GitHub"
 
-[164]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L149-L151 "Source code on GitHub"
+[164]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L176-L178 "Source code on GitHub"
 
-[165]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L156-L159 "Source code on GitHub"
+[165]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L183-L186 "Source code on GitHub"
 
-[166]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L166-L168 "Source code on GitHub"
+[166]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L193-L195 "Source code on GitHub"
 
-[167]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L175-L177 "Source code on GitHub"
+[167]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L202-L204 "Source code on GitHub"
 
-[168]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L185-L211 "Source code on GitHub"
+[168]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L212-L238 "Source code on GitHub"
 
-[169]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L220-L234 "Source code on GitHub"
+[169]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L247-L261 "Source code on GitHub"
 
-[170]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L241-L243 "Source code on GitHub"
+[170]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L268-L270 "Source code on GitHub"
 
-[171]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L251-L258 "Source code on GitHub"
+[171]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L278-L285 "Source code on GitHub"
 
-[172]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L265-L276 "Source code on GitHub"
+[172]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L292-L303 "Source code on GitHub"
 
-[173]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L285-L292 "Source code on GitHub"
+[173]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L312-L319 "Source code on GitHub"
 
-[174]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L301-L308 "Source code on GitHub"
+[174]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L328-L335 "Source code on GitHub"
 
-[175]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L315-L322 "Source code on GitHub"
+[175]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L342-L349 "Source code on GitHub"
 
-[176]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L331-L338 "Source code on GitHub"
+[176]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L358-L365 "Source code on GitHub"
 
-[177]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L347-L354 "Source code on GitHub"
+[177]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L374-L381 "Source code on GitHub"
 
-[178]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L361-L368 "Source code on GitHub"
+[178]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L388-L395 "Source code on GitHub"
 
-[179]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L375-L382 "Source code on GitHub"
+[179]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L402-L409 "Source code on GitHub"
 
-[180]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L396-L451 "Source code on GitHub"
+[180]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L423-L478 "Source code on GitHub"
 
-[181]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L460-L462 "Source code on GitHub"
+[181]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L487-L489 "Source code on GitHub"
 
-[182]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/device.js#L469-L474 "Source code on GitHub"
+[182]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/device.js#L496-L501 "Source code on GitHub"
 
-[183]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/dfu.js#L6-L11 "Source code on GitHub"
+[183]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/dfu.js#L6-L11 "Source code on GitHub"
 
-[184]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/dfu.js#L128-L132 "Source code on GitHub"
+[184]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/dfu.js#L128-L132 "Source code on GitHub"
 
-[185]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/dfu.js#L139-L143 "Source code on GitHub"
+[185]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/dfu.js#L139-L143 "Source code on GitHub"
 
-[186]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/dfu.js#L150-L172 "Source code on GitHub"
+[186]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/dfu.js#L150-L172 "Source code on GitHub"
 
-[187]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/error.js#L6-L11 "Source code on GitHub"
+[187]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/error.js#L6-L11 "Source code on GitHub"
 
-[188]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/error.js#L16-L21 "Source code on GitHub"
+[188]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/error.js#L16-L21 "Source code on GitHub"
 
-[189]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/error.js#L26-L31 "Source code on GitHub"
+[189]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/error.js#L26-L31 "Source code on GitHub"
 
-[190]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/error.js#L36-L41 "Source code on GitHub"
+[190]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/error.js#L36-L41 "Source code on GitHub"
 
-[191]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/error.js#L46-L51 "Source code on GitHub"
+[191]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/error.js#L46-L51 "Source code on GitHub"
 
-[192]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/error.js#L56-L61 "Source code on GitHub"
+[192]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/error.js#L56-L61 "Source code on GitHub"
 
-[193]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/error.js#L66-L71 "Source code on GitHub"
+[193]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/error.js#L66-L71 "Source code on GitHub"
 
-[194]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/error.js#L76-L81 "Source code on GitHub"
+[194]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/error.js#L76-L81 "Source code on GitHub"
 
-[195]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/error.js#L86-L91 "Source code on GitHub"
+[195]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/error.js#L86-L91 "Source code on GitHub"
 
-[196]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/error.js#L96-L102 "Source code on GitHub"
+[196]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/error.js#L96-L102 "Source code on GitHub"
 
-[197]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/mesh-device.js#L124-L342 "Source code on GitHub"
+[197]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/mesh-device.js#L124-L342 "Source code on GitHub"
 
-[198]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/network-device.js#L11-L14 "Source code on GitHub"
+[198]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/network-device.js#L11-L14 "Source code on GitHub"
 
-[199]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/network-device.js#L19-L51 "Source code on GitHub"
+[199]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/network-device.js#L19-L51 "Source code on GitHub"
 
-[200]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/result.js#L119-L122 "Source code on GitHub"
+[200]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/result.js#L119-L122 "Source code on GitHub"
 
-[201]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/result.js#L127-L129 "Source code on GitHub"
+[201]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/result.js#L127-L129 "Source code on GitHub"
 
-[202]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/wifi-device.js#L9-L13 "Source code on GitHub"
+[202]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/wifi-device.js#L9-L13 "Source code on GitHub"
 
-[203]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/wifi-device.js#L18-L26 "Source code on GitHub"
+[203]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/wifi-device.js#L18-L26 "Source code on GitHub"
 
-[204]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/wifi-device.js#L31-L35 "Source code on GitHub"
+[204]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/wifi-device.js#L31-L35 "Source code on GitHub"
 
-[205]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/wifi-device.js#L40-L43 "Source code on GitHub"
+[205]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/wifi-device.js#L40-L43 "Source code on GitHub"
 
-[206]: https://github.com/particle-iot/particle-usb/blob/5737c9c9800daecd466f1a6c3f74ec4132b73484/src/wifi-device.js#L79-L151 "Source code on GitHub"
+[206]: https://github.com/particle-iot/particle-usb/blob/19f2244306c111a8fe70a4e7fdbbf5f0f8f1548d/src/wifi-device.js#L79-L151 "Source code on GitHub"
