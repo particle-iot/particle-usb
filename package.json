@@ -52,7 +52,7 @@
     "chai-as-promised": "^7.1.1",
     "chai-subset": "^1.6.0",
     "documentation": "^12.1.4",
-    "mocha": "^6.0.2",
+    "mocha": "^7.1.0",
     "mocha-sinon": "^2.1.0",
     "sinon": "^7.2.7",
     "sinon-chai": "^3.3.0",
