@@ -15,7 +15,7 @@ export { WifiAntenna, WifiSecurity, WifiCipher, EapMethod } from './wifi-device'
 export { ServerProtocol } from './cloud-device';
 export { Result } from './result';
 export { DeviceError, NotFoundError, NotAllowedError, StateError, TimeoutError, MemoryError, ProtocolError, UsbError,
-    InternalError, RequestError } from './error';
+	InternalError, RequestError } from './error';
 export { config } from './config';
 
 export class Core extends DeviceBase {
@@ -52,31 +52,31 @@ export class B5Som extends CloudDevice(CellularDevice(MeshDevice(NetworkDevice(D
 }
 
 const DEVICE_PROTOTYPES = {
-  [DeviceType.CORE]: Core.prototype,
-  [DeviceType.PHOTON]: Photon.prototype,
-  [DeviceType.P1]: P1.prototype,
-  [DeviceType.ELECTRON]: Electron.prototype,
-  [DeviceType.ARGON]: Argon.prototype,
-  [DeviceType.BORON]: Boron.prototype,
-  [DeviceType.XENON]: Xenon.prototype,
-  [DeviceType.ARGON_SOM]: ArgonSom.prototype,
-  [DeviceType.BORON_SOM]: BoronSom.prototype,
-  [DeviceType.XENON_SOM]: XenonSom.prototype,
-  [DeviceType.B5_SOM]: B5Som.prototype
+	[DeviceType.CORE]: Core.prototype,
+	[DeviceType.PHOTON]: Photon.prototype,
+	[DeviceType.P1]: P1.prototype,
+	[DeviceType.ELECTRON]: Electron.prototype,
+	[DeviceType.ARGON]: Argon.prototype,
+	[DeviceType.BORON]: Boron.prototype,
+	[DeviceType.XENON]: Xenon.prototype,
+	[DeviceType.ARGON_SOM]: ArgonSom.prototype,
+	[DeviceType.BORON_SOM]: BoronSom.prototype,
+	[DeviceType.XENON_SOM]: XenonSom.prototype,
+	[DeviceType.B5_SOM]: B5Som.prototype
 };
 
 function setDevicePrototype(dev) {
-  const proto = DEVICE_PROTOTYPES[dev.type];
-  if (!proto) {
-    return dev;
-  }
-  return Object.setPrototypeOf(dev, proto);
+	const proto = DEVICE_PROTOTYPES[dev.type];
+	if (!proto) {
+		return dev;
+	}
+	return Object.setPrototypeOf(dev, proto);
 }
 
 export function getDevices(options) {
-  return getUsbDevices(options).then(devs => devs.map(dev => setDevicePrototype(dev)));
+	return getUsbDevices(options).then(devs => devs.map(dev => setDevicePrototype(dev)));
 }
 
 export function openDeviceById(id, options) {
-  return openUsbDeviceById(id, options).then(dev => setDevicePrototype(dev));
+	return openUsbDeviceById(id, options).then(dev => setDevicePrototype(dev));
 }
