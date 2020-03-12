@@ -1,5 +1,4 @@
 import { getDevices, openDeviceById, PollingPolicy } from '../src/device-base';
-import { DeviceType } from '../src/device-type';
 import * as usbImpl from '../src/usb-device-node';
 import * as proto from '../src/usb-protocol';
 import * as error from '../src/error';
@@ -20,7 +19,7 @@ describe('device-base', () => {
 		usbImpl.getUsbDevices.restore();
 	});
 
-	beforeEach(function() {
+	beforeEach(function setup() {
 		this.tick = async t => {
 			// Wait for the next event loop iteration to ensure that all promise callbacks get invoked:
 			// https://github.com/sinonjs/sinon/issues/738
@@ -91,9 +90,13 @@ describe('device-base', () => {
 		it('can optionally exclude devices in the DFU mode', async () => {
 			const photon1 = fakeUsb.addPhoton({ dfu: true });
 			const photon2 = fakeUsb.addPhoton({ dfu: false });
-			const devs = await getDevices({ includeDfu: false });
-			expect(devs).to.have.lengthOf(1);
-			expect(devs[0].usbDevice).to.equal(photon2);
+			const allDevices = await getDevices({ includeDfu: true });
+			const nonDFUDevices = await getDevices({ includeDfu: false });
+			expect(allDevices).to.have.lengthOf(2);
+			expect(allDevices[0].usbDevice).to.equal(photon1);
+			expect(allDevices[1].usbDevice).to.equal(photon2);
+			expect(nonDFUDevices).to.have.lengthOf(1);
+			expect(nonDFUDevices[0].usbDevice).to.equal(photon2);
 		});
 
 		it('can filter detected devices by type', async () => {
@@ -147,7 +150,7 @@ describe('device-base', () => {
 
 		it('ignores invalid device types', async () => {
 			const photon = fakeUsb.addPhoton();
-			const boron = fakeUsb.addBoron();
+			fakeUsb.addBoron();
 			let devs = await getDevices({ types: ['photoshka'] });
 			expect(devs).to.be.empty;
 			devs = await getDevices({ types: ['photon', 'boronchik'] });
@@ -175,7 +178,7 @@ describe('device-base', () => {
 			expect(photon.isOpen).to.be.false;
 		});
 
-		it('ignores non-Particle devices with a matching serial number', async function() {
+		it('ignores non-Particle devices with a matching serial number', async function test() {
 			const unknown = fakeUsb.addDevice({
 				vendorId: 0xaaaa,
 				productId: 0xbbbb,
@@ -207,7 +210,7 @@ describe('device-base', () => {
 					firmwareVersion: '1.0.0'
 				});
 				const devs = await getDevices();
-				assert(devs.length != 0);
+				assert(devs.length !== 0);
 				dev = devs[0];
 			});
 
@@ -244,7 +247,7 @@ describe('device-base', () => {
 					expect(dev.firmwareVersion).to.be.null;
 				});
 
-				it('resets all pending requests after opening the USB device', async function() {
+				it('resets all pending requests after opening the USB device', async function test() {
 					const resetAllRequests = this.sinon.spy(usbDev.protocol, 'resetAllRequests');
 					await dev.open();
 					expect(resetAllRequests).to.have.been.calledOnce;
@@ -287,7 +290,7 @@ describe('device-base', () => {
 					await close;
 				});
 
-				it('cancels pending requests when the timeout is reached', async function() {
+				it('cancels pending requests when the timeout is reached', async function test() {
 					this.sinon.useFakeTimers();
 					this.sinon.stub(usbDev.protocol, 'checkRequest').returns(proto.Status.PENDING);
 					await dev.open();
@@ -300,7 +303,7 @@ describe('device-base', () => {
 					await expect(req2).to.be.rejectedWith(error.StateError);
 				});
 
-				it('resets active requests when the timeout is reached', async function() {
+				it('resets active requests when the timeout is reached', async function test() {
 					this.sinon.useFakeTimers();
 					this.sinon.stub(usbDev.protocol, 'checkRequest').returns(proto.Status.PENDING);
 					const resetAllRequests = this.sinon.spy(usbDev.protocol, 'resetAllRequests');
@@ -320,7 +323,7 @@ describe('device-base', () => {
 					await dev.open();
 				});
 
-				it('can send a request without payload data', async function() {
+				it('can send a request without payload data', async function test() {
 					this.sinon.useFakeTimers();
 					const initRequest = this.sinon.spy(usbDev.protocol, 'initRequest');
 					const sendRequest = this.sinon.spy(usbDev.protocol, 'sendRequest');
@@ -334,7 +337,7 @@ describe('device-base', () => {
 					expect(sendRequest).to.have.not.been.called;
 				});
 
-				it('can send a request with payload data', async function() {
+				it('can send a request with payload data', async function test() {
 					this.sinon.useFakeTimers();
 					const initRequest = this.sinon.spy(usbDev.protocol, 'initRequest');
 					const sendRequest = this.sinon.spy(usbDev.protocol, 'sendRequest');
@@ -353,7 +356,7 @@ describe('device-base', () => {
 					}));
 				});
 
-				it('can send request data in multiple chunks', async function() {
+				it('can send request data in multiple chunks', async function test() {
 					this.sinon.useFakeTimers();
 					const initRequest = this.sinon.spy(usbDev.protocol, 'initRequest');
 					const sendRequest = this.sinon.spy(usbDev.protocol, 'sendRequest');
@@ -378,17 +381,16 @@ describe('device-base', () => {
 					}]);
 				});
 
-				it('can receive a reply without payload data', async function() {
+				it('can receive a reply without payload data', async function test() {
 					this.sinon.useFakeTimers();
 					const recvRequest = this.sinon.spy(usbDev.protocol, 'recvRequest');
-					const reqId = usbDev.protocol.nextRequestId;
 					const req = dev.sendControlRequest(REQUEST_1);
 					await this.checkTimeout();
 					await req;
 					expect(recvRequest).to.have.not.been.called;
 				});
 
-				it('can receive a reply with payload data', async function() {
+				it('can receive a reply with payload data', async function test() {
 					this.sinon.useFakeTimers();
 					const repData = Buffer.from('reply data');
 					this.sinon.stub(usbDev.protocol, 'replyData').returns(repData);
@@ -403,7 +405,7 @@ describe('device-base', () => {
 					});
 				});
 
-				it('can receive reply data in multiple chunks', async function() {
+				it('can receive reply data in multiple chunks', async function test() {
 					this.sinon.useFakeTimers();
 					const chunk1 = Buffer.from('A'.repeat(usbImpl.MAX_CONTROL_TRANSFER_DATA_SIZE));
 					const chunk2 = Buffer.from('B'.repeat(usbImpl.MAX_CONTROL_TRANSFER_DATA_SIZE - 1));
@@ -424,9 +426,9 @@ describe('device-base', () => {
 					}]);
 				});
 
-				it('polls the USB device until it allocates a buffer for the request data', async function() {
+				it('polls the USB device until it allocates a buffer for the request data', async function test() {
 					this.sinon.useFakeTimers();
-					const initRequest = this.sinon.stub(usbDev.protocol, 'initRequest')
+					this.sinon.stub(usbDev.protocol, 'initRequest')
 						.returns(proto.Status.PENDING);
 					const checkBuffer = this.sinon.stub(usbDev.protocol, 'checkBuffer')
 						.onFirstCall().returns(proto.Status.PENDING)
@@ -444,7 +446,7 @@ describe('device-base', () => {
 					await req;
 				});
 
-				it('polls the USB device until it completes processing of a request', async function() {
+				it('polls the USB device until it completes processing of a request', async function test() {
 					this.sinon.useFakeTimers();
 					const checkRequest = this.sinon.stub(usbDev.protocol, 'checkRequest')
 						.onFirstCall().returns(proto.Status.PENDING)
@@ -460,7 +462,7 @@ describe('device-base', () => {
 					await req;
 				});
 
-				it('resolves to an object containing the result code', async function() {
+				it('resolves to an object containing the result code', async function test() {
 					this.sinon.useFakeTimers();
 					this.sinon.stub(usbDev.protocol, 'replyResult').returns(1234);
 					const req = dev.sendControlRequest(REQUEST_1);
@@ -471,7 +473,7 @@ describe('device-base', () => {
 					expect(rep).not.to.have.property('data');
 				});
 
-				it('resolves to an object containing the reply data', async function() {
+				it('resolves to an object containing the reply data', async function test() {
 					this.sinon.useFakeTimers();
 					this.sinon.stub(usbDev.protocol, 'replyResult').returns(0);
 					this.sinon.stub(usbDev.protocol, 'replyData').returns(Buffer.from('reply data'));
@@ -484,39 +486,39 @@ describe('device-base', () => {
 					expect(rep.data).to.deep.equal(Buffer.from('reply data'));
 				});
 
-				it('sends requests to the USB device concurrently', async function() {
+				it('sends requests to the USB device concurrently', async function test() {
 					this.sinon.useFakeTimers();
 					this.sinon.stub(usbDev.protocol, 'checkRequest').returns(proto.Status.PENDING);
 					const initRequest = this.sinon.spy(usbDev.protocol, 'initRequest');
-					const req1 = dev.sendControlRequest(REQUEST_1);
-					const req2 = dev.sendControlRequest(REQUEST_2);
+					dev.sendControlRequest(REQUEST_1);
+					dev.sendControlRequest(REQUEST_2);
 					await this.checkTimeout();
 					expect(initRequest).to.have.been.calledWith(sinon.match({ type: REQUEST_1 }));
 					expect(initRequest).to.have.been.calledWith(sinon.match({ type: REQUEST_2 }));
 				});
 
-				it('limits the maximum number of concurrent requests', async function() {
+				it('limits the maximum number of concurrent requests', async function test() {
 					// Reopen the device with different settings
 					await dev.close();
 					await dev.open({ concurrentRequests: 1 });
 					this.sinon.useFakeTimers();
 					this.sinon.stub(usbDev.protocol, 'checkRequest').returns(proto.Status.PENDING);
 					const initRequest = this.sinon.spy(usbDev.protocol, 'initRequest');
-					const req1 = dev.sendControlRequest(REQUEST_1);
-					const req2 = dev.sendControlRequest(REQUEST_2);
+					dev.sendControlRequest(REQUEST_1);
+					dev.sendControlRequest(REQUEST_2);
 					await this.checkTimeout();
 					expect(initRequest).to.have.been.calledWith(sinon.match({ type: REQUEST_1 }));
 					expect(initRequest).to.not.have.been.calledWith(sinon.match({ type: REQUEST_2 }));
 				});
 
-				it('times out after a specified amount of time', async function() {
+				it('times out after a specified amount of time', async function test() {
 					this.sinon.useFakeTimers();
 					const req = dev.sendControlRequest(REQUEST_1, null, { timeout: 1000 });
 					this.tick(1000);
 					await expect(req).to.be.rejectedWith(error.TimeoutError);
 				});
 
-				it('resets an active request when it times out', async function() {
+				it('resets an active request when it times out', async function test() {
 					this.sinon.useFakeTimers();
 					this.sinon.stub(usbDev.protocol, 'checkRequest').returns(proto.Status.PENDING);
 					const resetRequest = this.sinon.spy(usbDev.protocol, 'resetRequest');
@@ -526,7 +528,7 @@ describe('device-base', () => {
 					expect(resetRequest).to.have.been.called;
 				});
 
-				it('converts the reply data to a string if the request data is a string', async function() {
+				it('converts the reply data to a string if the request data is a string', async function test() {
 					this.sinon.useFakeTimers();
 					this.sinon.stub(usbDev.protocol, 'replyData').returns(Buffer.from('reply data'));
 					const req = dev.sendControlRequest(REQUEST_1, 'request data');
@@ -561,28 +563,26 @@ describe('device-base', () => {
 
 		describe('with multiple devices', () => {
 			beforeEach(async () => {
-				const usbDevs = [
-					fakeUsb.addCore({ dfu: true }),
-					fakeUsb.addPhoton({ dfu: true }),
-					fakeUsb.addP1({ dfu: true }),
-					fakeUsb.addElectron({ dfu: true }),
-					fakeUsb.addArgon({ dfu: true }),
-					fakeUsb.addBoron({ dfu: true }),
-					fakeUsb.addXenon({ dfu: true }),
-					fakeUsb.addArgonSom({ dfu: true }),
-					fakeUsb.addBoronSom({ dfu: true }),
-					fakeUsb.addXenonSom({ dfu: true }),
-					fakeUsb.addCore(),
-					fakeUsb.addPhoton(),
-					fakeUsb.addP1(),
-					fakeUsb.addElectron(),
-					fakeUsb.addArgon(),
-					fakeUsb.addBoron(),
-					fakeUsb.addXenon(),
-					fakeUsb.addArgonSom(),
-					fakeUsb.addBoronSom(),
-					fakeUsb.addXenonSom()
-				];
+				fakeUsb.addCore({ dfu: true });
+				fakeUsb.addPhoton({ dfu: true });
+				fakeUsb.addP1({ dfu: true });
+				fakeUsb.addElectron({ dfu: true });
+				fakeUsb.addArgon({ dfu: true });
+				fakeUsb.addBoron({ dfu: true });
+				fakeUsb.addXenon({ dfu: true });
+				fakeUsb.addArgonSom({ dfu: true });
+				fakeUsb.addBoronSom({ dfu: true });
+				fakeUsb.addXenonSom({ dfu: true });
+				fakeUsb.addCore();
+				fakeUsb.addPhoton();
+				fakeUsb.addP1();
+				fakeUsb.addElectron();
+				fakeUsb.addArgon();
+				fakeUsb.addBoron();
+				fakeUsb.addXenon();
+				fakeUsb.addArgonSom();
+				fakeUsb.addBoronSom();
+				fakeUsb.addXenonSom();
 			});
 
 			it('open and close', async () => {

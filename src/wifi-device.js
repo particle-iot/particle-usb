@@ -94,7 +94,7 @@ export const WifiDevice = base => class extends base {
    *
    * @return {Promise<String>}
    */
-	getWifiAntenna(antenna) {
+	getWifiAntenna(/* antenna */) {
 		return this.sendRequest(Request.WIFI_GET_ANTENNA).then(rep => {
 			return WifiAntenna.fromProtobuf(rep.antenna);
 		});

@@ -66,7 +66,7 @@ function transformMessage(msg, map) {
 
 function checkFromProtobufMessageMap(pbMsgProto, map) {
 	for (let name in map) {
-		if (!pbMsgProto.hasOwnProperty(name)) {
+		if (!Object.prototype.hasOwnProperty.call(pbMsgProto, name)) {
 			throw new Error(`Unknown message field: ${name}`);
 		}
 	}
@@ -82,7 +82,7 @@ function checkToProtobufMessageMap(pbMsgProto, map) {
 				name = m.name;
 			}
 		}
-		if (!pbMsgProto.hasOwnProperty(name)) {
+		if (!Object.prototype.hasOwnProperty.call(pbMsgProto, name)) {
 			throw new Error(`Unknown message field: ${name}`);
 		}
 	}

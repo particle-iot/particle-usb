@@ -50,7 +50,7 @@ export class Protocol {
 	}
 
 	deviceToHostRequest(setup) {
-		if (setup.bmRequestType != proto.BmRequestType.DEVICE_TO_HOST) {
+		if (setup.bmRequestType !== proto.BmRequestType.DEVICE_TO_HOST) {
 			throw new ProtocolError(`Unsupported device-to-host request: bmRequestType: ${setup.bmRequestType}`);
 		}
 		let data = null;
@@ -72,7 +72,7 @@ export class Protocol {
 				break;
 			}
 			case proto.PARTICLE_BREQUEST: { // Low-level vendor request
-				if (setup.wIndex == VendorRequest.SYSTEM_VERSION) {
+				if (setup.wIndex === VendorRequest.SYSTEM_VERSION) {
 					if (!this._opts.firmwareVersion) {
 						throw new ProtocolError(`Unsupported device-to-host request: wIndex: ${setup.wIndex}`);
 					}
@@ -93,10 +93,10 @@ export class Protocol {
 	}
 
 	hostToDeviceRequest(setup, data) {
-		if (setup.bmRequestType != proto.BmRequestType.HOST_TO_DEVICE) {
+		if (setup.bmRequestType !== proto.BmRequestType.HOST_TO_DEVICE) {
 			throw new ProtocolError(`Unsupported host-to-device request: bmRequestType: ${setup.bmRequestType}`);
 		}
-		if (data && data.length != setup.wLength || !data && setup.wLength != 0) {
+		if (data && data.length !== setup.wLength || !data && setup.wLength !== 0) {
 			throw new ProtocolError(`Unexpected size of the data stage: wLength: ${setup.wLength}`);
 		}
 		switch (setup.bRequest) {
@@ -132,8 +132,8 @@ export class Protocol {
 		};
 		const srep = {}; // Service reply
 		srep.status = this.initRequest({ id, type, size });
-		if (srep.status == proto.Status.OK || srep.status == proto.Status.PENDING) {
-			if (srep.status == proto.Status.OK) {
+		if (srep.status === proto.Status.OK || srep.status === proto.Status.PENDING) {
+			if (srep.status === proto.Status.OK) {
 				if (!req.size) {
 					req.received = true;
 				} else if (!req.data) {
@@ -154,27 +154,27 @@ export class Protocol {
 			if (req.size && !req.data) {
 				// Buffer allocation is pending
 				srep.status = this.checkBuffer({ id });
-				if (srep.status == proto.Status.OK) {
+				if (srep.status === proto.Status.OK) {
 					req.data = Buffer.alloc(req.size);
-				} else if (srep.status != proto.Status.PENDING) {
+				} else if (srep.status !== proto.Status.PENDING) {
 					this._reqs.delete(id); // Buffer allocation failed
 				}
 			} else {
 				// Request processing is pending
 				srep.status = this.checkRequest({ id });
-				if (srep.status == proto.Status.OK) {
+				if (srep.status === proto.Status.OK) {
 					const rep = { // Application reply
 						result: this.replyResult({ id }),
 						data: this.replyData({ id })
 					};
 					srep.result = rep.result;
-					if (rep.data && rep.data.length != 0) {
+					if (rep.data && rep.data.length !== 0) {
 						srep.size = rep.data.length;
 						req.reply = rep;
 					} else {
 						this._reqs.delete(id); // Request completed
 					}
-				} else if (srep.status != proto.Status.PENDING) {
+				} else if (srep.status !== proto.Status.PENDING) {
 					this._reqs.delete(id); // Request failed
 				}
 			}
@@ -202,7 +202,7 @@ export class Protocol {
 		this.sendRequest({ id, data: Buffer.from(data) });
 		data.copy(req.data, req.offset);
 		req.offset += data.length;
-		if (req.offset == req.data.length) {
+		if (req.offset === req.data.length) {
 			req.offset = 0;
 			req.received = true;
 		}
@@ -224,7 +224,7 @@ export class Protocol {
 		this.recvRequest({ id, size });
 		const data = repData.slice(req.offset, req.offset + size);
 		req.offset += size;
-		if (req.offset == repData.size) {
+		if (req.offset === repData.size) {
 			this._reqs.delete(id); // Request completed
 		}
 		return data;
@@ -236,7 +236,7 @@ export class Protocol {
 			const req = this._reqs.get(id);
 			if (req) {
 				srep.status = this.resetRequest({ id: req.id });
-				if (srep.status == proto.Status.OK) {
+				if (srep.status === proto.Status.OK) {
 					this._reqs.delete(id);
 				}
 			} else {
@@ -244,32 +244,32 @@ export class Protocol {
 			}
 		} else {
 			srep.status = this.resetAllRequests();
-			if (srep.status == proto.Status.OK) {
+			if (srep.status === proto.Status.OK) {
 				this._reqs.clear();
 			}
 		}
 		return proto.encodeReply(srep);
 	}
 
-	initRequest({ id, type, size }) {
+	initRequest(/* { id, type, size } */) {
 		return proto.Status.OK;
 	}
 
-	checkBuffer({ id }) {
+	checkBuffer(/* { id } */) {
 		return proto.Status.OK;
 	}
 
-	checkRequest({ id }) {
+	checkRequest(/* { id } */) {
 		return proto.Status.OK;
 	}
 
-	sendRequest({ id, data }) {
+	sendRequest(/* { id, data } */) {
 	}
 
-	recvRequest({ id, size }) {
+	recvRequest(/* { id, size } */) {
 	}
 
-	resetRequest({ id }) {
+	resetRequest(/* { id } */) {
 		return proto.Status.OK;
 	}
 
@@ -277,11 +277,11 @@ export class Protocol {
 		return proto.Status.OK;
 	}
 
-	replyResult({ id }) {
+	replyResult(/* { id } */) {
 		return 0; // OK
 	}
 
-	replyData({ id }) {
+	replyData(/* { id } */) {
 		return null;
 	}
 
@@ -382,7 +382,7 @@ export class DfuClass {
 		this._claimed.splice(this._claimed.indexOf(iface), 1);
 	}
 
-	setAltSetting(iface, setting) {
+	setAltSetting(/* iface, setting */) {
 		// Noop for now
 	}
 
@@ -412,7 +412,6 @@ export class DfuClass {
 			case dfu.DfuDeviceState.dfuDNLOAD_SYNC:
 			case dfu.DfuDeviceState.dfuMANIFEST_SYNC:
 			case dfu.DfuDeviceState.dfuMANIFEST:
-
 			case dfu.DfuDeviceState.appIDLE:
 			case dfu.DfuDeviceState.appDETACH:
 			case dfu.DfuDeviceState.dfuIDLE:
@@ -653,17 +652,17 @@ export async function getDevices(filters) {
 	});
 	let devs = Array.from(devices.values());
 	if (filters.length > 0) {
-		devs = devs.filter(dev => filters.some(f => ((!f.vendorId || dev.vendorId == f.vendorId) &&
-        (!f.productId || dev.productId == f.productId) &&
-        (!f.serialNumber || dev.serialNumber.toLowerCase() == f.serialNumber))));
+		devs = devs.filter(dev => filters.some(f => ((!f.vendorId || dev.vendorId === f.vendorId) &&
+        (!f.productId || dev.productId === f.productId) &&
+        (!f.serialNumber || dev.serialNumber.toLowerCase() === f.serialNumber))));
 	}
 	return devs;
 }
 
 export function addDevice(options) {
 	if (options.type) {
-		const devs = USB_DEVICES.filter(dev => (dev.type == options.type && dev.dfu == !!options.dfu));
-		if (devs.length == 0) {
+		const devs = USB_DEVICES.filter(dev => (dev.type === options.type && dev.dfu === !!options.dfu));
+		if (devs.length === 0) {
 			throw new Error(`Unknown device type: ${options.type}`);
 		}
 		options = Object.assign({}, options, devs[0]);

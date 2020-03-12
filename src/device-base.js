@@ -103,7 +103,7 @@ export class DeviceBase extends EventEmitter {
 		options = Object.assign({
 			concurrentRequests: null // The maximum number of concurrent requests is limited by the device
 		}, options);
-		if (this._state != DeviceState.CLOSED) {
+		if (this._state !== DeviceState.CLOSED) {
 			return Promise.reject(new StateError('Device is already open'));
 		}
 		// Open USB device
@@ -154,7 +154,7 @@ export class DeviceBase extends EventEmitter {
 			processPendingRequests: true, // Process pending requests before closing the device
 			timeout: null // Wait until all requests are processed
 		}, options);
-		if (this._state == DeviceState.CLOSED) {
+		if (this._state === DeviceState.CLOSED) {
 			return Promise.resolve();
 		}
 		// Check if pending requests need to be processed before closing the device
@@ -170,7 +170,7 @@ export class DeviceBase extends EventEmitter {
 				this._process();
 			}, options.timeout);
 		}
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve) => {
 			// Use EventEmitter's queue to resolve the promise
 			this.once('closed', () => {
 				resolve();
@@ -194,16 +194,16 @@ export class DeviceBase extends EventEmitter {
 			timeout: globalOptions.requestTimeout // Request timeout
 		}, options);
 		return new Promise((resolve, reject) => {
-			if (this._state == DeviceState.CLOSED) {
+			if (this._state === DeviceState.CLOSED) {
 				throw new StateError('Device is not open');
 			}
-			if (this._state == DeviceState.CLOSING || this._wantClose) {
+			if (this._state === DeviceState.CLOSING || this._wantClose) {
 				throw new StateError('Device is being closed');
 			}
 			if (type < 0 || type > proto.MAX_REQUEST_TYPE) {
 				throw new RangeError('Invalid request type');
 			}
-			const dataIsStr = (typeof data == 'string');
+			const dataIsStr = (typeof data === 'string');
 			if (dataIsStr) {
 				data = Buffer.from(data);
 			}
@@ -218,7 +218,7 @@ export class DeviceBase extends EventEmitter {
 				dataSent: false,
 				protoId: null, // Protocol request ID
 				checkInterval: options.pollingPolicy,
-				checkIntervalIsFunc: (typeof options.pollingPolicy == 'function'),
+				checkIntervalIsFunc: (typeof options.pollingPolicy === 'function'),
 				checkTimer: null,
 				checkCount: 0,
 				reqTimer: null,
@@ -257,7 +257,7 @@ export class DeviceBase extends EventEmitter {
    * Set to `true` if the device is open.
    */
 	get isOpen() {
-		return (this._state != DeviceState.CLOSED);
+		return (this._state !== DeviceState.CLOSED);
 	}
 
 	/**
@@ -292,56 +292,56 @@ export class DeviceBase extends EventEmitter {
    * Set to `true` if this is a Core device.
    */
 	get isCore() {
-		return (this.type == DeviceType.CORE);
+		return (this.type === DeviceType.CORE);
 	}
 
 	/**
    * Set to `true` if this is a Photon device.
    */
 	get isPhoton() {
-		return (this.type == DeviceType.PHOTON);
+		return (this.type === DeviceType.PHOTON);
 	}
 
 	/**
    * Set to `true` if this is a P1 device.
    */
 	get isP1() {
-		return (this.type == DeviceType.P1);
+		return (this.type === DeviceType.P1);
 	}
 
 	/**
    * Set to `true` if this is an Electron device.
    */
 	get isElectron() {
-		return (this.type == DeviceType.ELECTRON);
+		return (this.type === DeviceType.ELECTRON);
 	}
 
 	/**
    * Set to `true` if this is a Duo device.
    */
 	get isDuo() {
-		return (this.type == DeviceType.DUO);
+		return (this.type === DeviceType.DUO);
 	}
 
 	/**
    * Set to `true` if this is a Xenon device.
    */
 	get isXenon() {
-		return (this.type == DeviceType.XENON);
+		return (this.type === DeviceType.XENON);
 	}
 
 	/**
    * Set to `true` if this is a Xenon device.
    */
 	get isArgon() {
-		return (this.type == DeviceType.ARGON);
+		return (this.type === DeviceType.ARGON);
 	}
 
 	/**
    * Set to `true` if this is a Xenon device.
    */
 	get isBoron() {
-		return (this.type == DeviceType.BORON);
+		return (this.type === DeviceType.BORON);
 	}
 
 	/**
@@ -373,10 +373,10 @@ export class DeviceBase extends EventEmitter {
 	}
 
 	_process() {
-		if (this._state == DeviceState.CLOSED || this._state == DeviceState.OPENING || this._busy) {
+		if (this._state === DeviceState.CLOSED || this._state === DeviceState.OPENING || this._busy) {
 			return;
 		}
-		if (this._wantClose && this._state != DeviceState.CLOSING) {
+		if (this._wantClose && this._state !== DeviceState.CLOSING) {
 			this._log.trace('Closing device');
 			this._state = DeviceState.CLOSING;
 		}
@@ -392,7 +392,7 @@ export class DeviceBase extends EventEmitter {
 		if (this._sendNextRequest()) {
 			return;
 		}
-		if (this._state == DeviceState.CLOSING && this._activeReqs == 0) {
+		if (this._state === DeviceState.CLOSING && this._activeReqs === 0) {
 			this._close();
 		}
 	}
@@ -416,7 +416,7 @@ export class DeviceBase extends EventEmitter {
 	}
 
 	_resetNextRequest() {
-		if (this._resetQueue.length == 0) {
+		if (this._resetQueue.length === 0) {
 			return false;
 		}
 		const req = this._resetQueue.shift();
@@ -435,7 +435,7 @@ export class DeviceBase extends EventEmitter {
 
 	_checkNextRequest() {
 		let req = null;
-		while (this._checkQueue.length != 0) {
+		while (this._checkQueue.length !== 0) {
 			const r = this._checkQueue.shift();
 			if (!r.done) { // Skip cancelled requests
 				req = r;
@@ -505,7 +505,7 @@ export class DeviceBase extends EventEmitter {
 			return false;
 		}
 		let req = null;
-		while (this._reqQueue.length != 0) {
+		while (this._reqQueue.length !== 0) {
 			const r = this._reqQueue.shift();
 			if (!r.done) { // Skip cancelled requests
 				req = r;
@@ -521,7 +521,7 @@ export class DeviceBase extends EventEmitter {
 		const setup = proto.initRequest(req.type, req.data ? req.data.length : 0);
 		this._sendServiceRequest(setup).then(srep => {
 			this._log.trace(`Request ${req.id}: Status: ${srep.status}`);
-			if (srep.status == proto.Status.OK || srep.status == proto.Status.PENDING) {
+			if (srep.status === proto.Status.OK || srep.status === proto.Status.PENDING) {
 				req.protoId = srep.id;
 				++this._activeReqs;
 				this._log.trace(`Request ${req.id}: Protocol ID: ${req.protoId}`);
@@ -541,7 +541,7 @@ export class DeviceBase extends EventEmitter {
 					break;
 				}
 				case proto.Status.PENDING: {
-					if (!req.data || req.data.length == 0) {
+					if (!req.data || req.data.length === 0) {
 						throw new ProtocolError(`Unexpected status code: ${srep.status}`);
 					}
 					// Buffer allocation is pending
@@ -603,7 +603,7 @@ export class DeviceBase extends EventEmitter {
 			const setup = proto.recvRequest(req.protoId, chunkSize);
 			return this._dev.transferIn(setup).then(data => {
 				this._log.trace(`Request ${req.id}: Received ${data.length} bytes`);
-				if (data.length != chunkSize) {
+				if (data.length !== chunkSize) {
 					throw new Error('Unexpected size of the control transfer');
 				}
 				data.copy(buf, offs);
@@ -623,7 +623,7 @@ export class DeviceBase extends EventEmitter {
 	_close(err = null) {
 		assert(!this._busy);
 		// Cancel all requests
-		if (this._reqs.size != 0) {
+		if (this._reqs.size !== 0) {
 			if (!err) {
 				err = new StateError('Device has been closed');
 			}
@@ -648,7 +648,7 @@ export class DeviceBase extends EventEmitter {
 			this._log.warn(`Unable to close USB device: ${err.message}`);
 		}).then(() => {
 			// Reset device state
-			const emitEvent = (this._state == DeviceState.CLOSING);
+			const emitEvent = (this._state === DeviceState.CLOSING);
 			this._state = DeviceState.CLOSED;
 			this._wantClose = false;
 			this._maxActiveReqs = null;
@@ -752,14 +752,14 @@ export async function getDevices({ types = [], includeDfu = true } = {}) {
 	types = types.map(type => type.toLowerCase());
 	const filters = [];
 	DEVICES.forEach(dev => {
-		if (types.length == 0 || types.includes(dev.type.toLowerCase())) {
+		if (types.length === 0 || types.includes(dev.type.toLowerCase())) {
 			filters.push(dev.usbIds);
 			if (includeDfu) {
 				filters.push(dev.dfuUsbIds);
 			}
 		}
 	});
-	if (filters.length == 0) {
+	if (filters.length === 0) {
 		return [];
 	}
 	const devs = await getUsbDevices(filters);
@@ -785,10 +785,10 @@ export async function openDeviceById(id, options = null) {
 		filters.push(Object.assign({ serialNumber: id }, dev.dfuUsbIds));
 	});
 	const devs = await getUsbDevices(filters);
-	if (devs.length == 0) {
+	if (devs.length === 0) {
 		throw new NotFoundError('Device is not found');
 	}
-	if (devs.length != 1) {
+	if (devs.length !== 1) {
 		log.warn(`Found multiple devices with the same ID: ${id}`); // lol
 	}
 	let dev = devs[0];

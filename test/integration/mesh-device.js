@@ -8,7 +8,7 @@ const NETWORK_NAME = 'TestNetwork'; // Test network name
 const NETWORK_PASSWORD = '123456'; // Commissioner password
 const NETWORK_CHANNEL = 11; // Network channel
 
-describe('mesh-device', function() {
+describe('mesh-device', function desc() {
 	// Mesh device operations may take a while
 	this.timeout(60000);
 	this.slow(45000);
@@ -16,7 +16,7 @@ describe('mesh-device', function() {
 	let dev1 = null;
 	let dev2 = null;
 
-	before(function() {
+	before(function setup() {
 		return integrationTest(this, async () => {
 			let devs = await getDevices();
 			devs = devs.filter(dev => dev.isMeshDevice);

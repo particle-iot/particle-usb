@@ -1,4 +1,3 @@
-import * as usb from '../../src/particle-usb';
 import * as fakeUsb from './fake-usb';
 import { config } from '../../src/config';
 
@@ -16,15 +15,15 @@ chai.use(chaiSubset);
 const PRINTABLE_CHARS = ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~';
 
 class Logger {
-	trace(...args) {
+	trace(/* ...args */) {
 		// console.log(...args);
 	}
 
-	info(...args) {
+	info(/* ...args */) {
 		// console.log(...args);
 	}
 
-	warn(...args) {
+	warn(/* ...args */) {
 		// console.log(...args);
 	}
 

@@ -79,7 +79,7 @@ export class UsbDevice {
 
 	async transferOut(setup, data) {
 		try {
-			const res = await this._dev.controlTransferOut({
+			await this._dev.controlTransferOut({
 				requestType: bmRequestTypeToString(setup.bmRequestType),
 				recipient: bmRequestTypeToRecipientString(setup.bmRequestType),
 				request: setup.bRequest,
@@ -154,21 +154,21 @@ export async function getUsbDevices(filters) {
 			newDev = await navigator.usb.requestDevice({ filters });
 		} catch (e) {
 			// Ignore NotFoundError which means that the user has cancelled the request
-			if (e.name != 'NotFoundError') {
+			if (e.name !== 'NotFoundError') {
 				throw e;
 			}
 		}
 		// Get the list of known devices and filter them according to the provided options
 		devs = await navigator.usb.getDevices();
 		if (filters.length > 0) {
-			devs = devs.filter(dev => filters.some(f => ((!f.vendorId || dev.vendorId == f.vendorId) &&
-          (!f.productId || dev.productId == f.productId) &&
-          (!f.serialNumber || dev.serialNumber == f.serialNumber))));
+			devs = devs.filter(dev => filters.some(f => ((!f.vendorId || dev.vendorId === f.vendorId) &&
+          (!f.productId || dev.productId === f.productId) &&
+          (!f.serialNumber || dev.serialNumber === f.serialNumber))));
 		}
 		if (newDev) {
 			// Avoid listing the same device twice
-			const hasNewDev = devs.some(dev => dev.vendorId == newDev.vendorId && dev.productId == newDev.productId &&
-          dev.serialNumber == newDev.serialNumber);
+			const hasNewDev = devs.some(dev => dev.vendorId === newDev.vendorId && dev.productId === newDev.productId &&
+          dev.serialNumber === newDev.serialNumber);
 			if (!hasNewDev) {
 				devs.push(newDev);
 			}

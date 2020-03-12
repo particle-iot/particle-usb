@@ -16,7 +16,7 @@ try {
 export const MAX_CONTROL_TRANSFER_DATA_SIZE = 4096;
 
 function wrapUsbError(err, message) {
-	if (err.message == 'LIBUSB_ERROR_ACCESS') {
+	if (err.message === 'LIBUSB_ERROR_ACCESS') {
 		return new NotAllowedError(err, message);
 	}
 	return new UsbError(err, message);
@@ -169,7 +169,6 @@ export class UsbDevice {
 }
 
 export async function getUsbDevices(filters) {
-	const log = globalOptions.log;
 	// Validate the filtering options
 	if (filters) {
 		filters = filters.map(f => {
@@ -199,10 +198,10 @@ export async function getUsbDevices(filters) {
 		for (let dev of devs) {
 			let serialNum = null;
 			for (let f of filters) {
-				if (f.vendorId && dev.vendorId != f.vendorId) {
+				if (f.vendorId && dev.vendorId !== f.vendorId) {
 					continue;
 				}
-				if (f.productId && dev.productId != f.productId) {
+				if (f.productId && dev.productId !== f.productId) {
 					continue;
 				}
 				if (f.serialNumber) {
@@ -218,7 +217,7 @@ export async function getUsbDevices(filters) {
 							await dev.close();
 						}
 					}
-					if (serialNum != f.serialNumber) {
+					if (serialNum !== f.serialNumber) {
 						continue;
 					}
 				}

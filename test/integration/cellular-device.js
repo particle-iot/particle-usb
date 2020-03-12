@@ -2,7 +2,7 @@ import { getDevices } from '../../src/particle-usb';
 
 import { expect, integrationTest } from '../support';
 
-describe('cellular-device', function() {
+describe('cellular-device', function desc() {
 	// Cellular device operations may take a while
 	this.timeout(60000);
 	this.slow(45000);
@@ -10,7 +10,7 @@ describe('cellular-device', function() {
 	let devs = [];
 	let dev = null;
 
-	before(function() {
+	before(function setup() {
 		return integrationTest(this, async () => {
 			let devs = await getDevices();
 			devs = devs.filter(dev => dev.isCellularDevice);

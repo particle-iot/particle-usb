@@ -70,7 +70,7 @@ class RequestSender {
 		if (Date.now() + ms >= this._timeoutTime) {
 			throw new TimeoutError();
 		}
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve) => {
 			setTimeout(() => resolve(), ms);
 		});
 	}
@@ -156,11 +156,11 @@ export class Device extends DeviceBase {
 		return this.timeout(async (s) => {
 			await s.sendRequest(Request.START_LISTENING);
 			// Wait until the device enters the listening mode
-			while (true) {
+			while (true) { // eslint-disable-line no-constant-condition
 				const r = await s.sendRequest(Request.GET_DEVICE_MODE, null, {
 					dontThrow: true // This request may not be supported by the device
 				});
-				if (r.result != Result.OK || r.mode == proto.DeviceMode.LISTENING_MODE) {
+				if (r.result !== Result.OK || r.mode === proto.DeviceMode.LISTENING_MODE) {
 					break;
 				}
 				await s.delay(500);
@@ -219,7 +219,7 @@ export class Device extends DeviceBase {
 				if (chunkOffs + chunkSize > data.length) {
 					chunkSize = data.length - chunkOffs;
 				}
-				if (chunkSize == 0) {
+				if (chunkSize === 0) {
 					return Promise.resolve();
 				}
 				return this.sendRequest(Request.FIRMWARE_UPDATE_DATA, {
@@ -247,7 +247,7 @@ export class Device extends DeviceBase {
 	getFirmwareModule(module, index) {
 		return this._getStorageInfo().then(storage => {
 			const section = storage.modules.find(section => {
-				return (section.moduleType == module && section.moduleIndex == index);
+				return (section.moduleType === module && section.moduleIndex === index);
 			});
 			if (!section) {
 				throw new NotFoundError();
@@ -511,7 +511,7 @@ export class Device extends DeviceBase {
 			let r = undefined;
 			if (opts && opts.dontThrow) {
 				r = { result: rep.result };
-			} else if (rep.result != Result.OK) {
+			} else if (rep.result !== Result.OK) {
 				throw new RequestError(rep.result, messageForResultCode(rep.result));
 			}
 			if (req.reply) {
@@ -529,7 +529,7 @@ export class Device extends DeviceBase {
 	// This method is used to send multiple requests to the device. The overall execution time can be
 	// limited via the `ms` argument (optional)
 	async timeout(ms, fn) {
-		if (typeof ms == 'function') {
+		if (typeof ms === 'function') {
 			fn = ms;
 			ms = globalOptions.requestTimeout; // Default timeout
 		}
@@ -545,7 +545,7 @@ export class Device extends DeviceBase {
 			if (chunkOffs + chunkSize > size) {
 				chunkSize = size - chunkOffs;
 			}
-			if (chunkSize == 0) {
+			if (chunkSize === 0) {
 				return Promise.resolve(data);
 			}
 			return this.sendRequest(Request.READ_SECTION_DATA, {
@@ -574,7 +574,7 @@ export class Device extends DeviceBase {
 				if (chunkOffs + chunkSize > data.length) {
 					chunkSize = data.length - chunkOffs;
 				}
-				if (chunkSize == 0) {
+				if (chunkSize === 0) {
 					return Promise.resolve();
 				}
 				return this.sendRequest(Request.WRITE_SECTION_DATA, {
@@ -633,7 +633,7 @@ export class Device extends DeviceBase {
 						// Firmware module
 						case proto.SectionType.FIRMWARE: {
 							const pbFirmwareModule = pbSection.firmwareModule;
-							if (pbFirmwareModule.type == proto.FirmwareModuleType.MONO_FIRMWARE) {
+							if (pbFirmwareModule.type === proto.FirmwareModuleType.MONO_FIRMWARE) {
 								storage.hasModularFirmware = false;
 							}
 							section.moduleType = FirmwareModule.fromProtobuf(pbFirmwareModule.type);

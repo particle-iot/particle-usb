@@ -1,11 +1,9 @@
 import { PollingPolicy } from '../src/device-base';
-import { DeviceType } from '../src/device-type';
 import { getDevices } from '../src/particle-usb';
 import * as usbImpl from '../src/usb-device-node';
-import * as proto from '../src/usb-protocol';
 import * as error from '../src/error';
 
-import { fakeUsb, sinon, expect, assert, nextTick } from './support';
+import { fakeUsb, sinon, expect, nextTick } from './support';
 
 describe('device', () => {
 	before(() => {
@@ -17,7 +15,7 @@ describe('device', () => {
 		usbImpl.getUsbDevices.restore();
 	});
 
-	beforeEach(function() {
+	beforeEach(function setup() {
 		this.tick = async t => {
 			// Wait for the next event loop iteration to ensure that all promise callbacks get invoked:
 			// https://github.com/sinonjs/sinon/issues/738
@@ -37,33 +35,28 @@ describe('device', () => {
 	});
 
 	describe('Device', () => {
-		let dev = null;
-		let usbDev = null;
-
 		describe('with multiple devices', () => {
 			beforeEach(async () => {
-				const usbDevs = [
-					fakeUsb.addCore({ dfu: true }),
-					fakeUsb.addPhoton({ dfu: true }),
-					fakeUsb.addP1({ dfu: true }),
-					fakeUsb.addElectron({ dfu: true }),
-					fakeUsb.addArgon({ dfu: true }),
-					fakeUsb.addBoron({ dfu: true }),
-					fakeUsb.addXenon({ dfu: true }),
-					fakeUsb.addArgonSom({ dfu: true }),
-					fakeUsb.addBoronSom({ dfu: true }),
-					fakeUsb.addXenonSom({ dfu: true }),
-					fakeUsb.addCore(),
-					fakeUsb.addPhoton(),
-					fakeUsb.addP1(),
-					fakeUsb.addElectron(),
-					fakeUsb.addArgon(),
-					fakeUsb.addBoron(),
-					fakeUsb.addXenon(),
-					fakeUsb.addArgonSom(),
-					fakeUsb.addBoronSom(),
-					fakeUsb.addXenonSom()
-				];
+				fakeUsb.addCore({ dfu: true });
+				fakeUsb.addPhoton({ dfu: true });
+				fakeUsb.addP1({ dfu: true });
+				fakeUsb.addElectron({ dfu: true });
+				fakeUsb.addArgon({ dfu: true });
+				fakeUsb.addBoron({ dfu: true });
+				fakeUsb.addXenon({ dfu: true });
+				fakeUsb.addArgonSom({ dfu: true });
+				fakeUsb.addBoronSom({ dfu: true });
+				fakeUsb.addXenonSom({ dfu: true });
+				fakeUsb.addCore();
+				fakeUsb.addPhoton();
+				fakeUsb.addP1();
+				fakeUsb.addElectron();
+				fakeUsb.addArgon();
+				fakeUsb.addBoron();
+				fakeUsb.addXenon();
+				fakeUsb.addArgonSom();
+				fakeUsb.addBoronSom();
+				fakeUsb.addXenonSom();
 			});
 
 			it('open, reset, close', async () => {

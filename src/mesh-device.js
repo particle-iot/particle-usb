@@ -145,7 +145,7 @@ export const MeshDevice = base => class extends base {
    */
 	async createMeshNetwork(network) {
 		// Perform some checks at the client side
-		if (!network.id || Buffer.byteLength(network.id) != NETWORK_ID_LENGTH) {
+		if (!network.id || Buffer.byteLength(network.id) !== NETWORK_ID_LENGTH) {
 			throw new RangeError('Invalid length of the network ID');
 		}
 		if (!network.name || Buffer.byteLength(network.name) > MAX_NETWORK_NAME_LENGTH) {
@@ -190,10 +190,10 @@ export const MeshDevice = base => class extends base {
 		const r = await this.sendRequest(Request.MESH_GET_NETWORK_INFO, null, {
 			dontThrow: true
 		});
-		if (r.result == Result.NOT_FOUND) {
+		if (r.result === Result.NOT_FOUND) {
 			return null; // The device is not a member of a network
 		}
-		if (r.result != Result.OK) {
+		if (r.result !== Result.OK) {
 			throw new RequestError(r.result);
 		}
 		return {
@@ -291,14 +291,12 @@ export const MeshDevice = base => class extends base {
 		// Currently, Device OS requires a mesh device to be in the listening mode in order to perform
 		// most of the mesh network operations
 		const mode = await this.getDeviceMode();
-		if (mode == DeviceMode.LISTENING) {
+		if (mode === DeviceMode.LISTENING) {
 			return fn();
 		}
 		await this.enterListeningMode();
 		try {
 			return await fn();
-		} catch (e) {
-			throw e;
 		} finally {
 			await this.leaveListeningMode(); // Restore the device state
 		}

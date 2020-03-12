@@ -7,14 +7,14 @@ const RequestType = {
 	ECHO: 1 // ctrl_request_type::CTRL_REQUEST_ECHO
 };
 
-describe('device-base', function() {
+describe('device-base', function desc() {
 	this.timeout(60000);
 	this.slow(45000);
 
 	let devs = [];
 	let dev = null;
 
-	before(function() {
+	before(function setup() {
 		return integrationTest(this, async () => {
 			devs = await getDevices();
 			if (!devs.length) {

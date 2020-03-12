@@ -198,7 +198,7 @@ export class Dfu {
 	}
 
 	async _sendDnloadRequest(req) {
-		if ((!req.cmd || req.cmd === DFUSE_COMMAND_NONE) && req.blockNum) {
+		if ((!req.cmd || req.cmd === DfuseCommand.DFUSE_COMMAND_NONE) && req.blockNum) {
 			// Send data
 			const setup = {
 				bmRequestType: DfuBmRequestType.HOST_TO_DEVICE,
@@ -221,7 +221,7 @@ export class Dfu {
 			wLength: DFU_STATUS_SIZE
 		};
 		const data = await this._dev.transferIn(setup);
-		if (!data || data.length != DFU_STATUS_SIZE) {
+		if (!data || data.length !== DFU_STATUS_SIZE) {
 			throw new DfuError('Could not parse DFU_GETSTATUS response');
 		}
 
