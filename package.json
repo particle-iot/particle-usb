@@ -58,6 +58,7 @@
     "eslint-config-particle": "^2.2.1",
     "mocha": "^7.1.0",
     "mocha-sinon": "^2.1.0",
+    "nyc": "^15.0.0",
     "sinon": "^9.0.1",
     "sinon-chai": "^3.5.0",
     "webpack": "^4.42.0",
