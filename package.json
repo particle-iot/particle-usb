@@ -30,6 +30,8 @@
     "compile-babel": "babel src -s -d lib",
     "docs": "documentation build src/** -g -f md -o docs/reference.md",
     "test": "mocha -r @babel/register -r @babel/polyfill test test/integration",
+    "test:silent": "PARTICLE_NOOP=$(npm run test)",
+    "coverage": "nyc --reporter=text --include='src/**/*.js' --temp-dir=./tmp/ --check-coverage --lines 50 npm run test:silent",
     "lint": "eslint . --ext .js --ignore-path .gitignore",
     "lint:fix": "npm run lint -- --fix",
     "webpack": "webpack-cli",
