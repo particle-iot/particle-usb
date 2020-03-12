@@ -20,7 +20,7 @@
     "Andrey Tolstoy <avtolstoy@gmail.com>"
   ],
   "engines": {
-    "node": ">=6"
+    "node": ">=8"
   },
   "scripts": {
     "prepublish": "git submodule update --init && npm run build",
