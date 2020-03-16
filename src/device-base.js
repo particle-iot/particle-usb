@@ -94,11 +94,11 @@ export class DeviceBase extends EventEmitter {
 	}
 
 	/**
-   * Open the device.
-   *
-   * @param {Object} options Options.
-   * @return {Promise}
-   */
+	 * Open the device.
+	 *
+	 * @param {Object} options Options.
+	 * @return {Promise}
+	 */
 	open(options) {
 		options = Object.assign({
 			concurrentRequests: null // The maximum number of concurrent requests is limited by the device
@@ -144,11 +144,11 @@ export class DeviceBase extends EventEmitter {
 	}
 
 	/**
-   * Close the device.
-   *
-   * @param {Object} options Options.
-   * @return {Promise}
-   */
+	 * Close the device.
+	 *
+	 * @param {Object} options Options.
+	 * @return {Promise}
+	 */
 	close(options) {
 		options = Object.assign({
 			processPendingRequests: true, // Process pending requests before closing the device
@@ -181,13 +181,13 @@ export class DeviceBase extends EventEmitter {
 	}
 
 	/**
-   * Send a USB control request.
-   *
-   * @param {Number} type Request type.
-   * @param {Buffer|String} data Request data.
-   * @param {Object} options Request options.
-   * @return {Promise}
-   */
+	 * Send a USB control request.
+	 *
+	 * @param {Number} type Request type.
+	 * @param {Buffer|String} data Request data.
+	 * @param {Object} options Request options.
+	 * @return {Promise}
+	 */
 	sendControlRequest(type, data, options) {
 		options = Object.assign({
 			pollingPolicy: PollingPolicy.DEFAULT, // Polling policy
@@ -241,11 +241,11 @@ export class DeviceBase extends EventEmitter {
 	}
 
 	/**
-   * Perform the system reset.
-   * This function only works in DFU mode.
-   *
-   * @return {Promise}
-   */
+	 * Perform the system reset.
+	 * This function only works in DFU mode.
+	 *
+	 * @return {Promise}
+	 */
 	async reset() {
 		if (this._dfu) {
 			return this._dfu.leave();
@@ -254,120 +254,120 @@ export class DeviceBase extends EventEmitter {
 	}
 
 	/**
-   * Set to `true` if the device is open.
-   */
+	 * Set to `true` if the device is open.
+	 */
 	get isOpen() {
 		return (this._state !== DeviceState.CLOSED);
 	}
 
 	/**
-   * Device ID. Set to `null` if the device is not open.
-   */
+	 * Device ID. Set to `null` if the device is not open.
+	 */
 	get id() {
 		return this._id;
 	}
 
 	/**
-   * Firmware version. Set to `null` if the device is not open, or the version could not be determined.
-   */
+	 * Firmware version. Set to `null` if the device is not open, or the version could not be determined.
+	 */
 	get firmwareVersion() {
 		return this._fwVer;
 	}
 
 	/**
-   * Device type.
-   */
+	 * Device type.
+	 */
 	get type() {
 		return this._info.type;
 	}
 
 	/**
-   * Platform ID.
-   */
+	 * Platform ID.
+	 */
 	get platformId() {
 		return this._info.platformId;
 	}
 
 	/**
-   * Set to `true` if this is a Core device.
-   */
+	 * Set to `true` if this is a Core device.
+	 */
 	get isCore() {
 		return (this.type === DeviceType.CORE);
 	}
 
 	/**
-   * Set to `true` if this is a Photon device.
-   */
+	 * Set to `true` if this is a Photon device.
+	 */
 	get isPhoton() {
 		return (this.type === DeviceType.PHOTON);
 	}
 
 	/**
-   * Set to `true` if this is a P1 device.
-   */
+	 * Set to `true` if this is a P1 device.
+	 */
 	get isP1() {
 		return (this.type === DeviceType.P1);
 	}
 
 	/**
-   * Set to `true` if this is an Electron device.
-   */
+	 * Set to `true` if this is an Electron device.
+	 */
 	get isElectron() {
 		return (this.type === DeviceType.ELECTRON);
 	}
 
 	/**
-   * Set to `true` if this is a Duo device.
-   */
+	 * Set to `true` if this is a Duo device.
+	 */
 	get isDuo() {
 		return (this.type === DeviceType.DUO);
 	}
 
 	/**
-   * Set to `true` if this is a Xenon device.
-   */
+	 * Set to `true` if this is a Xenon device.
+	 */
 	get isXenon() {
 		return (this.type === DeviceType.XENON);
 	}
 
 	/**
-   * Set to `true` if this is a Xenon device.
-   */
+	 * Set to `true` if this is a Xenon device.
+	 */
 	get isArgon() {
 		return (this.type === DeviceType.ARGON);
 	}
 
 	/**
-   * Set to `true` if this is a Xenon device.
-   */
+	 * Set to `true` if this is a Xenon device.
+	 */
 	get isBoron() {
 		return (this.type === DeviceType.BORON);
 	}
 
 	/**
-   * USB vendor ID.
-   */
+	 * USB vendor ID.
+	 */
 	get vendorId() {
 		return this._dev.vendorId;
 	}
 
 	/**
-   * USB product ID.
-   */
+	 * USB product ID.
+	 */
 	get productId() {
 		return this._dev.productId;
 	}
 
 	/**
-   * Set to `true` if this device is in the DFU mode.
-   */
+	 * Set to `true` if this device is in the DFU mode.
+	 */
 	get isInDfuMode() {
 		return this._info.dfu;
 	}
 
 	/**
-   * Returns an internal USB device handle.
-   */
+	 * Returns an internal USB device handle.
+	 */
 	get usbDevice() {
 		return this._dev;
 	}

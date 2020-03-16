@@ -123,11 +123,11 @@ function transformNetworkDiagnosticInfo(info) {
  */
 export const MeshDevice = base => class extends base {
 	/**
-   * Authenticate the host on the device.
-   *
-   * @param {String} pwd - Network password.
-   * @return {Promise}
-   */
+	 * Authenticate the host on the device.
+	 *
+	 * @param {String} pwd - Network password.
+	 * @return {Promise}
+	 */
 	async meshAuth(pwd) {
 		return this.sendRequest(Request.MESH_AUTH, {
 			password: pwd
@@ -135,14 +135,14 @@ export const MeshDevice = base => class extends base {
 	}
 
 	/**
-   * Create a new mesh network.
-   *
-   * @param {String} network.id - Network ID.
-   * @param {String} network.name - Network name.
-   * @param {String} network.password - Network password.
-   * @param {Number} [network.channel] - Channel number.
-   * @return {Promise}
-   */
+	 * Create a new mesh network.
+	 *
+	 * @param {String} network.id - Network ID.
+	 * @param {String} network.name - Network name.
+	 * @param {String} network.password - Network password.
+	 * @param {Number} [network.channel] - Channel number.
+	 * @return {Promise}
+	 */
 	async createMeshNetwork(network) {
 		// Perform some checks at the client side
 		if (!network.id || Buffer.byteLength(network.id) !== NETWORK_ID_LENGTH) {
@@ -171,10 +171,10 @@ export const MeshDevice = base => class extends base {
 	}
 
 	/**
-   * Leave the current mesh network.
-   *
-   * @return {Promise}
-   */
+	 * Leave the current mesh network.
+	 *
+	 * @return {Promise}
+	 */
 	async leaveMeshNetwork() {
 		return this._runInListeningMode(() => {
 			return this.sendRequest(Request.MESH_LEAVE_NETWORK);
@@ -182,10 +182,10 @@ export const MeshDevice = base => class extends base {
 	}
 
 	/**
-   * Get info about the current mesh network.
-   *
-   * @return {Promise}
-   */
+	 * Get info about the current mesh network.
+	 *
+	 * @return {Promise}
+	 */
 	async getMeshNetworkInfo() {
 		const r = await this.sendRequest(Request.MESH_GET_NETWORK_INFO, null, {
 			dontThrow: true
@@ -206,11 +206,11 @@ export const MeshDevice = base => class extends base {
 	}
 
 	/**
-   * Start the commissioner role.
-   *
-   * @param {Number} [timeout] - Time in milliseconds after which the role is automatically stopped.
-   * @return {Promise}
-   */
+	 * Start the commissioner role.
+	 *
+	 * @param {Number} [timeout] - Time in milliseconds after which the role is automatically stopped.
+	 * @return {Promise}
+	 */
 	async startCommissioner(timeout) {
 		return this.sendRequest(Request.MESH_START_COMMISSIONER, {
 			timeout: timeout
@@ -218,20 +218,20 @@ export const MeshDevice = base => class extends base {
 	}
 
 	/**
-   * Stop the commissioner role.
-   *
-   * @return {Promise}
-   */
+	 * Stop the commissioner role.
+	 *
+	 * @return {Promise}
+	 */
 	async stopCommissioner() {
 		return this.sendRequest(Request.MESH_STOP_COMMISSIONER);
 	}
 
 	/**
-   * Join the network.
-   *
-   * @param {MeshDevice} commDev - Commissioner device.
-   * @return {Promise}
-   */
+	 * Join the network.
+	 *
+	 * @param {MeshDevice} commDev - Commissioner device.
+	 * @return {Promise}
+	 */
 	async joinMeshNetwork(commDev) {
 		return this._runInListeningMode(async () => {
 			// TODO: Start the commissioner role automatically
@@ -251,10 +251,10 @@ export const MeshDevice = base => class extends base {
 	}
 
 	/**
-   * Scan for mesh networks.
-   *
-   * @return {Promise}
-   */
+	 * Scan for mesh networks.
+	 *
+	 * @return {Promise}
+	 */
 	async scanMeshNetworks() {
 		const r = await this.sendRequest(Request.MESH_SCAN_NETWORKS);
 		return r.networks.map(network => ({
@@ -266,11 +266,11 @@ export const MeshDevice = base => class extends base {
 	}
 
 	/**
-   * Set the setup done flag.
-   *
-   * @param {Boolean} [done] Flag value.
-   * @return {Promise}
-   */
+	 * Set the setup done flag.
+	 *
+	 * @param {Boolean} [done] Flag value.
+	 * @return {Promise}
+	 */
 	async setSetupDone(done) {
 		if (done === undefined) {
 			done = true;
@@ -281,8 +281,8 @@ export const MeshDevice = base => class extends base {
 	}
 
 	/**
-   * Set to `true` if this is a mesh device.
-   */
+	 * Set to `true` if this is a mesh device.
+	 */
 	get isMeshDevice() {
 		return true;
 	}
@@ -303,11 +303,11 @@ export const MeshDevice = base => class extends base {
 	}
 
 	/**
-   * Collect network diagnostic information
-   *
-   * @param {Object} opts Request options
-   * @return {Promise}
-   */
+	 * Collect network diagnostic information
+	 *
+	 * @param {Object} opts Request options
+	 * @return {Promise}
+	 */
 	async getMeshNetworkDiagnosticInfo(
 		opts = {
 			timeout: DIAGNOSTIC_DEFAULT_TIMEOUT,

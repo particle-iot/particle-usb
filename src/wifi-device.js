@@ -78,11 +78,11 @@ const accessPointToProtobuf = toProtobufMessage(proto.WiFiAccessPoint, accessPoi
  */
 export const WifiDevice = base => class extends base {
 	/**
-   * Set the WiFi antenna to use.
-   *
-   * @param {String} antenna Antenna type.
-   * @return {Promise}
-   */
+	 * Set the WiFi antenna to use.
+	 *
+	 * @param {String} antenna Antenna type.
+	 * @return {Promise}
+	 */
 	setWifiAntenna(antenna) {
 		return this.sendRequest(Request.WIFI_SET_ANTENNA, {
 			antenna: WifiAntenna.toProtobuf(antenna)
@@ -90,10 +90,10 @@ export const WifiDevice = base => class extends base {
 	}
 
 	/**
-   * Get the currently used WiFi antenna.
-   *
-   * @return {Promise<String>}
-   */
+	 * Get the currently used WiFi antenna.
+	 *
+	 * @return {Promise<String>}
+	 */
 	getWifiAntenna(/* antenna */) {
 		return this.sendRequest(Request.WIFI_GET_ANTENNA).then(rep => {
 			return WifiAntenna.fromProtobuf(rep.antenna);
@@ -101,10 +101,10 @@ export const WifiDevice = base => class extends base {
 	}
 
 	/**
-   * Perform the WiFi scan.
-   *
-   * @return {Promise<Array>}
-   */
+	 * Perform the WiFi scan.
+	 *
+	 * @return {Promise<Array>}
+	 */
 	scanWifiNetworks() {
 		return this.sendRequest(Request.WIFI_SCAN).then(rep => {
 			if (!rep.list) {
@@ -115,11 +115,11 @@ export const WifiDevice = base => class extends base {
 	}
 
 	/**
-   * Set the WiFi credentials.
-   *
-   * @param {Object} credentials Credentials.
-   * @return {Promise}
-   */
+	 * Set the WiFi credentials.
+	 *
+	 * @param {Object} credentials Credentials.
+	 * @return {Promise}
+	 */
 	setWifiCredentials(credentials) {
 		return this.sendRequest(Request.WIFI_SET_CREDENTIALS, {
 			ap: accessPointToProtobuf(credentials)
@@ -127,10 +127,10 @@ export const WifiDevice = base => class extends base {
 	}
 
 	/**
-   * Get the WiFi credentials.
-   *
-   * @return {Promise<Array>}
-   */
+	 * Get the WiFi credentials.
+	 *
+	 * @return {Promise<Array>}
+	 */
 	getWifiCredentials() {
 		return this.sendRequest(Request.WIFI_GET_CREDENTIALS).then(rep => {
 			if (!rep.list) {
@@ -141,10 +141,10 @@ export const WifiDevice = base => class extends base {
 	}
 
 	/**
-   * Clear the WiFi credentials.
-   *
-   * @return {Promise}
-   */
+	 * Clear the WiFi credentials.
+	 *
+	 * @return {Promise}
+	 */
 	clearWifiCredentials() {
 		return this.sendRequest(Request.WIFI_CLEAR_CREDENTIALS);
 	}

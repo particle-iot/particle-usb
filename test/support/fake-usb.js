@@ -653,8 +653,8 @@ export async function getDevices(filters) {
 	let devs = Array.from(devices.values());
 	if (filters.length > 0) {
 		devs = devs.filter(dev => filters.some(f => ((!f.vendorId || dev.vendorId === f.vendorId) &&
-        (!f.productId || dev.productId === f.productId) &&
-        (!f.serialNumber || dev.serialNumber.toLowerCase() === f.serialNumber))));
+				(!f.productId || dev.productId === f.productId) &&
+				(!f.serialNumber || dev.serialNumber.toLowerCase() === f.serialNumber))));
 	}
 	return devs;
 }

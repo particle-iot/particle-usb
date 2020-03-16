@@ -16,11 +16,11 @@ export const ServerProtocol = fromProtobufEnum(proto.ServerProtocolType, {
  */
 export const CloudDevice = base => class extends base {
 	/**
-   * Set the claim code.
-   *
-   * @param {String} code Claim code.
-   * @return {Promise}
-   */
+	 * Set the claim code.
+	 *
+	 * @param {String} code Claim code.
+	 * @return {Promise}
+	 */
 	setClaimCode(code) {
 		return this.sendRequest(Request.SET_CLAIM_CODE, {
 			code: code
@@ -28,21 +28,21 @@ export const CloudDevice = base => class extends base {
 	}
 
 	/**
-   * Check if the device is claimed.
-   *
-   * @return {Promise<Boolean>}
-   */
+	 * Check if the device is claimed.
+	 *
+	 * @return {Promise<Boolean>}
+	 */
 	isClaimed() {
 		return this.sendRequest(Request.IS_CLAIMED).then(rep => rep.claimed);
 	}
 
 	/**
-   * Set the device private key.
-   *
-   * @param {Buffer} data Key data.
-   * @param {String} [protocol] Server protocol.
-   * @return {Promise}
-   */
+	 * Set the device private key.
+	 *
+	 * @param {Buffer} data Key data.
+	 * @param {String} [protocol] Server protocol.
+	 * @return {Promise}
+	 */
 	setDevicePrivateKey(data, protocol) {
 		return this._getServerProtocol(protocol).then(protocol => {
 			const keyType = (protocol === proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_DEVICE_PRIVATE_KEY :
@@ -52,11 +52,11 @@ export const CloudDevice = base => class extends base {
 	}
 
 	/**
-   * Get the device private key.
-   *
-   * @param {String} [protocol] Server protocol.
-   * @return {Promise<Buffer>}
-   */
+	 * Get the device private key.
+	 *
+	 * @param {String} [protocol] Server protocol.
+	 * @return {Promise<Buffer>}
+	 */
 	getDevicePrivateKey(protocol) {
 		return this._getServerProtocol(protocol).then(protocol => {
 			const keyType = (protocol === proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_DEVICE_PRIVATE_KEY :
@@ -66,12 +66,12 @@ export const CloudDevice = base => class extends base {
 	}
 
 	/**
-   * Set the device public key.
-   *
-   * @param {Buffer} data Key data.
-   * @param {String} [protocol] Server protocol.
-   * @return {Promise}
-   */
+	 * Set the device public key.
+	 *
+	 * @param {Buffer} data Key data.
+	 * @param {String} [protocol] Server protocol.
+	 * @return {Promise}
+	 */
 	setDevicePublicKey(data, protocol) {
 		return this._getServerProtocol(protocol).then(protocol => {
 			const keyType = (protocol === proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_DEVICE_PUBLIC_KEY :
@@ -81,11 +81,11 @@ export const CloudDevice = base => class extends base {
 	}
 
 	/**
-   * Get the device public key.
-   *
-   * @param {String} [protocol] Server protocol.
-   * @return {Promise<Buffer>}
-   */
+	 * Get the device public key.
+	 *
+	 * @param {String} [protocol] Server protocol.
+	 * @return {Promise<Buffer>}
+	 */
 	getDevicePublicKey(data, protocol) {
 		return this._getServerProtocol(protocol).then(protocol => {
 			const keyType = (protocol === proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_DEVICE_PUBLIC_KEY :
@@ -95,12 +95,12 @@ export const CloudDevice = base => class extends base {
 	}
 
 	/**
-   * Set the server public key.
-   *
-   * @param {Buffer} data Key data.
-   * @param {String} [protocol] Server protocol.
-   * @return {Promise}
-   */
+	 * Set the server public key.
+	 *
+	 * @param {Buffer} data Key data.
+	 * @param {String} [protocol] Server protocol.
+	 * @return {Promise}
+	 */
 	setServerPublicKey(data, protocol) {
 		return this._getServerProtocol(protocol).then(protocol => {
 			const keyType = (protocol === proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_SERVER_PUBLIC_KEY :
@@ -110,11 +110,11 @@ export const CloudDevice = base => class extends base {
 	}
 
 	/**
-   * Get the server public key.
-   *
-   * @param {String} [protocol] Server protocol.
-   * @return {Promise<Buffer>}
-   */
+	 * Get the server public key.
+	 *
+	 * @param {String} [protocol] Server protocol.
+	 * @return {Promise<Buffer>}
+	 */
 	getServerPublicKey(data, protocol) {
 		return this._getServerProtocol(protocol).then(protocol => {
 			const keyType = (protocol === proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_SERVER_PUBLIC_KEY :
@@ -124,13 +124,13 @@ export const CloudDevice = base => class extends base {
 	}
 
 	/**
-   * Set the server address.
-   *
-   * @param {String} data Host address.
-   * @param {Number} port Port number.
-   * @param {String} [protocol] Server protocol.
-   * @return {Promise}
-   */
+	 * Set the server address.
+	 *
+	 * @param {String} data Host address.
+	 * @param {Number} port Port number.
+	 * @param {String} [protocol] Server protocol.
+	 * @return {Promise}
+	 */
 	setServerAddress(address, port, protocol) {
 		return this._getServerProtocol(protocol).then(protocol => {
 			return this.sendRequest(Request.SET_SERVER_ADDRESS, {
@@ -142,11 +142,11 @@ export const CloudDevice = base => class extends base {
 	}
 
 	/**
-   * Get the server address.
-   *
-   * @param {String} [protocol] Server protocol.
-   * @return {Promise<Object>}
-   */
+	 * Get the server address.
+	 *
+	 * @param {String} [protocol] Server protocol.
+	 * @return {Promise<Object>}
+	 */
 	getServerAddress(protocol) {
 		return this._getServerProtocol(protocol).then(protocol => {
 			return this.sendRequest(Request.GET_SERVER_ADDRESS, {
@@ -156,11 +156,11 @@ export const CloudDevice = base => class extends base {
 	}
 
 	/**
-   * Set the server protocol.
-   *
-   * @param {String} protocol Server protocol.
-   * @return {Promise}
-   */
+	 * Set the server protocol.
+	 *
+	 * @param {String} protocol Server protocol.
+	 * @return {Promise}
+	 */
 	setServerProtocol(protocol) {
 		return this.sendRequest(Request.SET_SERVER_PROTOCOL, {
 			protocol: ServerProtocol.toProtobuf(protocol)
@@ -168,10 +168,10 @@ export const CloudDevice = base => class extends base {
 	}
 
 	/**
-   * Get the server protocol.
-   *
-   * @return {Promise<String>}
-   */
+	 * Get the server protocol.
+	 *
+	 * @return {Promise<String>}
+	 */
 	getServerProtocol() {
 		return this._getServerProtocol().then(protocol => ServerProtocol.fromProtobuf(protocol));
 	}

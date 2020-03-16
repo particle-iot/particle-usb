@@ -18,10 +18,10 @@ export const NetworkStatus = fromProtobufEnum(proto.NetworkState, {
  */
 export const NetworkDevice = base => class extends base {
 	/**
-   * Get network status.
-   *
-   * @return {Promise<String>}
-   */
+	 * Get network status.
+	 *
+	 * @return {Promise<String>}
+	 */
 	getNetworkStatus() {
 		return this.sendRequest(Request.NETWORK_GET_STATUS, {
 			interface: DEFAULT_INTERFACE
@@ -29,10 +29,10 @@ export const NetworkDevice = base => class extends base {
 	}
 
 	/**
-   * Get network configuration.
-   *
-   * @return {Promise<Object>}
-   */
+	 * Get network configuration.
+	 *
+	 * @return {Promise<Object>}
+	 */
 	getNetworkConfig() {
 		return this.sendRequest(Request.NETWORK_GET_CONFIGURATION, { // TODO
 			interface: DEFAULT_INTERFACE
@@ -40,11 +40,11 @@ export const NetworkDevice = base => class extends base {
 	}
 
 	/**
-   * Set network configuration.
-   *
-   * @param {Object} config Network configuration.
-   * @return {Promise}
-   */
+	 * Set network configuration.
+	 *
+	 * @param {Object} config Network configuration.
+	 * @return {Promise}
+	 */
 	setNetworkConfig(config) {
 		return this.sendRequest(Request.NETWORK_SET_CONFIGURATION, config); // TODO
 	}

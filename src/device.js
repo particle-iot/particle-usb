@@ -81,19 +81,19 @@ class RequestSender {
  */
 export class Device extends DeviceBase {
 	/**
-   * Get device serial number
-   *
-   * @return {Promise}
-   */
+	 * Get device serial number
+	 *
+	 * @return {Promise}
+	 */
 	getSerialNumber() {
 		return this.sendRequest(Request.GET_SERIAL_NUMBER);
 	}
 
 	/**
-   * Perform the system reset.
-   *
-   * @return {Promise}
-   */
+	 * Perform the system reset.
+	 *
+	 * @return {Promise}
+	 */
 	reset() {
 		if (!this.isInDfuMode) {
 			return this.sendRequest(Request.RESET);
@@ -103,19 +103,19 @@ export class Device extends DeviceBase {
 	}
 
 	/**
-   * Perform the factory reset.
-   *
-   * @return {Promise}
-   */
+	 * Perform the factory reset.
+	 *
+	 * @return {Promise}
+	 */
 	factoryReset() {
 		return this.sendRequest(Request.FACTORY_RESET);
 	}
 
 	/**
-   * Reset and enter the DFU mode.
-   *
-   * @return {Promise}
-   */
+	 * Reset and enter the DFU mode.
+	 *
+	 * @return {Promise}
+	 */
 	enterDfuMode() {
 		if (this.isInDfuMode) {
 			return;
@@ -139,19 +139,19 @@ export class Device extends DeviceBase {
 	}
 
 	/**
-   * Reset and enter the safe mode.
-   *
-   * @return {Promise}
-   */
+	 * Reset and enter the safe mode.
+	 *
+	 * @return {Promise}
+	 */
 	enterSafeMode() {
 		return this.sendRequest(Request.SAFE_MODE);
 	}
 
 	/**
-   * Enter the listening mode.
-   *
-   * @return {Promise}
-   */
+	 * Enter the listening mode.
+	 *
+	 * @return {Promise}
+	 */
 	async enterListeningMode() {
 		return this.timeout(async (s) => {
 			await s.sendRequest(Request.START_LISTENING);
@@ -169,46 +169,46 @@ export class Device extends DeviceBase {
 	}
 
 	/**
-   * Leave the listening mode.
-   *
-   * @return {Promise}
-   */
+	 * Leave the listening mode.
+	 *
+	 * @return {Promise}
+	 */
 	leaveListeningMode() {
 		return this.sendRequest(Request.STOP_LISTENING);
 	}
 
 	/**
-   * Get device mode.
-   */
+	 * Get device mode.
+	 */
 	async getDeviceMode() {
 		const r = await this.sendRequest(Request.GET_DEVICE_MODE);
 		return DeviceMode.fromProtobuf(r.mode);
 	}
 
 	/**
-   * Start the Nyan LED indication.
-   *
-   * @return {Promise}
-   */
+	 * Start the Nyan LED indication.
+	 *
+	 * @return {Promise}
+	 */
 	startNyanSignal() {
 		return this.sendRequest(Request.START_NYAN_SIGNAL);
 	}
 
 	/**
-   * Stop the Nyan LED indication.
-   *
-   * @return {Promise}
-   */
+	 * Stop the Nyan LED indication.
+	 *
+	 * @return {Promise}
+	 */
 	stopNyanSignal() {
 		return this.sendRequest(Request.STOP_NYAN_SIGNAL);
 	}
 
 	/**
-   * Perform the firmware update.
-   *
-   * @param {Buffer} data Firmware data.
-   * @return {Promise}
-   */
+	 * Perform the firmware update.
+	 *
+	 * @param {Buffer} data Firmware data.
+	 * @return {Promise}
+	 */
 	updateFirmware(data) {
 		return this.sendRequest(Request.START_FIRMWARE_UPDATE, {
 			size: data.length
@@ -238,12 +238,12 @@ export class Device extends DeviceBase {
 	}
 
 	/**
-   * Get firmware module data.
-   *
-   * @param {String} module Module type.
-   * @param {Number} [index] Module index.
-   * @return {Promise<Buffer>}
-   */
+	 * Get firmware module data.
+	 *
+	 * @param {String} module Module type.
+	 * @param {Number} [index] Module index.
+	 * @return {Promise<Buffer>}
+	 */
 	getFirmwareModule(module, index) {
 		return this._getStorageInfo().then(storage => {
 			const section = storage.modules.find(section => {
@@ -261,20 +261,20 @@ export class Device extends DeviceBase {
 	}
 
 	/**
-   * Check if the device runs a modular firmware.
-   *
-   * @return {Promise<Boolean>}
-   */
+	 * Check if the device runs a modular firmware.
+	 *
+	 * @return {Promise<Boolean>}
+	 */
 	hasModularFirmware() {
 		return this._getStorageInfo().then(storage => storage.hasModularFirmware);
 	}
 
 	/**
-   * Set factory firmware.
-   *
-   * @param {Buffer} data Firmware data.
-   * @return {Promise}
-   */
+	 * Set factory firmware.
+	 *
+	 * @param {Buffer} data Firmware data.
+	 * @return {Promise}
+	 */
 	setFactoryFirmware(data) {
 		return this._getStorageInfo().then(storage => {
 			if (!storage.factory) {
@@ -285,10 +285,10 @@ export class Device extends DeviceBase {
 	}
 
 	/**
-   * Get factory firmware.
-   *
-   * @return {Promise<Buffer>}
-   */
+	 * Get factory firmware.
+	 *
+	 * @return {Promise<Buffer>}
+	 */
 	getFactoryFirmware() {
 		return this._getStorageInfo().then(storage => {
 			if (!storage.factory) {
@@ -303,12 +303,12 @@ export class Device extends DeviceBase {
 	}
 
 	/**
-   * Read configuration data.
-   *
-   * @param {Number} address Address.
-   * @param {Number} size Data size.
-   * @return {Promise<Buffer>}
-   */
+	 * Read configuration data.
+	 *
+	 * @param {Number} address Address.
+	 * @param {Number} size Data size.
+	 * @return {Promise<Buffer>}
+	 */
 	readConfigData(address, size) {
 		return this._getStorageInfo().then(storage => {
 			if (!storage.config) {
@@ -319,12 +319,12 @@ export class Device extends DeviceBase {
 	}
 
 	/**
-   * Write configuration data.
-   *
-   * @param {Number} address Address.
-   * @param {Buffer} data Data.
-   * @return {Promise}
-   */
+	 * Write configuration data.
+	 *
+	 * @param {Number} address Address.
+	 * @param {Buffer} data Data.
+	 * @return {Promise}
+	 */
 	writeConfigData(address, data) {
 		return this._getStorageInfo().then(storage => {
 			if (!storage.config) {
@@ -335,10 +335,10 @@ export class Device extends DeviceBase {
 	}
 
 	/**
-   * Get size of the configuration data.
-   *
-   * @return {Promise<Number>}
-   */
+	 * Get size of the configuration data.
+	 *
+	 * @return {Promise<Number>}
+	 */
 	getConfigDataSize() {
 		return this._getStorageInfo().then(storage => {
 			if (!storage.config) {
@@ -349,12 +349,12 @@ export class Device extends DeviceBase {
 	}
 
 	/**
-   * Read from EEPROM.
-   *
-   * @param {Number} address Address.
-   * @param {Number} size Data size.
-   * @return {Promise<Buffer>}
-   */
+	 * Read from EEPROM.
+	 *
+	 * @param {Number} address Address.
+	 * @param {Number} size Data size.
+	 * @return {Promise<Buffer>}
+	 */
 	readEeprom(address, size) {
 		return this._getStorageInfo().then(storage => {
 			if (!storage.eeprom) {
@@ -365,12 +365,12 @@ export class Device extends DeviceBase {
 	}
 
 	/**
-   * Write to EEPROM.
-   *
-   * @param {Number} address Address.
-   * @param {Buffer} data Data.
-   * @return {Promise}
-   */
+	 * Write to EEPROM.
+	 *
+	 * @param {Number} address Address.
+	 * @param {Buffer} data Data.
+	 * @return {Promise}
+	 */
 	writeEeprom(address, data) {
 		return this._getStorageInfo().then(storage => {
 			if (!storage.eeprom) {
@@ -381,10 +381,10 @@ export class Device extends DeviceBase {
 	}
 
 	/**
-   * Clear EEPROM.
-   *
-   * @return {Promise}
-   */
+	 * Clear EEPROM.
+	 *
+	 * @return {Promise}
+	 */
 	clearEeprom() {
 		return this._getStorageInfo().then(storage => {
 			if (!storage.eeprom) {
@@ -395,10 +395,10 @@ export class Device extends DeviceBase {
 	}
 
 	/**
-   * Get size of the EEPROM.
-   *
-   * @return {Promise<Number>}
-   */
+	 * Get size of the EEPROM.
+	 *
+	 * @return {Promise<Number>}
+	 */
 	getEepromSize() {
 		return this._getStorageInfo().then(storage => {
 			if (!storage.eeprom) {
@@ -409,17 +409,17 @@ export class Device extends DeviceBase {
 	}
 
 	/**
-   * Add a log handler.
-   *
-   * @param {Object} options Options.
-   * @param {String} options.id Handler ID.
-   * @param {String} options.stream Output stream: `Serial`, `Serial1`, `USBSerial1`, etc.
-   * @param {String} [options.format] Message format: `default`, `json`.
-   * @param {String} [options.level] Default logging level: `trace`, `info`, `warn`, `error`, `none`, `all`.
-   * @param {Array} [options.filters] Category filters.
-   * @param {Number} [options.baudRate] Baud rate.
-   * @return {Promise}
-   */
+	 * Add a log handler.
+	 *
+	 * @param {Object} options Options.
+	 * @param {String} options.id Handler ID.
+	 * @param {String} options.stream Output stream: `Serial`, `Serial1`, `USBSerial1`, etc.
+	 * @param {String} [options.format] Message format: `default`, `json`.
+	 * @param {String} [options.level] Default logging level: `trace`, `info`, `warn`, `error`, `none`, `all`.
+	 * @param {Array} [options.filters] Category filters.
+	 * @param {Number} [options.baudRate] Baud rate.
+	 * @return {Promise}
+	 */
 	async addLogHandler({ id, stream, format, level, filters, baudRate }) {
 		const req = {
 			id,
@@ -478,21 +478,21 @@ export class Device extends DeviceBase {
 	}
 
 	/**
-   * Remove a log handler.
-   *
-   * @param {Object} options Options.
-   * @param {String} options.id Handler ID.
-   * @return {Promise}
-   */
+	 * Remove a log handler.
+	 *
+	 * @param {Object} options Options.
+	 * @param {String} options.id Handler ID.
+	 * @return {Promise}
+	 */
 	async removeLogHandler({ id }) {
 		return this.sendRequest(Request.REMOVE_LOG_HANDLER, { id });
 	}
 
 	/**
-   * Get the list of active log handlers.
-   *
-   * @return {Promise<Object>}
-   */
+	 * Get the list of active log handlers.
+	 *
+	 * @return {Promise<Object>}
+	 */
 	async getLogHandlers() {
 		const rep = await this.sendRequest(Request.GET_LOG_HANDLERS);
 		return rep.handlers.map(h => ({

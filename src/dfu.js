@@ -10,42 +10,53 @@ export class DfuError extends DeviceError {
 	}
 }
 
-/* 3. Requests, USB Device Firmware Upgrade Specification, Revision 1.1 */
+// 3. Requests, USB Device Firmware Upgrade Specification, Revision 1.1
 export const DfuRequestType = {
-	/* | wValue    | wIndex    | wLength | Data     | */
-	/* +-----------+-----------+---------+----------+ */
-	DFU_DETACH: 0, /* | wTimeout  | Interface | Zero    | None     | */
-	DFU_DNLOAD: 1, /* | wBlockNum | Interface | Length  | Firmware | */
-	DFU_UPLOAD: 2, /* | Zero      | Interface | Length  | Firmware | */
-	DFU_GETSTATUS: 3, /* | Zero      | Interface | 6       | Status   | */
-	DFU_CLRSTATUS: 4, /* | Zero      | Interface | Zero    | None     | */
-	DFU_GETSTATE: 5, /* | Zero      | Interface | 1       | State    | */
-	DFU_ABORT: 6 /* | Zero      | Interface | Zero    | None     | */
+	// | wValue    | wIndex    | wLength | Data     |
+	// +-----------+-----------+---------+----------+
+	DFU_DETACH: 0, // | wTimeout  | Interface | Zero    | None     |
+	DFU_DNLOAD: 1, // | wBlockNum | Interface | Length  | Firmware |
+	DFU_UPLOAD: 2, // | Zero      | Interface | Length  | Firmware |
+	DFU_GETSTATUS: 3, // | Zero      | Interface | 6       | Status   |
+	DFU_CLRSTATUS: 4, // | Zero      | Interface | Zero    | None     |
+	DFU_GETSTATE: 5, // | Zero      | Interface | 1       | State    |
+	DFU_ABORT: 6 // | Zero      | Interface | Zero    | None     |
 };
 
-/* 6.1.2 DFU_GETSTATUS Request, USB Device Firmware Upgrade Specification, Revision 1.1 */
+// 6.1.2 DFU_GETSTATUS Request, USB Device Firmware Upgrade Specification, Revision 1.1
 export const DfuDeviceStatus = {
-	OK: 0x00, /* No error condition is present. */
-	errTARGET: 0x01, /* File is not targeted for use by this device. */
-	errFILE: 0x02, /* File is for this device but fails some vendor-specific
-                            * verification test. */
-	errWRITE: 0x03, /* Device is unable to write memory. */
-	errERASE: 0x04, /* Memory erase function failed. */
-	errCHECK_ERASED: 0x05, /* Memory erase check failed. */
-	errPROG: 0x06, /* Program memory function failed. */
-	errVERIFY: 0x07, /* Programmed memory failed verification. */
-	errADDRESS: 0x08, /* Cannot program memory due to received address that is
-                            * out of range. */
-	errNOTDONE: 0x09, /* Received DFU_DNLOAD with wLength = 0, but device does not
-                            * think it has all of the data yet. */
-	errFIRMWARE: 0x0A, /* Device’s firmware is corrupt. It cannot return to run-time
-                            * (non-DFU) operations. */
-	errVENDOR: 0x0B, /* iString indicates a vendor-specific error. */
-	errUSBR: 0x0C, /* Device detected unexpected USB reset signaling. */
-	errPOR: 0x0D, /* Device detected unexpected power on reset. */
-	errUNKNOWN: 0x0E, /* Something went wrong, but the device does not know what
-                            * it was */
-	errSTALLEDPKT: 0x0F, /* Device stalled an unexpected request. */
+	// No error condition is present.
+	OK: 0x00,
+	// File is not targeted for use by this device.
+	errTARGET: 0x01,
+	// File is for this device but fails some vendor-specific verification test.
+	errFILE: 0x02,
+	// Device is unable to write memory.
+	errWRITE: 0x03,
+	// Memory erase function failed.
+	errERASE: 0x04,
+	// Memory erase check failed.
+	errCHECK_ERASED: 0x05,
+	// Program memory function failed.
+	errPROG: 0x06,
+	// Programmed memory failed verification.
+	errVERIFY: 0x07,
+	// Cannot program memory due to received address that is out of range.
+	errADDRESS: 0x08,
+	// Received DFU_DNLOAD with wLength = 0, but device does not think it has all of the data yet.
+	errNOTDONE: 0x09,
+	// Device’s firmware is corrupt. It cannot return to run-time (non-DFU) operations.
+	errFIRMWARE: 0x0A,
+	// iString indicates a vendor-specific error.
+	errVENDOR: 0x0B,
+	// Device detected unexpected USB reset signaling.
+	errUSBR: 0x0C,
+	// Device detected unexpected power on reset.
+	errPOR: 0x0D,
+	// Something went wrong, but the device does not know what it was.
+	errUNKNOWN: 0x0E,
+	// Device stalled an unexpected request.
+	errSTALLEDPKT: 0x0F,
 };
 
 export const DfuDeviceStatusMap = Object.keys(DfuDeviceStatus).reduce((obj, key) => {
@@ -53,35 +64,36 @@ export const DfuDeviceStatusMap = Object.keys(DfuDeviceStatus).reduce((obj, key)
 	return obj;
 }, {});
 
-/* 6.1.2 DFU_GETSTATUS Request, USB Device Firmware Upgrade Specification, Revision 1.1 */
+// 6.1.2 DFU_GETSTATUS Request, USB Device Firmware Upgrade Specification, Revision 1.1
 export const DfuDeviceState = {
-	appIDLE: 0, /* Device is running its normal application. */
-	appDETACH: 1, /* Device is running its normal application, has received the
-                               * DFU_DETACH request, and is waiting for a USB reset. */
-	dfuIDLE: 2, /* Device is operating in the DFU mode and is waiting for
-                               * requests. */
-	dfuDNLOAD_SYNC: 3, /* Device has received a block and is waiting for the host to
-                               * solicit the status via DFU_GETSTATUS. */
-	dfuDNBUSY: 4, /* Device is programming a control-write block into its
-                               * nonvolatile memories. */
-	dfuDNLOAD_IDLE: 5, /* Device is processing a download operation. Expecting
-                               * DFU_DNLOAD requests. */
-	dfuMANIFEST_SYNC: 6, /* Device has received the final block of firmware from the host
-                               * and is waiting for receipt of DFU_GETSTATUS to begin the
-                               * Manifestation phase; or device has completed the
-                               * Manifestation phase and is waiting for receipt of
-                               * DFU_GETSTATUS. (Devices that can enter this state after
-                               * the Manifestation phase set bmAttributes bit
-                               * bitManifestationTolerant to 1.) */
-	dfuMANIFEST: 7, /* Device is in the Manifestation phase. (Not all devices will be
-                               * able to respond to DFU_GETSTATUS when in this state.) */
-	dfuMANIFEST_WAIT_RESET: 8, /* Device has programmed its memories and is waiting for a
-                               * USB reset or a power on reset. (Devices that must enter
-                               * this state clear bitManifestationTolerant to 0.) */
-	dfuUPLOAD_IDLE: 9, /* The device is processing an upload operation. Expecting
-                               * DFU_UPLOAD requests. */
-	dfuERROR: 10 /* An error has occurred. Awaiting the DFU_CLRSTATUS
-                               * request. */
+	// Device is running its normal application.
+	appIDLE: 0,
+	// Device is running its normal application, has received the DFU_DETACH request, and is waiting
+	// for a USB reset.
+	appDETACH: 1,
+	// Device is operating in the DFU mode and is waiting for requests.
+	dfuIDLE: 2,
+	// Device has received a block and is waiting for the host to solicit the status via DFU_GETSTATUS.
+	dfuDNLOAD_SYNC: 3,
+	// Device is programming a control-write block into its nonvolatile memories.
+	dfuDNBUSY: 4,
+	// Device is processing a download operation. Expecting DFU_DNLOAD requests.
+	dfuDNLOAD_IDLE: 5,
+	// Device has received the final block of firmware from the host and is waiting for receipt of
+	// DFU_GETSTATUS to begin the Manifestation phase; or device has completed the Manifestation
+	// phase and is waiting for receipt of DFU_GETSTATUS. (Devices that can enter this state after
+	// the Manifestation phase set bmAttributes bit bitManifestationTolerant to 1.)
+	dfuMANIFEST_SYNC: 6,
+	// Device is in the Manifestation phase. (Not all devices will be able to respond to DFU_GETSTATUS
+	// when in this state.)
+	dfuMANIFEST: 7,
+	// Device has programmed its memories and is waiting for a USB reset or a power on reset. (Devices
+	// that must enter this state clear bitManifestationTolerant to 0.)
+	dfuMANIFEST_WAIT_RESET: 8,
+	// The device is processing an upload operation. Expecting DFU_UPLOAD requests.
+	dfuUPLOAD_IDLE: 9,
+	// An error has occurred. Awaiting the DFU_CLRSTATUS request.
+	dfuERROR: 10
 };
 
 export const DfuDeviceStateMap = Object.keys(DfuDeviceState).reduce((obj, key) => {
@@ -90,8 +102,10 @@ export const DfuDeviceStateMap = Object.keys(DfuDeviceState).reduce((obj, key) =
 }, {});
 
 
-/* DFU with ST Microsystems extensions
- * AN3156: USB DFU protocol used in the STM32 bootloader
+/**
+ * DFU with ST Microsystems extensions.
+ *
+ * AN3156: USB DFU protocol used in the STM32 bootloader.
  */
 export const DfuseCommand = {
 	DFUSE_COMMAND_NONE: 0xff,
@@ -121,10 +135,10 @@ export class Dfu {
 	}
 
 	/**
-   * Open DFU interface.
-   *
-   * @return {Promise}
-   */
+	 * Open DFU interface.
+	 *
+	 * @return {Promise}
+	 */
 	async open() {
 		await this._dev.claimInterface(this._interface);
 		await this._dev.setAltSetting(this._interface, this._alternate);
@@ -132,10 +146,10 @@ export class Dfu {
 	}
 
 	/**
-   * Close DFU interface.
-   *
-   * @return {Promise}
-   */
+	 * Close DFU interface.
+	 *
+	 * @return {Promise}
+	 */
 	async close() {
 		if (this._claimed) {
 			return this._dev.releaseInterface(this._interface);
@@ -143,10 +157,10 @@ export class Dfu {
 	}
 
 	/**
-   * Leave DFU mode.
-   *
-   * @return {Promise}
-   */
+	 * Leave DFU mode.
+	 *
+	 * @return {Promise}
+	 */
 	async leave() {
 		await this._goIntoDfuIdleOrDfuDnloadIdle();
 

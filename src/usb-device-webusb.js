@@ -162,13 +162,13 @@ export async function getUsbDevices(filters) {
 		devs = await navigator.usb.getDevices();
 		if (filters.length > 0) {
 			devs = devs.filter(dev => filters.some(f => ((!f.vendorId || dev.vendorId === f.vendorId) &&
-          (!f.productId || dev.productId === f.productId) &&
-          (!f.serialNumber || dev.serialNumber === f.serialNumber))));
+					(!f.productId || dev.productId === f.productId) &&
+					(!f.serialNumber || dev.serialNumber === f.serialNumber))));
 		}
 		if (newDev) {
 			// Avoid listing the same device twice
 			const hasNewDev = devs.some(dev => dev.vendorId === newDev.vendorId && dev.productId === newDev.productId &&
-          dev.serialNumber === newDev.serialNumber);
+					dev.serialNumber === newDev.serialNumber);
 			if (!hasNewDev) {
 				devs.push(newDev);
 			}
