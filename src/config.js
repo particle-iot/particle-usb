@@ -1,14 +1,14 @@
 // Global configuration
 export let globalOptions = {
-  // Request timeout
-  requestTimeout: 30000,
-  // Logger instance
-  log: {
-    trace: () => {},
-    info: () => {},
-    warn: () => {},
-    error: () => {}
-  }
+	// Request timeout
+	requestTimeout: 30000,
+	// Logger instance
+	log: {
+		trace: () => {},
+		info: () => {},
+		warn: () => {},
+		error: () => {}
+	}
 };
 
 /**
@@ -17,5 +17,5 @@ export let globalOptions = {
  * @param {Object} options Options.
  */
 export function config(options) {
-  Object.assign(globalOptions, options);
+	Object.assign(globalOptions, options);
 }

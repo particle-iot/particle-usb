@@ -20,41 +20,50 @@
     "Andrey Tolstoy <avtolstoy@gmail.com>"
   ],
   "engines": {
-    "node": ">=6"
+    "node": ">=8"
   },
   "scripts": {
-    "prepublish": "git submodule update --init && npm run compile",
+    "prepublish": "git submodule update --init && npm run build",
     "version": "npm run docs && git add docs",
-    "compile": "npm run compile-babel && npm run compile-proto",
-    "compile-proto": "pbjs proto/control/*.proto -t static-module -o lib/pb-message.js --no-beautify --no-comments --no-delimited --no-convert --no-verify",
-    "compile-babel": "babel src -s -d lib",
-    "docs": "documentation build src/** -g -f md -o docs/reference.md",
     "test": "mocha -r @babel/register -r @babel/polyfill test test/integration",
-    "webpack": "webpack-cli"
+    "test:silent": "PARTICLE_NOOP=$(npm run test)",
+    "lint": "eslint . --ext .js --ignore-path .gitignore",
+    "lint:fix": "npm run lint -- --fix",
+    "coverage": "nyc --reporter=text --include='src/**/*.js' --temp-dir=./tmp/ --check-coverage --lines 50 npm run test:silent",
+    "build": "npm run build:node && npm run build:proto && npm run build:web",
+    "build:proto": "pbjs proto/control/*.proto -t static-module -o lib/pb-message.js --no-beautify --no-comments --no-delimited --no-convert --no-verify",
+    "build:node": "babel src -s -d lib",
+    "build:web": "webpack-cli",
+    "docs": "documentation build src/** -g -f md -o docs/reference.md",
+    "clean": "rm -rf ./dist ./lib",
+    "reinstall": "npm run clean && rm -rf ./node_modules && npm i"
   },
   "dependencies": {
-    "@babel/runtime-corejs2": "^7.3.4",
+    "@babel/runtime-corejs2": "^7.8.7",
     "ip": "^1.1.5",
-    "protobufjs": "^6.8.8",
-    "usb": "^1.6.0",
+    "protobufjs": "^6.8.9",
+    "usb": "^1.6.2",
     "verror": "^1.10.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.2.3",
-    "@babel/core": "^7.3.4",
-    "@babel/plugin-transform-runtime": "^7.3.4",
-    "@babel/polyfill": "^7.2.5",
-    "@babel/preset-env": "^7.3.4",
-    "@babel/register": "^7.0.0",
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.8.7",
+    "@babel/plugin-transform-runtime": "^7.8.3",
+    "@babel/polyfill": "^7.8.7",
+    "@babel/preset-env": "^7.8.7",
+    "@babel/register": "^7.8.6",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chai-subset": "^1.6.0",
     "documentation": "^12.1.4",
-    "mocha": "^6.0.2",
+    "eslint": "^6.8.0",
+    "eslint-config-particle": "^2.2.1",
+    "mocha": "^7.1.0",
     "mocha-sinon": "^2.1.0",
-    "sinon": "^7.2.7",
-    "sinon-chai": "^3.3.0",
-    "webpack": "^4.29.6",
-    "webpack-cli": "^3.2.3"
+    "nyc": "^15.0.0",
+    "sinon": "^9.0.1",
+    "sinon-chai": "^3.5.0",
+    "webpack": "^4.42.0",
+    "webpack-cli": "^3.3.11"
   }
 }
