@@ -24,7 +24,9 @@ const USB_DEVICES = [
 	{ type: 'Xenon-SoM', platformId: 24, vendorId: 0x2b04, productId: 0xc018, dfu: false },
 	{ type: 'Xenon-SoM', platformId: 24, vendorId: 0x2b04, productId: 0xd018, dfu: true },
 	{ type: 'B5-SoM', platformId: 25, vendorId: 0x2b04, productId: 0xc019, dfu: false },
-	{ type: 'B5-SoM', platformId: 25, vendorId: 0x2b04, productId: 0xd019, dfu: true }
+	{ type: 'B5-SoM', platformId: 25, vendorId: 0x2b04, productId: 0xd019, dfu: true },
+	{ type: 'Asset-Tracker', platformId: 26, vendorId: 0x2b04, productId: 0xc01a, dfu: false },
+	{ type: 'Asset-Tracker', platformId: 26, vendorId: 0x2b04, productId: 0xd01a, dfu: true }
 ];
 
 // Low-level vendor requests
@@ -739,6 +741,11 @@ export function addB5Som(options) {
 
 export function addXenonSom(options) {
 	const opts = Object.assign({}, options, { type: 'Xenon-SoM' });
+	return addDevice(opts);
+}
+
+export function addAssetTracker(options) {
+	const opts = Object.assign({}, options, { type: 'Asset-Tracker' });
 	return addDevice(opts);
 }
 

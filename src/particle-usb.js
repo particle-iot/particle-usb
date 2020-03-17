@@ -51,6 +51,9 @@ export class XenonSom extends CloudDevice(MeshDevice(NetworkDevice(Device))) {
 export class B5Som extends CloudDevice(CellularDevice(MeshDevice(NetworkDevice(Device)))) {
 }
 
+export class AssetTracker extends CloudDevice(CellularDevice(NetworkDevice(Device))) {
+}
+
 const DEVICE_PROTOTYPES = {
 	[DeviceType.CORE]: Core.prototype,
 	[DeviceType.PHOTON]: Photon.prototype,
@@ -62,7 +65,8 @@ const DEVICE_PROTOTYPES = {
 	[DeviceType.ARGON_SOM]: ArgonSom.prototype,
 	[DeviceType.BORON_SOM]: BoronSom.prototype,
 	[DeviceType.XENON_SOM]: XenonSom.prototype,
-	[DeviceType.B5_SOM]: B5Som.prototype
+	[DeviceType.B5_SOM]: B5Som.prototype,
+	[DeviceType.ASSET_TRACKER]: AssetTracker.prototype
 };
 
 function setDevicePrototype(dev) {
