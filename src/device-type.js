@@ -12,7 +12,8 @@ export const DeviceType = {
 	ARGON_SOM: 'Argon-SoM',
 	BORON_SOM: 'Boron-SoM',
 	XENON_SOM: 'Xenon-SoM',
-	B5_SOM: 'B5-SoM'
+	B5_SOM: 'B5-SoM',
+	ASSET_TRACKER: 'Asset-Tracker'
 };
 
 // Descriptions of all devices supported by the library
@@ -147,6 +148,18 @@ export const DEVICES = [
 		dfuUsbIds: {
 			vendorId: 0x2b04,
 			productId: 0xd019
+		}
+	},
+	{
+		type: DeviceType.ASSET_TRACKER,
+		platformId: 26,
+		usbIds: {
+			vendorId: 0x2b04,
+			productId: 0xc01a
+		},
+		dfuUsbIds: {
+			vendorId: 0x2b04,
+			productId: 0xd01a
 		}
 	}
 ];

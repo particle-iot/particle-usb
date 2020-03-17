@@ -58,6 +58,7 @@ describe('device-base', () => {
 			usbDevs.push(fakeUsb.addArgonSom());
 			usbDevs.push(fakeUsb.addBoronSom());
 			usbDevs.push(fakeUsb.addB5Som());
+			usbDevs.push(fakeUsb.addAssetTracker());
 			// Enumerate detected devices
 			const devs = await getDevices();
 			expect(devs.map(dev => dev.usbDevice)).to.have.all.members(usbDevs);
@@ -79,7 +80,8 @@ describe('device-base', () => {
 				fakeUsb.addArgonSom({ dfu: true }),
 				fakeUsb.addBoronSom({ dfu: true }),
 				fakeUsb.addXenonSom({ dfu: true }),
-				fakeUsb.addB5Som({ dfu: true })
+				fakeUsb.addB5Som({ dfu: true }),
+				fakeUsb.addAssetTracker({ dfu: true })
 			];
 			const devs = await getDevices();
 			expect(devs.map(dev => dev.usbDevice)).to.have.all.members(usbDevs);
@@ -99,6 +101,7 @@ describe('device-base', () => {
 			expect(nonDFUDevices[0].usbDevice).to.equal(photon2);
 		});
 
+		// eslint-disable-next-line max-statements
 		it('can filter detected devices by type', async () => {
 			const photon = fakeUsb.addPhoton();
 			const p1 = fakeUsb.addP1();
@@ -110,6 +113,7 @@ describe('device-base', () => {
 			const argonSom = fakeUsb.addArgonSom();
 			const boronSom = fakeUsb.addBoronSom();
 			const b5Som = fakeUsb.addB5Som();
+			const assetTracker = fakeUsb.addAssetTracker();
 			// Core
 			let devs = await getDevices({ types: ['core'] });
 			expect(devs).to.be.empty;
@@ -133,6 +137,11 @@ describe('device-base', () => {
 			expect(devs).to.have.lengthOf(4);
 			devs = devs.map(dev => dev.usbDevice);
 			expect(devs).to.have.all.members([argonSom, boronSom, b5Som, xenonSom]);
+			// Asset Tracker
+			devs = await getDevices({ types: ['asset-tracker'] });
+			expect(devs).to.have.lengthOf(1);
+			devs = devs.map(dev => dev.usbDevice);
+			expect(devs).to.have.all.members([assetTracker]);
 		});
 
 		it('matches device types in a case-insensitive manner', async () => {
