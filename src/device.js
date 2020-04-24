@@ -18,6 +18,17 @@ export const FirmwareModule = fromProtobufEnum(proto.FirmwareModuleType, {
 });
 
 /**
+ * Cloud Connection statuses.
+ */
+export const CloudConnectionStatus = fromProtobufEnum(proto.cloud.ConnectionStatus, {
+	DISCONNECTED: 'DISCONNECTED',
+	CONNECTING: 'CONNECTING',
+	CONNECTED: 'CONNECTED',
+	DISCONNECTING: 'DISCONNECTING'
+});
+
+
+/**
  * Device modes.
  */
 export const DeviceMode = fromProtobufEnum(proto.DeviceMode, {
@@ -87,6 +98,14 @@ export class Device extends DeviceBase {
 	 */
 	getSerialNumber() {
 		return this.sendRequest(Request.GET_SERIAL_NUMBER);
+	}
+
+	/**
+	 * Get device's cloud connection status.
+	 */
+	async getCloudConnectionStatus() {
+		const r = await this.sendRequest(Request.GET_CONNECTION_STATUS);
+		return CloudConnectionStatus.fromProtobuf(r.status);
 	}
 
 	/**
