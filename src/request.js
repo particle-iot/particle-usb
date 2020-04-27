@@ -44,6 +44,11 @@ export const Request = {
 	DIAGNOSTIC_INFO: {
 		id: 100
 	},
+	GET_CONNECTION_STATUS: {
+		id: 300,
+		request: proto.cloud.GetConnectionStatusRequest,
+		reply: proto.cloud.GetConnectionStatusReply
+	},
 	WIFI_SET_ANTENNA: {
 		id: 110,
 		request: proto.WiFiSetAntennaRequest,
