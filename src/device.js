@@ -535,10 +535,11 @@ export class Device extends DeviceBase {
 			}
 			if (req.reply) {
 				if (rep.data) {
-					r = Object.assign({}, r, req.reply.decode(rep.data));
+					// Parse the response message
+					r = Object.assign(req.reply.decode(rep.data), r);
 				} else {
-					// Return a message with default-initialized properties
-					r = Object.assign({}, r, req.reply.create());
+					// Create a message with default-initialized properties
+					r = Object.assign(req.reply.create(), r);
 				}
 			}
 			return r;
