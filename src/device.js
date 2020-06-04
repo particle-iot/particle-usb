@@ -226,33 +226,23 @@ export class Device extends DeviceBase {
 	 * Perform the firmware update.
 	 *
 	 * @param {Buffer} data Firmware data.
+	 * @param {Object} [options] Options.
+	 * @param {Number} [options.timeout] Timeout in milliseconds (default: 120000).
 	 * @return {Promise}
 	 */
-	updateFirmware(data) {
-		return this.sendRequest(Request.START_FIRMWARE_UPDATE, {
-			size: data.length
-		}).then(rep => {
-			let chunkSize = rep.chunkSize;
-			let chunkOffs = 0;
-			const writeChunk = () => {
-				if (chunkOffs + chunkSize > data.length) {
-					chunkSize = data.length - chunkOffs;
-				}
-				if (chunkSize === 0) {
-					return Promise.resolve();
-				}
-				return this.sendRequest(Request.FIRMWARE_UPDATE_DATA, {
-					data: data.slice(chunkOffs, chunkOffs + chunkSize)
-				}).then(() => {
-					chunkOffs += chunkSize;
-					return writeChunk();
-				});
-			};
-			return writeChunk();
-		}).then(() => {
-			return this.sendRequest(Request.FINISH_FIRMWARE_UPDATE, {
-				validateOnly: false
-			});
+	async updateFirmware(data, { timeout = 120000 } = {}) {
+		if (!data.length) {
+			throw new RangeError('Invalid firmware size');
+		}
+		return this.timeout(timeout, async (s) => {
+			const { chunkSize } = await s.sendRequest(Request.START_FIRMWARE_UPDATE, { size: data.length });
+			let offs = 0;
+			while (offs < data.length) {
+				const n = Math.min(chunkSize, data.length - offs);
+				await s.sendRequest(Request.FIRMWARE_UPDATE_DATA, { data: data.slice(offs, offs + n) });
+				offs += n;
+			}
+			await s.sendRequest(Request.FINISH_FIRMWARE_UPDATE, { validateOnly: false });
 		});
 	}
 
