@@ -44,11 +44,6 @@ export const Request = {
 	DIAGNOSTIC_INFO: {
 		id: 100
 	},
-	GET_CONNECTION_STATUS: {
-		id: 300,
-		request: proto.cloud.GetConnectionStatusRequest,
-		reply: proto.cloud.GetConnectionStatusReply
-	},
 	WIFI_SET_ANTENNA: {
 		id: 110,
 		request: proto.WiFiSetAntennaRequest,
@@ -189,6 +184,22 @@ export const Request = {
 		id: 264,
 		request: proto.GetSectionDataSizeRequest,
 		reply: proto.GetSectionDataSizeReply
+	},
+	// Cloud connectivity
+	CLOUD_STATUS: {
+		id: 300,
+		request: proto.cloud.GetConnectionStatusRequest,
+		reply: proto.cloud.GetConnectionStatusReply
+	},
+	CLOUD_CONNECT: {
+		id: 301,
+		request: proto.cloud.ConnectRequest,
+		reply: proto.cloud.ConnectReply
+	},
+	CLOUD_DISCONNECT: {
+		id: 302,
+		request: proto.cloud.DisconnectRequest,
+		reply: proto.cloud.DisconnectReply
 	},
 	// Cellular-specific requests
 	CELLULAR_GET_ICCID: {
