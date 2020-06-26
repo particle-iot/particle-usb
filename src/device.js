@@ -2,6 +2,7 @@ import { DeviceBase, openDeviceById } from './device-base';
 import { Request } from './request';
 import { Result, messageForResultCode } from './result';
 import { fromProtobufEnum } from './protobuf-util';
+import * as usbProto from './usb-protocol';
 import { RequestError, NotFoundError, TimeoutError } from './error';
 import { globalOptions } from './config';
 
@@ -113,12 +114,20 @@ export class Device extends DeviceBase {
 	 *
 	 * @return {Promise}
 	 */
-	reset() {
-		if (!this.isInDfuMode) {
-			return this.sendRequest(Request.RESET);
-		} else {
+	async reset({ force = false } = {}) {
+		if (this.isInDfuMode) {
 			return super.reset();
 		}
+		if (!force) {
+			return this.sendRequest(Request.RESET);
+		}
+		const setup = {
+			bmRequestType: usbProto.BmRequestType.HOST_TO_DEVICE,
+			bRequest: usbProto.PARTICLE_BREQUEST,
+			wIndex: Request.RESET.id,
+			wValue: 0
+		};
+		return this.usbDevice.transferOut(setup);
 	}
 
 	/**

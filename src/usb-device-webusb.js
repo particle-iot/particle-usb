@@ -85,7 +85,7 @@ export class UsbDevice {
 				request: setup.bRequest,
 				value: setup.wValue,
 				index: setup.wIndex
-			}, data);
+			}, data); // data is optional
 		} catch (err) {
 			throw new UsbError(err, 'OUT control transfer failed');
 		}
@@ -129,6 +129,10 @@ export class UsbDevice {
 
 	get isOpen() {
 		return this._dev.opened;
+	}
+
+	get internalObject() {
+		return this._dev;
 	}
 }
 
