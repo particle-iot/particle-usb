@@ -550,6 +550,9 @@ export class Device extends DeviceBase {
 	async timeout(ms, fn) {
 		if (typeof ms === 'function') {
 			fn = ms;
+			ms = undefined;
+		}
+		if (!ms) {
 			ms = globalOptions.requestTimeout; // Default timeout
 		}
 		const s = new RequestSender(this, ms);
