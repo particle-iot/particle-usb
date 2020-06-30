@@ -106,12 +106,12 @@ export class Device extends DeviceBase {
 	 *
 	 * @return {Promise}
 	 */
-	async reset({ force = false } = {}) {
+	async reset({ force = false, timeout = globalOptions.requestTimeout } = {}) {
 		if (this.isInDfuMode) {
 			return super.reset();
 		}
 		if (!force) {
-			return this.sendRequest(Request.RESET);
+			return this.sendRequest(Request.RESET, null /* msg */, { timeout });
 		}
 		const setup = {
 			bmRequestType: usbProto.BmRequestType.HOST_TO_DEVICE,
@@ -208,7 +208,7 @@ export class Device extends DeviceBase {
 	/**
 	 * Connect to the cloud.
 	 */
-	async connectToCloud({ dontWait = false, timeout = undefined } = {}) {
+	async connectToCloud({ dontWait = false, timeout = globalOptions.requestTimeout } = {}) {
 		await this.timeout(timeout, async (s) => {
 			await s.sendRequest(Request.CLOUD_CONNECT);
 			if (!dontWait) {
@@ -226,7 +226,7 @@ export class Device extends DeviceBase {
 	/**
 	 * Disconnect from the cloud.
 	 */
-	async disconnectFromCloud({ dontWait = false, force = false, timeout = undefined } = {}) {
+	async disconnectFromCloud({ dontWait = false, force = false, timeout = globalOptions.requestTimeout } = {}) {
 		if (force) {
 			const setup = {
 				bmRequestType: usbProto.BmRequestType.HOST_TO_DEVICE,
