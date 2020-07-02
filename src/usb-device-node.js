@@ -89,6 +89,9 @@ export class UsbDevice {
 
 	transferOut(setup, data) {
 		return new Promise((resolve, reject) => {
+			if (!data) {
+				data = Buffer.alloc(0);
+			}
 			this._dev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, data, err => {
 				if (err) {
 					return reject(wrapUsbError(err, 'OUT control transfer failed'));
@@ -165,6 +168,10 @@ export class UsbDevice {
 
 	get isOpen() {
 		return this._dev.particle.isOpen;
+	}
+
+	get internalObject() {
+		return this._dev;
 	}
 }
 

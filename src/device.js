@@ -2,6 +2,7 @@ import { DeviceBase, openDeviceById } from './device-base';
 import { Request } from './request';
 import { Result, messageForResultCode } from './result';
 import { fromProtobufEnum } from './protobuf-util';
+import * as usbProto from './usb-protocol';
 import { RequestError, NotFoundError, TimeoutError } from './error';
 import { globalOptions } from './config';
 
@@ -101,24 +102,24 @@ export class Device extends DeviceBase {
 	}
 
 	/**
-	 * Get device's cloud connection status.
-	 */
-	async getCloudConnectionStatus() {
-		const r = await this.sendRequest(Request.GET_CONNECTION_STATUS);
-		return CloudConnectionStatus.fromProtobuf(r.status);
-	}
-
-	/**
 	 * Perform the system reset.
 	 *
 	 * @return {Promise}
 	 */
-	reset() {
-		if (!this.isInDfuMode) {
-			return this.sendRequest(Request.RESET);
-		} else {
+	async reset({ force = false, timeout = globalOptions.requestTimeout } = {}) {
+		if (this.isInDfuMode) {
 			return super.reset();
 		}
+		if (!force) {
+			return this.sendRequest(Request.RESET, null /* msg */, { timeout });
+		}
+		const setup = {
+			bmRequestType: usbProto.BmRequestType.HOST_TO_DEVICE,
+			bRequest: usbProto.PARTICLE_BREQUEST,
+			wIndex: Request.RESET.id,
+			wValue: 0
+		};
+		return this.usbDevice.transferOut(setup);
 	}
 
 	/**
@@ -202,6 +203,64 @@ export class Device extends DeviceBase {
 	async getDeviceMode() {
 		const r = await this.sendRequest(Request.GET_DEVICE_MODE);
 		return DeviceMode.fromProtobuf(r.mode);
+	}
+
+	/**
+	 * Connect to the cloud.
+	 */
+	async connectToCloud({ dontWait = false, timeout = globalOptions.requestTimeout } = {}) {
+		await this.timeout(timeout, async (s) => {
+			await s.sendRequest(Request.CLOUD_CONNECT);
+			if (!dontWait) {
+				for (;;) {
+					const r = await s.sendRequest(Request.CLOUD_STATUS);
+					if (r.status === proto.cloud.ConnectionStatus.CONNECTED) {
+						break;
+					}
+					await s.delay(500);
+				}
+			}
+		});
+	}
+
+	/**
+	 * Disconnect from the cloud.
+	 */
+	async disconnectFromCloud({ dontWait = false, force = false, timeout = globalOptions.requestTimeout } = {}) {
+		if (force) {
+			const setup = {
+				bmRequestType: usbProto.BmRequestType.HOST_TO_DEVICE,
+				bRequest: usbProto.PARTICLE_BREQUEST,
+				wIndex: Request.CLOUD_DISCONNECT.id,
+				wValue: 0
+			};
+			await this.usbDevice.transferOut(setup);
+			if (dontWait) {
+				return;
+			}
+		}
+		await this.timeout(timeout, async (s) => {
+			if (!force) {
+				await s.sendRequest(Request.CLOUD_DISCONNECT);
+			}
+			if (!dontWait) {
+				for (;;) {
+					const r = await s.sendRequest(Request.CLOUD_STATUS);
+					if (r.status === proto.cloud.ConnectionStatus.DISCONNECTED) {
+						break;
+					}
+					await s.delay(500);
+				}
+			}
+		});
+	}
+
+	/**
+	 * Get the cloud connection status.
+	 */
+	async getCloudConnectionStatus() {
+		const r = await this.sendRequest(Request.CLOUD_STATUS);
+		return CloudConnectionStatus.fromProtobuf(r.status);
 	}
 
 	/**
@@ -541,6 +600,9 @@ export class Device extends DeviceBase {
 	async timeout(ms, fn) {
 		if (typeof ms === 'function') {
 			fn = ms;
+			ms = undefined;
+		}
+		if (!ms) {
 			ms = globalOptions.requestTimeout; // Default timeout
 		}
 		const s = new RequestSender(this, ms);

@@ -1,7 +1,7 @@
 // Global configuration
 export let globalOptions = {
 	// Request timeout
-	requestTimeout: 30000,
+	requestTimeout: 60000,
 	// Logger instance
 	log: {
 		trace: () => {},
