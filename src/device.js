@@ -49,6 +49,8 @@ export const LogLevel = fromProtobufEnum(proto.logging.LogLevel, {
 	NONE: 'NONE'
 });
 
+const DEFAULT_FIRMWARE_UPDATE_TIMEOUT = 120000;
+
 // Helper class used by Device.timeout()
 class RequestSender {
 	constructor(device, timeout) {
@@ -97,8 +99,8 @@ export class Device extends DeviceBase {
 	 *
 	 * @return {Promise}
 	 */
-	getSerialNumber() {
-		return this.sendRequest(Request.GET_SERIAL_NUMBER);
+	getSerialNumber({ timeout = globalOptions.requestTimeout } = {}) {
+		return this.sendRequest(Request.GET_SERIAL_NUMBER, null /* msg */, { timeout });
 	}
 
 	/**
@@ -127,8 +129,8 @@ export class Device extends DeviceBase {
 	 *
 	 * @return {Promise}
 	 */
-	factoryReset() {
-		return this.sendRequest(Request.FACTORY_RESET);
+	factoryReset({ timeout = globalOptions.requestTimeout } = {}) {
+		return this.sendRequest(Request.FACTORY_RESET, null /* msg */, { timeout });
 	}
 
 	/**
@@ -136,11 +138,11 @@ export class Device extends DeviceBase {
 	 *
 	 * @return {Promise}
 	 */
-	enterDfuMode() {
+	enterDfuMode({ timeout = globalOptions.requestTimeout } = {}) {
 		if (this.isInDfuMode) {
 			return;
 		}
-		return this.timeout(async (s) => {
+		return this.timeout(timeout, async (s) => {
 			await s.sendRequest(Request.DFU_MODE);
 			await s.close();
 			let isInDfuMode;
@@ -163,8 +165,8 @@ export class Device extends DeviceBase {
 	 *
 	 * @return {Promise}
 	 */
-	enterSafeMode() {
-		return this.sendRequest(Request.SAFE_MODE);
+	enterSafeMode({ timeout = globalOptions.requestTimeout } = {}) {
+		return this.sendRequest(Request.SAFE_MODE, null /* msg */, { timeout });
 	}
 
 	/**
@@ -172,8 +174,8 @@ export class Device extends DeviceBase {
 	 *
 	 * @return {Promise}
 	 */
-	async enterListeningMode() {
-		return this.timeout(async (s) => {
+	async enterListeningMode({ timeout = globalOptions.requestTimeout } = {}) {
+		return this.timeout(timeout, async (s) => {
 			await s.sendRequest(Request.START_LISTENING);
 			// Wait until the device enters the listening mode
 			while (true) { // eslint-disable-line no-constant-condition
@@ -193,15 +195,15 @@ export class Device extends DeviceBase {
 	 *
 	 * @return {Promise}
 	 */
-	leaveListeningMode() {
-		return this.sendRequest(Request.STOP_LISTENING);
+	leaveListeningMode({ timeout = globalOptions.requestTimeout } = {}) {
+		return this.sendRequest(Request.STOP_LISTENING, null /* msg */, { timeout });
 	}
 
 	/**
 	 * Get device mode.
 	 */
-	async getDeviceMode() {
-		const r = await this.sendRequest(Request.GET_DEVICE_MODE);
+	async getDeviceMode({ timeout = globalOptions.requestTimeout } = {}) {
+		const r = await this.sendRequest(Request.GET_DEVICE_MODE, null /* msg */, { timeout });
 		return DeviceMode.fromProtobuf(r.mode);
 	}
 
@@ -258,8 +260,8 @@ export class Device extends DeviceBase {
 	/**
 	 * Get the cloud connection status.
 	 */
-	async getCloudConnectionStatus() {
-		const r = await this.sendRequest(Request.CLOUD_STATUS);
+	async getCloudConnectionStatus({ timeout = globalOptions.requestTimeout } = {}) {
+		const r = await this.sendRequest(Request.CLOUD_STATUS, null /* msg */, { timeout });
 		return CloudConnectionStatus.fromProtobuf(r.status);
 	}
 
@@ -268,8 +270,8 @@ export class Device extends DeviceBase {
 	 *
 	 * @return {Promise}
 	 */
-	startNyanSignal() {
-		return this.sendRequest(Request.START_NYAN_SIGNAL);
+	startNyanSignal({ timeout = globalOptions.requestTimeout } = {}) {
+		return this.sendRequest(Request.START_NYAN_SIGNAL, null /* msg */, { timeout });
 	}
 
 	/**
@@ -277,8 +279,8 @@ export class Device extends DeviceBase {
 	 *
 	 * @return {Promise}
 	 */
-	stopNyanSignal() {
-		return this.sendRequest(Request.STOP_NYAN_SIGNAL);
+	stopNyanSignal({ timeout = globalOptions.requestTimeout } = {}) {
+		return this.sendRequest(Request.STOP_NYAN_SIGNAL, null /* msg */, { timeout });
 	}
 
 	/**
@@ -286,10 +288,10 @@ export class Device extends DeviceBase {
 	 *
 	 * @param {Buffer} data Firmware data.
 	 * @param {Object} [options] Options.
-	 * @param {Number} [options.timeout] Timeout in milliseconds (default: 120000).
+	 * @param {Number} [options.timeout] Timeout in milliseconds.
 	 * @return {Promise}
 	 */
-	async updateFirmware(data, { timeout = 120000 } = {}) {
+	async updateFirmware(data, { timeout = DEFAULT_FIRMWARE_UPDATE_TIMEOUT } = {}) {
 		if (!data.length) {
 			throw new RangeError('Invalid firmware size');
 		}
@@ -304,6 +306,8 @@ export class Device extends DeviceBase {
 			await s.sendRequest(Request.FINISH_FIRMWARE_UPDATE, { validateOnly: false });
 		});
 	}
+
+	// TODO: The methods below are not supported in recent versions of Device OS. Remove them in particle-usb@2.0.0
 
 	/**
 	 * Get firmware module data.

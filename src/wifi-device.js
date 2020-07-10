@@ -76,7 +76,10 @@ const accessPointToProtobuf = toProtobufMessage(proto.WiFiAccessPoint, accessPoi
 /**
  * Mixin class for a WiFi device.
  */
+// TODO: Recent versions of Device OS use a different network configuration interface and the
+// methods of this class no longer work
 export const WifiDevice = base => class extends base {
+	// TODO: The methods below are not supported in recent versions of Device OS. Remove them in particle-usb@2.0.0
 	/**
 	 * Set the WiFi antenna to use.
 	 *

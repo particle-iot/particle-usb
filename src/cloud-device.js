@@ -1,5 +1,6 @@
 import { Request } from './request';
 import { fromProtobufEnum } from './protobuf-util';
+import { globalOptions } from './config';
 
 import proto from './protocol';
 
@@ -21,10 +22,8 @@ export const CloudDevice = base => class extends base {
 	 * @param {String} code Claim code.
 	 * @return {Promise}
 	 */
-	setClaimCode(code) {
-		return this.sendRequest(Request.SET_CLAIM_CODE, {
-			code: code
-		});
+	setClaimCode(code, { timeout = globalOptions.requestTimeout } = {}) {
+		return this.sendRequest(Request.SET_CLAIM_CODE, { code }, { timeout });
 	}
 
 	/**
@@ -32,9 +31,11 @@ export const CloudDevice = base => class extends base {
 	 *
 	 * @return {Promise<Boolean>}
 	 */
-	isClaimed() {
-		return this.sendRequest(Request.IS_CLAIMED).then(rep => rep.claimed);
+	isClaimed({ timeout = globalOptions.requestTimeout } = {}) {
+		return this.sendRequest(Request.IS_CLAIMED, null /* msg */, { timeout }).then(rep => rep.claimed);
 	}
+
+	// TODO: The methods below are not supported in recent versions of Device OS. Remove them in particle-usb@2.0.0
 
 	/**
 	 * Set the device private key.

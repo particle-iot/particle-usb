@@ -16,6 +16,8 @@ export const NetworkStatus = fromProtobufEnum(proto.NetworkState, {
 /**
  * Mixin class for a network device.
  */
+// TODO: Recent versions of Device OS use a different network configuration interface and the
+// methods of this class no longer work
 export const NetworkDevice = base => class extends base {
 	/**
 	 * Get network status.
