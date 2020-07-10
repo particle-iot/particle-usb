@@ -1,4 +1,5 @@
 import { Request } from './request';
+import { globalOptions } from './config';
 
 /**
  * Mixin class for a cellular network device.
@@ -9,8 +10,8 @@ export const CellularDevice = base => class extends base {
 	 *
 	 * @return {Promise<String>}
 	 */
-	async getIccid() {
-		const r = await this.sendRequest(Request.CELLULAR_GET_ICCID);
+	async getIccid({ timeout = globalOptions.requestTimeout } = {}) {
+		const r = await this.sendRequest(Request.CELLULAR_GET_ICCID, null /* msg */, { timeout });
 		return r.iccid;
 	}
 

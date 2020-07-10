@@ -12,7 +12,7 @@ export { PollingPolicy } from './device-base';
 export { FirmwareModule } from './device';
 export { NetworkStatus } from './network-device';
 export { WifiAntenna, WifiSecurity, WifiCipher, EapMethod } from './wifi-device';
-export { ServerProtocol } from './cloud-device';
+export { CloudConnectionStatus, ServerProtocol } from './cloud-device';
 export { Result } from './result';
 export { DeviceError, NotFoundError, NotAllowedError, StateError, TimeoutError, MemoryError, ProtocolError, UsbError,
 	InternalError, RequestError } from './error';

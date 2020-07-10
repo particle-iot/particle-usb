@@ -1,7 +1,19 @@
 import { Request } from './request';
 import { fromProtobufEnum } from './protobuf-util';
+import * as usbProto from './usb-protocol';
+import { globalOptions } from './config';
 
 import proto from './protocol';
+
+/**
+ * Cloud connection status.
+ */
+export const CloudConnectionStatus = fromProtobufEnum(proto.cloud.ConnectionStatus, {
+	DISCONNECTED: 'DISCONNECTED',
+	CONNECTING: 'CONNECTING',
+	CONNECTED: 'CONNECTED',
+	DISCONNECTING: 'DISCONNECTING'
+});
 
 /**
  * Server protocol types.
@@ -16,15 +28,71 @@ export const ServerProtocol = fromProtobufEnum(proto.ServerProtocolType, {
  */
 export const CloudDevice = base => class extends base {
 	/**
+	 * Connect to the cloud.
+	 */
+	async connectToCloud({ dontWait = false, timeout = globalOptions.requestTimeout } = {}) {
+		await this.timeout(timeout, async (s) => {
+			await s.sendRequest(Request.CLOUD_CONNECT);
+			if (!dontWait) {
+				for (;;) {
+					const r = await s.sendRequest(Request.CLOUD_STATUS);
+					if (r.status === proto.cloud.ConnectionStatus.CONNECTED) {
+						break;
+					}
+					await s.delay(500);
+				}
+			}
+		});
+	}
+
+	/**
+	 * Disconnect from the cloud.
+	 */
+	async disconnectFromCloud({ dontWait = false, force = false, timeout = globalOptions.requestTimeout } = {}) {
+		if (force) {
+			const setup = {
+				bmRequestType: usbProto.BmRequestType.HOST_TO_DEVICE,
+				bRequest: usbProto.PARTICLE_BREQUEST,
+				wIndex: Request.CLOUD_DISCONNECT.id,
+				wValue: 0
+			};
+			await this.usbDevice.transferOut(setup);
+			if (dontWait) {
+				return;
+			}
+		}
+		await this.timeout(timeout, async (s) => {
+			if (!force) {
+				await s.sendRequest(Request.CLOUD_DISCONNECT);
+			}
+			if (!dontWait) {
+				for (;;) {
+					const r = await s.sendRequest(Request.CLOUD_STATUS);
+					if (r.status === proto.cloud.ConnectionStatus.DISCONNECTED) {
+						break;
+					}
+					await s.delay(500);
+				}
+			}
+		});
+	}
+
+	/**
+	 * Get the cloud connection status.
+	 */
+	async getCloudConnectionStatus({ timeout = globalOptions.requestTimeout } = {}) {
+		const r = await this.sendRequest(Request.CLOUD_STATUS, null /* msg */, { timeout });
+		return CloudConnectionStatus.fromProtobuf(r.status);
+	}
+
+	/**
 	 * Set the claim code.
 	 *
 	 * @param {String} code Claim code.
 	 * @return {Promise}
 	 */
-	setClaimCode(code) {
-		return this.sendRequest(Request.SET_CLAIM_CODE, {
-			code: code
-		});
+	setClaimCode(code, { timeout = globalOptions.requestTimeout } = {}) {
+		return this.sendRequest(Request.SET_CLAIM_CODE, { code }, { timeout });
 	}
 
 	/**
@@ -32,9 +100,11 @@ export const CloudDevice = base => class extends base {
 	 *
 	 * @return {Promise<Boolean>}
 	 */
-	isClaimed() {
-		return this.sendRequest(Request.IS_CLAIMED).then(rep => rep.claimed);
+	isClaimed({ timeout = globalOptions.requestTimeout } = {}) {
+		return this.sendRequest(Request.IS_CLAIMED, null /* msg */, { timeout }).then(rep => rep.claimed);
 	}
+
+	// TODO: The methods below are not supported in recent versions of Device OS. Remove them in particle-usb@2.0.0
 
 	/**
 	 * Set the device private key.

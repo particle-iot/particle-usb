@@ -121,6 +121,7 @@ function transformNetworkDiagnosticInfo(info) {
 /**
  * Mixin class for a Mesh device.
  */
+// TODO: Mesh support is deprecated. Remove this class in particle-usb@2.0.0
 export const MeshDevice = base => class extends base {
 	/**
 	 * Authenticate the host on the device.
