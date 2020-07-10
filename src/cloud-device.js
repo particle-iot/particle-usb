@@ -1,5 +1,6 @@
 import { Request } from './request';
 import { fromProtobufEnum } from './protobuf-util';
+import * as usbProto from './usb-protocol';
 import { globalOptions } from './config';
 
 import proto from './protocol';
