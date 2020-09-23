@@ -74,10 +74,16 @@ const accessPointToProtobuf = toProtobufMessage(proto.WiFiAccessPoint, accessPoi
 });
 
 /**
- * Mixin class for a WiFi device.
+ * Wi-Fi device.
+ *
+ * @deprecated Methods provided by this class are not guaranteed to work with recent versions of
+ *             Device OS and will be removed in future versions of this library.
+ *
+ * This class is not meant to be instantiated directly. Use {@link getDevices} and
+ * {@link openDeviceById} to create device instances.
+ *
+ * @mixin
  */
-// TODO: Recent versions of Device OS use a different network configuration interface and the
-// methods of this class no longer work
 export const WifiDevice = base => class extends base {
 	/**
 	 * Set the WiFi antenna to use.

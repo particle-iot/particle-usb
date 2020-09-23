@@ -7,28 +7,53 @@ import proto from './protocol';
 
 /**
  * Cloud connection status.
+ *
+ * @enum {String}
  */
 export const CloudConnectionStatus = fromProtobufEnum(proto.cloud.ConnectionStatus, {
+	/** Disconnected. */
 	DISCONNECTED: 'DISCONNECTED',
+	/** Connecting. */
 	CONNECTING: 'CONNECTING',
+	/** Connected. */
 	CONNECTED: 'CONNECTED',
+	/** Disconnecting. */
 	DISCONNECTING: 'DISCONNECTING'
 });
 
 /**
  * Server protocol types.
+ *
+ * @enum {String}
  */
 export const ServerProtocol = fromProtobufEnum(proto.ServerProtocolType, {
+	/** TCP. */
 	TCP: 'TCP_PROTOCOL',
+	/** UDP. */
 	UDP: 'UDP_PROTOCOL'
 });
 
 /**
- * Mixin class for a cloud-enabled device.
+ * Cloud-enabled device.
+ *
+ * This class is not meant to be instantiated directly. Use {@link getDevices} and
+ * {@link openDeviceById} to create device instances.
+ *
+ * @mixin
  */
 export const CloudDevice = base => class extends base {
 	/**
 	 * Connect to the cloud.
+	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 1.1.0)
+	 *
+	 * @param {Object} [options] Options.
+	 * @param {Boolean} [options.dontWait] Do wait for the device to actually connect to the cloud and
+	 *        return immediately.
+	 * @param {Number} [options.timeout] Timeout (milliseconds).
+	 * @return {Promise}
 	 */
 	async connectToCloud({ dontWait = false, timeout = globalOptions.requestTimeout } = {}) {
 		await this.timeout(timeout, async (s) => {
@@ -47,6 +72,20 @@ export const CloudDevice = base => class extends base {
 
 	/**
 	 * Disconnect from the cloud.
+	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 1.1.0)
+	 *
+	 * The `force` option is supported since Device OS 2.0.0.
+	 *
+	 * @param {Object} [options] Options.
+	 * @param {Boolean} [options.dontWait] Do wait for the device to actually disconnect from the cloud
+	 *        and return immediately.
+	 * @param {Boolean} [options.force] Disconnect immediately, even if the device is busy performing
+	 *        some operation with the cloud.
+	 * @param {Number} [options.timeout] Timeout (milliseconds).
+	 * @return {Promise}
 	 */
 	async disconnectFromCloud({ dontWait = false, force = false, timeout = globalOptions.requestTimeout } = {}) {
 		if (force) {
@@ -79,6 +118,14 @@ export const CloudDevice = base => class extends base {
 
 	/**
 	 * Get the cloud connection status.
+	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 1.1.0)
+	 *
+	 * @param {Object} [options] Options.
+	 * @param {Number} [options.timeout] Timeout (milliseconds).
+	 * @return {Promise<CloudConnectionStatus>}
 	 */
 	async getCloudConnectionStatus({ timeout = globalOptions.requestTimeout } = {}) {
 		const r = await this.sendRequest(Request.CLOUD_STATUS, null /* msg */, { timeout });
@@ -88,7 +135,13 @@ export const CloudDevice = base => class extends base {
 	/**
 	 * Set the claim code.
 	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 0.8.0)
+	 *
 	 * @param {String} code Claim code.
+	 * @param {Object} [options] Options.
+	 * @param {Number} [options.timeout] Timeout (milliseconds).
 	 * @return {Promise}
 	 */
 	setClaimCode(code, { timeout = globalOptions.requestTimeout } = {}) {
@@ -98,16 +151,23 @@ export const CloudDevice = base => class extends base {
 	/**
 	 * Check if the device is claimed.
 	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 0.8.0)
+	 *
+	 * @param {Object} [options] Options.
+	 * @param {Number} [options.timeout] Timeout (milliseconds).
 	 * @return {Promise<Boolean>}
 	 */
 	isClaimed({ timeout = globalOptions.requestTimeout } = {}) {
 		return this.sendRequest(Request.IS_CLAIMED, null /* msg */, { timeout }).then(rep => rep.claimed);
 	}
 
-	// TODO: The methods below are not supported in recent versions of Device OS. Remove them in particle-usb@2.0.0
-
 	/**
 	 * Set the device private key.
+	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
 	 *
 	 * @param {Buffer} data Key data.
 	 * @param {String} [protocol] Server protocol.
@@ -124,6 +184,9 @@ export const CloudDevice = base => class extends base {
 	/**
 	 * Get the device private key.
 	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
 	 * @param {String} [protocol] Server protocol.
 	 * @return {Promise<Buffer>}
 	 */
@@ -137,6 +200,9 @@ export const CloudDevice = base => class extends base {
 
 	/**
 	 * Set the device public key.
+	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
 	 *
 	 * @param {Buffer} data Key data.
 	 * @param {String} [protocol] Server protocol.
@@ -153,6 +219,9 @@ export const CloudDevice = base => class extends base {
 	/**
 	 * Get the device public key.
 	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
 	 * @param {String} [protocol] Server protocol.
 	 * @return {Promise<Buffer>}
 	 */
@@ -166,6 +235,9 @@ export const CloudDevice = base => class extends base {
 
 	/**
 	 * Set the server public key.
+	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
 	 *
 	 * @param {Buffer} data Key data.
 	 * @param {String} [protocol] Server protocol.
@@ -182,6 +254,9 @@ export const CloudDevice = base => class extends base {
 	/**
 	 * Get the server public key.
 	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
 	 * @param {String} [protocol] Server protocol.
 	 * @return {Promise<Buffer>}
 	 */
@@ -195,6 +270,9 @@ export const CloudDevice = base => class extends base {
 
 	/**
 	 * Set the server address.
+	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
 	 *
 	 * @param {String} data Host address.
 	 * @param {Number} port Port number.
@@ -214,6 +292,9 @@ export const CloudDevice = base => class extends base {
 	/**
 	 * Get the server address.
 	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
 	 * @param {String} [protocol] Server protocol.
 	 * @return {Promise<Object>}
 	 */
@@ -228,6 +309,9 @@ export const CloudDevice = base => class extends base {
 	/**
 	 * Set the server protocol.
 	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
 	 * @param {String} protocol Server protocol.
 	 * @return {Promise}
 	 */
@@ -239,6 +323,9 @@ export const CloudDevice = base => class extends base {
 
 	/**
 	 * Get the server protocol.
+	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
 	 *
 	 * @return {Promise<String>}
 	 */

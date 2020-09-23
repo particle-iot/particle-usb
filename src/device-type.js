@@ -1,18 +1,32 @@
 /**
  * Device types.
+ *
+ * @enum {String}
  */
 export const DeviceType = {
+	/** Core. */
 	CORE: 'Core',
+	/** Photon. */
 	PHOTON: 'Photon',
+	/** P1. */
 	P1: 'P1',
+	/** Electron. */
 	ELECTRON: 'Electron',
+	/** Argon. */
 	ARGON: 'Argon',
+	/** Boron. */
 	BORON: 'Boron',
+	/** Xenon. */
 	XENON: 'Xenon',
+	/** A SoM. */
 	ARGON_SOM: 'Argon-SoM',
+	/** B SoM. */
 	BORON_SOM: 'Boron-SoM',
+	/** X SoM. */
 	XENON_SOM: 'Xenon-SoM',
+	/** B5 SoM. */
 	B5_SOM: 'B5-SoM',
+	/** Tracker. */
 	ASSET_TRACKER: 'Asset-Tracker'
 };
 

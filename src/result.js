@@ -115,6 +115,8 @@ const RESULT_CODE_MESSAGES = RESULT_CODES.reduce((obj, result) => {
 
 /**
  * Request result codes.
+ *
+ * @enum {Number}
  */
 export const Result = RESULT_CODES.reduce((obj, result) => {
 	obj[result.id] = result.value;
@@ -123,6 +125,9 @@ export const Result = RESULT_CODES.reduce((obj, result) => {
 
 /**
  * Return a message for the result code.
+ *
+ * @param {Number} result Result code.
+ * @return {String} Error message.
  */
 export function messageForResultCode(result) {
 	return (RESULT_CODE_MESSAGES[result] || 'Request error');

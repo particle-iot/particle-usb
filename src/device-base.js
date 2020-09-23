@@ -45,8 +45,11 @@ function checkInterval(attempts, intervals) {
 
 /**
  * Predefined polling policies.
+ *
+ * @enum {Function}
  */
 export const PollingPolicy = {
+	/** Default polling policy. */
 	DEFAULT: n => checkInterval(n, DEFAULT_CHECK_INTERVALS)
 };
 
@@ -69,6 +72,9 @@ function ignore() {
 
 /**
  * Base class for a Particle USB device.
+ *
+ * This class is not meant to be instantiated directly. Use {@link getDevices} and
+ * {@link openDeviceById} to create device instances.
  */
 export class DeviceBase extends EventEmitter {
 	constructor(dev, info) {
@@ -96,7 +102,10 @@ export class DeviceBase extends EventEmitter {
 	/**
 	 * Open the device.
 	 *
-	 * @param {Object} options Options.
+	 * @param {Object} [options] Options.
+	 * @param {Number} [options.concurrentRequests] Maximum number of requests that can be sent to the
+	 *        device concurrently. Requests that exceed this limit are queued. By default, this parameter
+	 *        is set to the maximum number of concurrent requests supported by the device.
 	 * @return {Promise}
 	 */
 	open(options) {
@@ -146,7 +155,11 @@ export class DeviceBase extends EventEmitter {
 	/**
 	 * Close the device.
 	 *
-	 * @param {Object} options Options.
+	 * @param {Object} [options] Options.
+	 * @param {Boolean} [options.processPendingRequests=true] Whether to complete processing of the
+	 *        pending requests before closing the device.
+	 * @param {Number} [options.timeout] Timeout for processing pending requests (milliseconds).
+	 *        By default, the device is kept open until all requests are processed.
 	 * @return {Promise}
 	 */
 	close(options) {
@@ -181,12 +194,18 @@ export class DeviceBase extends EventEmitter {
 	}
 
 	/**
-	 * Send a USB control request.
+	 * Send a control request to the device.
 	 *
 	 * @param {Number} type Request type.
 	 * @param {Buffer|String} data Request data.
-	 * @param {Object} options Request options.
-	 * @return {Promise}
+	 * @param {Object} [options] Request options.
+	 * @param {Function|Number} [options.pollingPolicy=PollingPolicy.DEFAULT] Request polling policy.
+	 *        This parameter specifies how frequently the device will be polled to determine the result
+	 *        of the request. The argument can either be a function that returns the number of milliseconds
+	 *        to wait before polling the device again or a number that specifies a fixed interval.
+	 * @param {Number} [options.timeout] Request timeout. The default timeout can be configured via
+	 *        {@link config}.
+	 * @return {Promise<Object>} Response object.
 	 */
 	sendControlRequest(type, data, options) {
 		options = Object.assign({
@@ -242,7 +261,8 @@ export class DeviceBase extends EventEmitter {
 
 	/**
 	 * Perform the system reset.
-	 * This function only works in DFU mode.
+	 *
+	 * This method only works in DFU mode.
 	 *
 	 * @return {Promise}
 	 */
@@ -261,21 +281,25 @@ export class DeviceBase extends EventEmitter {
 	}
 
 	/**
-	 * Device ID. Set to `null` if the device is not open.
+	 * Device ID.
+	 *
+	 * This property is set to `null` if the device is closed.
 	 */
 	get id() {
 		return this._id;
 	}
 
 	/**
-	 * Firmware version. Set to `null` if the device is not open, or the version could not be determined.
+	 * Device OS system version.
+	 *
+	 * This property is set to `null` if the device is closed or the version could not be determined.
 	 */
 	get firmwareVersion() {
 		return this._fwVer;
 	}
 
 	/**
-	 * Device type.
+	 * Device type (see {@link DeviceType}).
 	 */
 	get type() {
 		return this._info.type;
@@ -317,7 +341,7 @@ export class DeviceBase extends EventEmitter {
 	}
 
 	/**
-	 * Set to `true` if this is a Duo device.
+	 * Set to `true` if this is a RedBear Duo device.
 	 */
 	get isDuo() {
 		return (this.type === DeviceType.DUO);
@@ -331,14 +355,14 @@ export class DeviceBase extends EventEmitter {
 	}
 
 	/**
-	 * Set to `true` if this is a Xenon device.
+	 * Set to `true` if this is an Argon device.
 	 */
 	get isArgon() {
 		return (this.type === DeviceType.ARGON);
 	}
 
 	/**
-	 * Set to `true` if this is a Xenon device.
+	 * Set to `true` if this is a Boron device.
 	 */
 	get isBoron() {
 		return (this.type === DeviceType.BORON);
@@ -366,7 +390,7 @@ export class DeviceBase extends EventEmitter {
 	}
 
 	/**
-	 * Returns an internal USB device handle.
+	 * Internal USB device handle.
 	 */
 	get usbDevice() {
 		return this._dev;
@@ -740,14 +764,6 @@ export class DeviceBase extends EventEmitter {
 	}
 }
 
-/**
- * Enumerate Particle devices attached to the host.
- *
- * @param {Object} options Options.
- * @param {Array<String>} [options.types] Device types.
- * @param {Boolean} [options.includeDfu] `true` to include devices in DFU mode.
- * @return {Promise}
- */
 export async function getDevices({ types = [], includeDfu = true } = {}) {
 	types = types.map(type => type.toLowerCase());
 	const filters = [];
@@ -770,13 +786,6 @@ export async function getDevices({ types = [], includeDfu = true } = {}) {
 	});
 }
 
-/**
- * Open a device with the specified ID.
- *
- * @param {String} id Device ID.
- * @param {Object} [options] Options.
- * @return {Promise}
- */
 export async function openDeviceById(id, options = null) {
 	const log = globalOptions.log;
 	const filters = [];

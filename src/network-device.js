@@ -14,10 +14,16 @@ export const NetworkStatus = fromProtobufEnum(proto.NetworkState, {
 });
 
 /**
- * Mixin class for a network device.
+ * Network device.
+ *
+ * @deprecated Methods provided by this class are not guaranteed to work with recent versions of
+ *             Device OS and will be removed in future versions of this library.
+ *
+ * This class is not meant to be instantiated directly. Use {@link getDevices} and
+ * {@link openDeviceById} to create device instances.
+ *
+ * @mixin
  */
-// TODO: Recent versions of Device OS use a different network configuration interface and the
-// methods of this class no longer work
 export const NetworkDevice = base => class extends base {
 	/**
 	 * Get network status.

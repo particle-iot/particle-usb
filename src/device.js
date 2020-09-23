@@ -10,31 +10,49 @@ import proto from './protocol';
 
 /**
  * Firmware module types.
+ *
+ * @enum {String}
  */
 export const FirmwareModule = fromProtobufEnum(proto.FirmwareModuleType, {
+	/** Bootloader module. */
 	BOOTLOADER: 'BOOTLOADER',
+	/** System part module. */
 	SYSTEM_PART: 'SYSTEM_PART',
+	/** User part module. */
 	USER_PART: 'USER_PART',
+	/** Monolithic firmware module. */
 	MONO_FIRMWARE: 'MONO_FIRMWARE'
 });
 
 /**
  * Device modes.
+ *
+ * @enum {String}
  */
 export const DeviceMode = fromProtobufEnum(proto.DeviceMode, {
+	/** Device is in normal mode. */
 	NORMAL: 'NORMAL_MODE',
+	/** Device is in listening mode. */
 	LISTENING: 'LISTENING_MODE'
 });
 
 /**
  * Logging levels.
+ *
+ * @enum {String}
  */
 export const LogLevel = fromProtobufEnum(proto.logging.LogLevel, {
+	/** Enables logging of all messages. */
 	ALL: 'ALL',
+	/** Enables logging of trace messages. */
 	TRACE: 'TRACE',
+	/** Enables logging of info messages. */
 	INFO: 'INFO',
+	/** Enables logging of warning messages. */
 	WARN: 'WARN',
+	/** Enables logging of error messages. */
 	ERROR: 'ERROR',
+	/** Disables logging of any messages. */
 	NONE: 'NONE'
 });
 
@@ -80,13 +98,22 @@ class RequestSender {
 }
 
 /**
- * Basic functionality supported by all Particle devices.
+ * Basic functionality supported by most of Particle devices.
+ *
+ * This class is not meant to be instantiated directly. Use {@link getDevices} and
+ * {@link openDeviceById} to create device instances.
  */
 export class Device extends DeviceBase {
 	/**
-	 * Get device serial number
+	 * Get the device's serial number.
 	 *
-	 * @return {Promise}
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 1.5.0)
+	 *
+	 * @param {Object} [options] Options.
+	 * @param {Number} [options.timeout] Timeout (milliseconds).
+	 * @return {Promise<String>}
 	 */
 	async getSerialNumber({ timeout = globalOptions.requestTimeout } = {}) {
 		const r = await this.sendRequest(Request.GET_SERIAL_NUMBER, null /* msg */, { timeout });
@@ -96,6 +123,19 @@ export class Device extends DeviceBase {
 	/**
 	 * Perform the system reset.
 	 *
+	 * Note: The only safe operation that can be performed on the device instance after the device
+	 * resets is closing it via {@link DeviceBase#close}.
+	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 0.8.0)
+	 *
+	 * The `force` option is supported since Device OS 2.0.0.
+	 *
+	 * @param {Object} [options] Options.
+	 * @param {Boolean} [options.force] Reset the device immediately, even if it is busy performing
+	 *        some blocking operation, such as writing to flash.
+	 * @param {Number} [options.timeout] Timeout (milliseconds).
 	 * @return {Promise}
 	 */
 	async reset({ force = false, timeout = globalOptions.requestTimeout } = {}) {
@@ -117,6 +157,15 @@ export class Device extends DeviceBase {
 	/**
 	 * Perform the factory reset.
 	 *
+	 * Note: The only safe operation that can be performed on the device instance after the device
+	 * resets is closing it via {@link DeviceBase#close}.
+	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 0.8.0)
+	 *
+	 * @param {Object} [options] Options.
+	 * @param {Number} [options.timeout] Timeout (milliseconds).
 	 * @return {Promise}
 	 */
 	factoryReset({ timeout = globalOptions.requestTimeout } = {}) {
@@ -126,6 +175,15 @@ export class Device extends DeviceBase {
 	/**
 	 * Reset and enter the DFU mode.
 	 *
+	 * Note: The only safe operation that can be performed on the device instance after the device
+	 * resets is closing it via {@link DeviceBase#close}.
+	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 0.8.0)
+	 *
+	 * @param {Object} [options] Options.
+	 * @param {Number} [options.timeout] Timeout (milliseconds).
 	 * @return {Promise}
 	 */
 	enterDfuMode({ timeout = globalOptions.requestTimeout } = {}) {
@@ -153,6 +211,15 @@ export class Device extends DeviceBase {
 	/**
 	 * Reset and enter the safe mode.
 	 *
+	 * Note: The only safe operation that can be performed on the device instance after the device
+	 * resets is closing it via {@link DeviceBase#close}.
+	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 0.8.0)
+	 *
+	 * @param {Object} [options] Options.
+	 * @param {Number} [options.timeout] Timeout (milliseconds).
 	 * @return {Promise}
 	 */
 	enterSafeMode({ timeout = globalOptions.requestTimeout } = {}) {
@@ -162,6 +229,12 @@ export class Device extends DeviceBase {
 	/**
 	 * Enter the listening mode.
 	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 0.8.0)
+	 *
+	 * @param {Object} [options] Options.
+	 * @param {Number} [options.timeout] Timeout (milliseconds).
 	 * @return {Promise}
 	 */
 	async enterListeningMode({ timeout = globalOptions.requestTimeout } = {}) {
@@ -183,6 +256,12 @@ export class Device extends DeviceBase {
 	/**
 	 * Leave the listening mode.
 	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 0.8.0)
+	 *
+	 * @param {Object} [options] Options.
+	 * @param {Number} [options.timeout] Timeout (milliseconds).
 	 * @return {Promise}
 	 */
 	leaveListeningMode({ timeout = globalOptions.requestTimeout } = {}) {
@@ -190,7 +269,15 @@ export class Device extends DeviceBase {
 	}
 
 	/**
-	 * Get device mode.
+	 * Get the device mode.
+	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 1.1.0)
+	 *
+	 * @param {Object} [options] Options.
+	 * @param {Number} [options.timeout] Timeout (milliseconds).
+	 * @return {Promise<DeviceMode>}
 	 */
 	async getDeviceMode({ timeout = globalOptions.requestTimeout } = {}) {
 		const r = await this.sendRequest(Request.GET_DEVICE_MODE, null /* msg */, { timeout });
@@ -200,6 +287,12 @@ export class Device extends DeviceBase {
 	/**
 	 * Start the Nyan LED indication.
 	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 0.8.0)
+	 *
+	 * @param {Object} [options] Options.
+	 * @param {Number} [options.timeout] Timeout (milliseconds).
 	 * @return {Promise}
 	 */
 	startNyanSignal({ timeout = globalOptions.requestTimeout } = {}) {
@@ -209,6 +302,12 @@ export class Device extends DeviceBase {
 	/**
 	 * Stop the Nyan LED indication.
 	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 0.8.0)
+	 *
+	 * @param {Object} [options] Options.
+	 * @param {Number} [options.timeout] Timeout (milliseconds).
 	 * @return {Promise}
 	 */
 	stopNyanSignal({ timeout = globalOptions.requestTimeout } = {}) {
@@ -218,9 +317,13 @@ export class Device extends DeviceBase {
 	/**
 	 * Perform the firmware update.
 	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 0.8.0)
+	 *
 	 * @param {Buffer} data Firmware data.
 	 * @param {Object} [options] Options.
-	 * @param {Number} [options.timeout] Timeout in milliseconds.
+	 * @param {Number} [options.timeout] Timeout (milliseconds).
 	 * @return {Promise}
 	 */
 	async updateFirmware(data, { timeout = DEFAULT_FIRMWARE_UPDATE_TIMEOUT } = {}) {
@@ -239,10 +342,11 @@ export class Device extends DeviceBase {
 		});
 	}
 
-	// TODO: The methods below are not supported in recent versions of Device OS. Remove them in particle-usb@2.0.0
-
 	/**
 	 * Get firmware module data.
+	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
 	 *
 	 * @param {String} module Module type.
 	 * @param {Number} [index] Module index.
@@ -267,6 +371,9 @@ export class Device extends DeviceBase {
 	/**
 	 * Check if the device runs a modular firmware.
 	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
 	 * @return {Promise<Boolean>}
 	 */
 	hasModularFirmware() {
@@ -275,6 +382,9 @@ export class Device extends DeviceBase {
 
 	/**
 	 * Set factory firmware.
+	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
 	 *
 	 * @param {Buffer} data Firmware data.
 	 * @return {Promise}
@@ -290,6 +400,9 @@ export class Device extends DeviceBase {
 
 	/**
 	 * Get factory firmware.
+	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
 	 *
 	 * @return {Promise<Buffer>}
 	 */
@@ -309,6 +422,9 @@ export class Device extends DeviceBase {
 	/**
 	 * Read configuration data.
 	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
 	 * @param {Number} address Address.
 	 * @param {Number} size Data size.
 	 * @return {Promise<Buffer>}
@@ -324,6 +440,9 @@ export class Device extends DeviceBase {
 
 	/**
 	 * Write configuration data.
+	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
 	 *
 	 * @param {Number} address Address.
 	 * @param {Buffer} data Data.
@@ -341,6 +460,9 @@ export class Device extends DeviceBase {
 	/**
 	 * Get size of the configuration data.
 	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
 	 * @return {Promise<Number>}
 	 */
 	getConfigDataSize() {
@@ -354,6 +476,9 @@ export class Device extends DeviceBase {
 
 	/**
 	 * Read from EEPROM.
+	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
 	 *
 	 * @param {Number} address Address.
 	 * @param {Number} size Data size.
@@ -371,6 +496,9 @@ export class Device extends DeviceBase {
 	/**
 	 * Write to EEPROM.
 	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
 	 * @param {Number} address Address.
 	 * @param {Buffer} data Data.
 	 * @return {Promise}
@@ -387,6 +515,9 @@ export class Device extends DeviceBase {
 	/**
 	 * Clear EEPROM.
 	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
 	 * @return {Promise}
 	 */
 	clearEeprom() {
@@ -401,6 +532,9 @@ export class Device extends DeviceBase {
 	/**
 	 * Get size of the EEPROM.
 	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
 	 * @return {Promise<Number>}
 	 */
 	getEepromSize() {
@@ -414,6 +548,9 @@ export class Device extends DeviceBase {
 
 	/**
 	 * Add a log handler.
+	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
 	 *
 	 * @param {Object} options Options.
 	 * @param {String} options.id Handler ID.
@@ -484,6 +621,9 @@ export class Device extends DeviceBase {
 	/**
 	 * Remove a log handler.
 	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
 	 * @param {Object} options Options.
 	 * @param {String} options.id Handler ID.
 	 * @return {Promise}
@@ -495,7 +635,10 @@ export class Device extends DeviceBase {
 	/**
 	 * Get the list of active log handlers.
 	 *
-	 * @return {Promise<Object>}
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
+	 * @return {Promise<Array<Object>>}
 	 */
 	async getLogHandlers() {
 		const rep = await this.sendRequest(Request.GET_LOG_HANDLERS);
