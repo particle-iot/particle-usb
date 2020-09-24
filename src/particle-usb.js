@@ -77,10 +77,26 @@ function setDevicePrototype(dev) {
 	return Object.setPrototypeOf(dev, proto);
 }
 
+/**
+ * Enumerate Particle USB devices attached to the host.
+ *
+ * @param {Object} options Options.
+ * @param {Array<String>} [options.types] Device types (see {@link DeviceType}). By default, this
+ *        function enumerates devices of all platforms supported by the library.
+ * @param {Boolean} [options.includeDfu=true] Whether to include devices in DFU mode.
+ * @return {Promise<Array<Device>>}
+ */
 export function getDevices(options) {
 	return getUsbDevices(options).then(devs => devs.map(dev => setDevicePrototype(dev)));
 }
 
+/**
+ * Open a Particle USB device with the specified ID.
+ *
+ * @param {String} id Device ID.
+ * @param {Object} [options] Options (see {@link DeviceBase#open}).
+ * @return {Promise<Device>}
+ */
 export function openDeviceById(id, options) {
 	return openUsbDeviceById(id, options).then(dev => setDevicePrototype(dev));
 }

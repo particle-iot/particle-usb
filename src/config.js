@@ -14,8 +14,12 @@ export let globalOptions = {
 /**
  * Set global options.
  *
- * @param {Object} options Options.
+ * @param {Object} [options] Options.
+ * @param {Number} [options.requestTimeout=60000] Default request timeout (milliseconds).
+ * @param {Object} [options.log] Logger instance. The logger is expected to have the following methods:
+ *                 `trace(String)`, `info(String)`, `warn(String)`, `error(String)`.
+ * @return {Object} Current options.
  */
 export function config(options) {
-	Object.assign(globalOptions, options);
+	return Object.assign(globalOptions, options);
 }

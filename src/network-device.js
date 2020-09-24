@@ -14,13 +14,22 @@ export const NetworkStatus = fromProtobufEnum(proto.NetworkState, {
 });
 
 /**
- * Mixin class for a network device.
+ * Network device.
+ *
+ * This class is not meant to be instantiated directly. Use {@link getDevices} and
+ * {@link openDeviceById} to create device instances.
+ *
+ * @mixin
  */
-// TODO: Recent versions of Device OS use a different network configuration interface and the
-// methods of this class no longer work
 export const NetworkDevice = base => class extends base {
 	/**
 	 * Get network status.
+	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
 	 *
 	 * @return {Promise<String>}
 	 */
@@ -33,6 +42,12 @@ export const NetworkDevice = base => class extends base {
 	/**
 	 * Get network configuration.
 	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
+	 *
 	 * @return {Promise<Object>}
 	 */
 	getNetworkConfig() {
@@ -43,6 +58,12 @@ export const NetworkDevice = base => class extends base {
 
 	/**
 	 * Set network configuration.
+	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
 	 *
 	 * @param {Object} config Network configuration.
 	 * @return {Promise}
