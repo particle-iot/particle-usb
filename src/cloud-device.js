@@ -169,6 +169,9 @@ export const CloudDevice = base => class extends base {
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
 	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
+	 *
 	 * @param {Buffer} data Key data.
 	 * @param {String} [protocol] Server protocol.
 	 * @return {Promise}
@@ -187,6 +190,9 @@ export const CloudDevice = base => class extends base {
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
 	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
+	 *
 	 * @param {String} [protocol] Server protocol.
 	 * @return {Promise<Buffer>}
 	 */
@@ -203,6 +209,9 @@ export const CloudDevice = base => class extends base {
 	 *
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
+	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
 	 *
 	 * @param {Buffer} data Key data.
 	 * @param {String} [protocol] Server protocol.
@@ -222,6 +231,9 @@ export const CloudDevice = base => class extends base {
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
 	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
+	 *
 	 * @param {String} [protocol] Server protocol.
 	 * @return {Promise<Buffer>}
 	 */
@@ -238,6 +250,9 @@ export const CloudDevice = base => class extends base {
 	 *
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
+	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
 	 *
 	 * @param {Buffer} data Key data.
 	 * @param {String} [protocol] Server protocol.
@@ -257,6 +272,9 @@ export const CloudDevice = base => class extends base {
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
 	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
+	 *
 	 * @param {String} [protocol] Server protocol.
 	 * @return {Promise<Buffer>}
 	 */
@@ -273,6 +291,9 @@ export const CloudDevice = base => class extends base {
 	 *
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
+	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
 	 *
 	 * @param {String} data Host address.
 	 * @param {Number} port Port number.
@@ -295,6 +316,9 @@ export const CloudDevice = base => class extends base {
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
 	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
+	 *
 	 * @param {String} [protocol] Server protocol.
 	 * @return {Promise<Object>}
 	 */
@@ -312,6 +336,9 @@ export const CloudDevice = base => class extends base {
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
 	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
+	 *
 	 * @param {String} protocol Server protocol.
 	 * @return {Promise}
 	 */
@@ -326,6 +353,9 @@ export const CloudDevice = base => class extends base {
 	 *
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
+	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
 	 *
 	 * @return {Promise<String>}
 	 */

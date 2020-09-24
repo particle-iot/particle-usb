@@ -348,6 +348,9 @@ export class Device extends DeviceBase {
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
 	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
+	 *
 	 * @param {String} module Module type.
 	 * @param {Number} [index] Module index.
 	 * @return {Promise<Buffer>}
@@ -374,6 +377,9 @@ export class Device extends DeviceBase {
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
 	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
+	 *
 	 * @return {Promise<Boolean>}
 	 */
 	hasModularFirmware() {
@@ -385,6 +391,9 @@ export class Device extends DeviceBase {
 	 *
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
+	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
 	 *
 	 * @param {Buffer} data Firmware data.
 	 * @return {Promise}
@@ -403,6 +412,9 @@ export class Device extends DeviceBase {
 	 *
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
+	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
 	 *
 	 * @return {Promise<Buffer>}
 	 */
@@ -425,6 +437,9 @@ export class Device extends DeviceBase {
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
 	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
+	 *
 	 * @param {Number} address Address.
 	 * @param {Number} size Data size.
 	 * @return {Promise<Buffer>}
@@ -443,6 +458,9 @@ export class Device extends DeviceBase {
 	 *
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
+	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
 	 *
 	 * @param {Number} address Address.
 	 * @param {Buffer} data Data.
@@ -463,6 +481,9 @@ export class Device extends DeviceBase {
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
 	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
+	 *
 	 * @return {Promise<Number>}
 	 */
 	getConfigDataSize() {
@@ -479,6 +500,9 @@ export class Device extends DeviceBase {
 	 *
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
+	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
 	 *
 	 * @param {Number} address Address.
 	 * @param {Number} size Data size.
@@ -499,6 +523,9 @@ export class Device extends DeviceBase {
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
 	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
+	 *
 	 * @param {Number} address Address.
 	 * @param {Buffer} data Data.
 	 * @return {Promise}
@@ -518,6 +545,9 @@ export class Device extends DeviceBase {
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
 	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
+	 *
 	 * @return {Promise}
 	 */
 	clearEeprom() {
@@ -534,6 +564,9 @@ export class Device extends DeviceBase {
 	 *
 	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
 	 *             be removed in future versions of this library.
+	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
 	 *
 	 * @return {Promise<Number>}
 	 */

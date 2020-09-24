@@ -76,9 +76,6 @@ const accessPointToProtobuf = toProtobufMessage(proto.WiFiAccessPoint, accessPoi
 /**
  * Wi-Fi device.
  *
- * @deprecated Methods provided by this class are not guaranteed to work with recent versions of
- *             Device OS and will be removed in future versions of this library.
- *
  * This class is not meant to be instantiated directly. Use {@link getDevices} and
  * {@link openDeviceById} to create device instances.
  *
@@ -87,6 +84,12 @@ const accessPointToProtobuf = toProtobufMessage(proto.WiFiAccessPoint, accessPoi
 export const WifiDevice = base => class extends base {
 	/**
 	 * Set the WiFi antenna to use.
+	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
 	 *
 	 * @param {String} antenna Antenna type.
 	 * @return {Promise}
@@ -100,6 +103,12 @@ export const WifiDevice = base => class extends base {
 	/**
 	 * Get the currently used WiFi antenna.
 	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
+	 *
 	 * @return {Promise<String>}
 	 */
 	getWifiAntenna(/* antenna */) {
@@ -110,6 +119,12 @@ export const WifiDevice = base => class extends base {
 
 	/**
 	 * Perform the WiFi scan.
+	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
 	 *
 	 * @return {Promise<Array>}
 	 */
@@ -125,6 +140,12 @@ export const WifiDevice = base => class extends base {
 	/**
 	 * Set the WiFi credentials.
 	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
+	 *
 	 * @param {Object} credentials Credentials.
 	 * @return {Promise}
 	 */
@@ -136,6 +157,12 @@ export const WifiDevice = base => class extends base {
 
 	/**
 	 * Get the WiFi credentials.
+	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
 	 *
 	 * @return {Promise<Array>}
 	 */
@@ -150,6 +177,12 @@ export const WifiDevice = base => class extends base {
 
 	/**
 	 * Clear the WiFi credentials.
+	 *
+	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
+	 *             be removed in future versions of this library.
+	 *
+	 * Supported platforms:
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
 	 *
 	 * @return {Promise}
 	 */
