@@ -1,12 +1,11 @@
-import deviceConstants from '@particle/device-constants';
 import { getDevices as getUsbDevices, openDeviceById as openUsbDeviceById } from './device-base';
+import { PLATFORMS } from './platforms';
 import { Device } from './device';
 import { WifiDevice } from './wifi-device';
 import { CellularDevice } from './cellular-device';
 import { CloudDevice } from './cloud-device';
 import { NetworkDevice } from './network-device';
 
-export { DeviceType } from './device-type';
 export { PollingPolicy } from './device-base';
 export { FirmwareModule } from './device';
 export { NetworkStatus } from './network-device';
@@ -18,12 +17,12 @@ export { DeviceError, NotFoundError, NotAllowedError, StateError, TimeoutError, 
 export { config } from './config';
 
 // Create a class for each platform by mixing in different capabilities
-const DEVICE_PROTOTYPES = Object.keys(deviceConstants).reduce((prototypes, platform) => {
+const DEVICE_PROTOTYPES = PLATFORMS.reduce((prototypes, platform) => {
 	let klass = class extends NetworkDevice(Device) {};
-	if (platform.features.include('cellular')) {
+	if (platform.features.includes('cellular')) {
 		klass = class extends CellularDevice(klass) {};
 	}
-	if (platform.features.include('wifi')) {
+	if (platform.features.includes('wifi')) {
 		klass = class extends WifiDevice(klass) {};
 	}
 	klass = class extends CloudDevice(klass) {};
