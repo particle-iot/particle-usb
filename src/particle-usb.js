@@ -44,7 +44,7 @@ function setDevicePrototype(dev) {
  * Enumerate Particle USB devices attached to the host.
  *
  * @param {Object} options Options.
- * @param {Array<String>} [options.types] Device types (photon, boron, asset_tracker, etc). By default, this
+ * @param {Array<String>} [options.types] Device types (photon, boron, tracker, etc). By default, this
  *        function enumerates devices of all platforms supported by the library.
  * @param {Boolean} [options.includeDfu=true] Whether to include devices in DFU mode.
  * @return {Promise<Array<Device>>}

@@ -306,7 +306,7 @@ export class DeviceBase extends EventEmitter {
 	}
 
 	/**
-	 * Device type (photon, bonron, asset_tracker, etc)
+	 * Device type (photon, boron, tracker, etc)
 	 */
 	get type() {
 		return this._info.type;
@@ -321,6 +321,7 @@ export class DeviceBase extends EventEmitter {
 
 	/**
 	 * Adds properties like isPhoton, isElectron, etc for each platform
+	 * TODO: (Julien) Are there any consumers using the isPhoton methods? Can this be simply removed?
 	 * @private
 	 */
 	_addIsPlatform() {
