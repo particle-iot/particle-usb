@@ -731,8 +731,10 @@ export async function getDevices({ types = [], includeDfu = true } = {}) {
 	const filters = [];
 	PLATFORMS.forEach((platform) => {
 		if (types.length === 0 || types.includes(platform.name)) {
-			filters.push(platform.usb);
-			if (includeDfu) {
+			if (platform.usb.vendorId) {
+				filters.push(platform.usb);
+			}
+			if (includeDfu && platform.dfu.vendorId) {
 				filters.push(platform.dfu);
 			}
 		}
@@ -752,8 +754,12 @@ export async function openDeviceById(id, options = null) {
 	const log = globalOptions.log;
 	const filters = [];
 	PLATFORMS.forEach((platform) => {
-		filters.push(Object.assign({ serialNumber: id }, platform.usb));
-		filters.push(Object.assign({ serialNumber: id }, platform.dfu));
+		if (platform.usb.vendorId) {
+			filters.push(Object.assign({ serialNumber: id }, platform.usb));
+		}
+		if (platform.dfu.vendorId) {
+			filters.push(Object.assign({ serialNumber: id }, platform.dfu));
+		}
 	});
 	const devs = await getUsbDevices(filters);
 	if (devs.length === 0) {

@@ -123,12 +123,12 @@ describe('device-base', () => {
 			devs = devs.map(dev => dev.usbDevice);
 			expect(devs).to.have.all.members([argon, boron, xenon]);
 			// Argon-SoM, Boron-SoM, Xenon-SoM
-			devs = await getDevices({ types: ['argon-som', 'boron-som', 'b5-som', 'xenon-som'] });
+			devs = await getDevices({ types: ['asom', 'bsom', 'b5som', 'xsom'] });
 			expect(devs).to.have.lengthOf(4);
 			devs = devs.map(dev => dev.usbDevice);
 			expect(devs).to.have.all.members([argonSom, boronSom, b5Som, xenonSom]);
 			// Asset Tracker
-			devs = await getDevices({ types: ['asset-tracker'] });
+			devs = await getDevices({ types: ['tracker'] });
 			expect(devs).to.have.lengthOf(1);
 			devs = devs.map(dev => dev.usbDevice);
 			expect(devs).to.have.all.members([assetTracker]);
