@@ -1,33 +1,31 @@
+import deviceConstants from '@particle/device-constants';
 import * as proto from '../../src/usb-protocol';
 import { ProtocolError, UsbError } from '../../src/error';
 import * as dfu from '../../src/dfu';
+import { PLATFORMS } from '../../src/platforms';
 
-const USB_DEVICES = [
-	{ type: 'Core', platformId: 0, vendorId: 0x1d50, productId: 0x607d, dfu: false },
-	{ type: 'Core', platformId: 0, vendorId: 0x1d50, productId: 0x607f, dfu: true },
-	{ type: 'Photon', platformId: 6, vendorId: 0x2b04, productId: 0xc006, dfu: false },
-	{ type: 'Photon', platformId: 6, vendorId: 0x2b04, productId: 0xd006, dfu: true },
-	{ type: 'P1', platformId: 8, vendorId: 0x2b04, productId: 0xc008, dfu: false },
-	{ type: 'P1', platformId: 8, vendorId: 0x2b04, productId: 0xd008, dfu: true },
-	{ type: 'Electron', platformId: 10, vendorId: 0x2b04, productId: 0xc00a, dfu: false },
-	{ type: 'Electron', platformId: 10, vendorId: 0x2b04, productId: 0xd00a, dfu: true },
-	{ type: 'Argon', platformId: 12, vendorId: 0x2b04, productId: 0xc00c, dfu: false },
-	{ type: 'Argon', platformId: 12, vendorId: 0x2b04, productId: 0xd00c, dfu: true },
-	{ type: 'Boron', platformId: 13, vendorId: 0x2b04, productId: 0xc00d, dfu: false },
-	{ type: 'Boron', platformId: 13, vendorId: 0x2b04, productId: 0xd00d, dfu: true },
-	{ type: 'Xenon', platformId: 14, vendorId: 0x2b04, productId: 0xc00e, dfu: false },
-	{ type: 'Xenon', platformId: 14, vendorId: 0x2b04, productId: 0xd00e, dfu: true },
-	{ type: 'Argon-SoM', platformId: 22, vendorId: 0x2b04, productId: 0xc016, dfu: false },
-	{ type: 'Argon-SoM', platformId: 22, vendorId: 0x2b04, productId: 0xd016, dfu: true },
-	{ type: 'Boron-SoM', platformId: 23, vendorId: 0x2b04, productId: 0xc017, dfu: false },
-	{ type: 'Boron-SoM', platformId: 23, vendorId: 0x2b04, productId: 0xd017, dfu: true },
-	{ type: 'Xenon-SoM', platformId: 24, vendorId: 0x2b04, productId: 0xc018, dfu: false },
-	{ type: 'Xenon-SoM', platformId: 24, vendorId: 0x2b04, productId: 0xd018, dfu: true },
-	{ type: 'B5-SoM', platformId: 25, vendorId: 0x2b04, productId: 0xc019, dfu: false },
-	{ type: 'B5-SoM', platformId: 25, vendorId: 0x2b04, productId: 0xd019, dfu: true },
-	{ type: 'Asset-Tracker', platformId: 26, vendorId: 0x2b04, productId: 0xc01a, dfu: false },
-	{ type: 'Asset-Tracker', platformId: 26, vendorId: 0x2b04, productId: 0xd01a, dfu: true }
-];
+const USB_DEVICES = PLATFORMS.reduce((arr, platform) => {
+	if (platform.usb) {
+		arr.push({
+			type: platform.name,
+			platformId: platform.id,
+			vendorId: platform.usb.vendorId,
+			productId: platform.usb.productId,
+			dfu: false
+		});
+	}
+	if (platform.dfu) {
+		arr.push({
+			type: platform.name,
+			platformId: platform.id,
+			vendorId: platform.dfu.vendorId,
+			productId: platform.dfu.productId,
+			dfu: true
+		});
+	}
+
+	return arr;
+}, []);
 
 // Low-level vendor requests
 const VendorRequest = {
@@ -689,63 +687,58 @@ export function addDevices(options) {
 	return devs;
 }
 
-export function addCore(options) {
-	const opts = Object.assign({}, options, { type: 'Core', buggyDfu: true });
-	return addDevice(opts);
-}
-
 export function addPhoton(options) {
-	const opts = Object.assign({}, options, { type: 'Photon', buggyDfu: true });
+	const opts = Object.assign({}, options, { type: deviceConstants.photon.name, buggyDfu: true });
 	return addDevice(opts);
 }
 
 export function addP1(options) {
-	const opts = Object.assign({}, options, { type: 'P1', buggyDfu: true });
+	const opts = Object.assign({}, options, { type: deviceConstants.p1.name, buggyDfu: true });
 	return addDevice(opts);
 }
 
 export function addElectron(options) {
-	const opts = Object.assign({}, options, { type: 'Electron', buggyDfu: true });
+	const opts = Object.assign({}, options, { type: deviceConstants.electron.name, buggyDfu: true });
 	return addDevice(opts);
 }
 
 export function addArgon(options) {
-	const opts = Object.assign({}, options, { type: 'Argon' });
+	const opts = Object.assign({}, options, { type: deviceConstants.argon.name });
 	return addDevice(opts);
 }
 
 export function addBoron(options) {
-	const opts = Object.assign({}, options, { type: 'Boron' });
+	const opts = Object.assign({}, options, { type: deviceConstants.boron.name });
 	return addDevice(opts);
 }
 
 export function addXenon(options) {
-	const opts = Object.assign({}, options, { type: 'Xenon' });
+	const opts = Object.assign({}, options, { type: deviceConstants.xenon.name });
 	return addDevice(opts);
 }
 
 export function addArgonSom(options) {
-	const opts = Object.assign({}, options, { type: 'Argon-SoM' });
+	const opts = Object.assign({}, options, { type: deviceConstants.asom.name });
 	return addDevice(opts);
 }
 
 export function addBoronSom(options) {
-	const opts = Object.assign({}, options, { type: 'Boron-SoM' });
+	const opts = Object.assign({}, options, { type: deviceConstants.bsom.name });
 	return addDevice(opts);
 }
 
 export function addB5Som(options) {
-	const opts = Object.assign({}, options, { type: 'B5-SoM' });
+	const opts = Object.assign({}, options, { type: deviceConstants.b5som.name });
 	return addDevice(opts);
 }
 
 export function addXenonSom(options) {
-	const opts = Object.assign({}, options, { type: 'Xenon-SoM' });
+	const opts = Object.assign({}, options, { type: deviceConstants.xsom.name });
 	return addDevice(opts);
 }
 
 export function addAssetTracker(options) {
-	const opts = Object.assign({}, options, { type: 'Asset-Tracker' });
+	const opts = Object.assign({}, options, { type: deviceConstants.tracker.name });
 	return addDevice(opts);
 }
 

@@ -37,7 +37,6 @@ describe('device', () => {
 	describe('Device', () => {
 		describe('with multiple devices', () => {
 			beforeEach(async () => {
-				fakeUsb.addCore({ dfu: true });
 				fakeUsb.addPhoton({ dfu: true });
 				fakeUsb.addP1({ dfu: true });
 				fakeUsb.addElectron({ dfu: true });
@@ -47,7 +46,6 @@ describe('device', () => {
 				fakeUsb.addArgonSom({ dfu: true });
 				fakeUsb.addBoronSom({ dfu: true });
 				fakeUsb.addXenonSom({ dfu: true });
-				fakeUsb.addCore();
 				fakeUsb.addPhoton();
 				fakeUsb.addP1();
 				fakeUsb.addElectron();
@@ -67,12 +65,7 @@ describe('device', () => {
 				}
 
 				for (let dev of devs) {
-					if (dev.isCore && !dev.isInDfuMode) {
-						// Core can only be reset from DFU mode
-						expect(dev.reset()).to.be.rejectedWith(error.StateError);
-					} else {
-						await dev.reset();
-					}
+					await dev.reset();
 				}
 
 				for (let dev of devs) {

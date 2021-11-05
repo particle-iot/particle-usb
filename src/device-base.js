@@ -10,6 +10,9 @@ import EventEmitter from 'events';
 // Platforms arranged by vendor/product IDs
 const PLATFORM_USB_IDS = PLATFORMS.reduce((obj, platform) => {
 	const addMapping = (obj, { vendorId, productId }, dfu) => {
+		if (!vendorId) {
+			return;
+		}
 		if (!obj[vendorId]) {
 			obj[vendorId] = {};
 		}

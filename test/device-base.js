@@ -43,7 +43,6 @@ describe('device-base', () => {
 			// Register a bunch of Particle and non-Particle devices
 			const usbDevs = [];
 			fakeUsb.addDevice({ vendorId: 0xaaaa, productId: 0xaaaa });
-			usbDevs.push(fakeUsb.addCore());
 			usbDevs.push(fakeUsb.addPhoton());
 			fakeUsb.addDevice({ vendorId: 0xbbbb, productId: 0xbbbb });
 			usbDevs.push(fakeUsb.addP1());
@@ -70,7 +69,6 @@ describe('device-base', () => {
 
 		it('includes devices in the DFU mode by default', async () => {
 			const usbDevs = [
-				fakeUsb.addCore({ dfu: true }),
 				fakeUsb.addPhoton({ dfu: true }),
 				fakeUsb.addP1({ dfu: true }),
 				fakeUsb.addElectron({ dfu: true }),
@@ -114,16 +112,8 @@ describe('device-base', () => {
 			const boronSom = fakeUsb.addBoronSom();
 			const b5Som = fakeUsb.addB5Som();
 			const assetTracker = fakeUsb.addAssetTracker();
-			// Core
-			let devs = await getDevices({ types: ['core'] });
-			expect(devs).to.be.empty;
-			const core = fakeUsb.addCore(); // Add a Core device
-			devs = await getDevices({ types: ['core'] });
-			expect(devs).to.have.lengthOf(1);
-			devs = devs.map(dev => dev.usbDevice);
-			expect(devs).to.have.all.members([core]);
 			// Photon, P1, Electron
-			devs = await getDevices({ types: ['photon', 'p1', 'electron'] });
+			let devs = await getDevices({ types: ['photon', 'p1', 'electron'] });
 			expect(devs).to.have.lengthOf(3);
 			devs = devs.map(dev => dev.usbDevice);
 			expect(devs).to.have.all.members([photon, p1, electron]);
@@ -572,7 +562,6 @@ describe('device-base', () => {
 
 		describe('with multiple devices', () => {
 			beforeEach(async () => {
-				fakeUsb.addCore({ dfu: true });
 				fakeUsb.addPhoton({ dfu: true });
 				fakeUsb.addP1({ dfu: true });
 				fakeUsb.addElectron({ dfu: true });
@@ -582,7 +571,6 @@ describe('device-base', () => {
 				fakeUsb.addArgonSom({ dfu: true });
 				fakeUsb.addBoronSom({ dfu: true });
 				fakeUsb.addXenonSom({ dfu: true });
-				fakeUsb.addCore();
 				fakeUsb.addPhoton();
 				fakeUsb.addP1();
 				fakeUsb.addElectron();
