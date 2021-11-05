@@ -1,7 +1,6 @@
 import { PollingPolicy } from '../src/device-base';
 import { getDevices } from '../src/particle-usb';
 import * as usbImpl from '../src/usb-device-node';
-import * as error from '../src/error';
 
 import { fakeUsb, sinon, expect, nextTick } from './support';
 

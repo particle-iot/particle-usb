@@ -313,7 +313,7 @@ export class DeviceBase extends EventEmitter {
 	}
 
 	/**
-	 * Platform ID.
+	 * Platform ID.C
 	 */
 	get platformId() {
 		return this._info.id;
