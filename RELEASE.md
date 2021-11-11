@@ -1,11 +1,15 @@
 # Releasing a new version
 
-- Checkout the `master` branch.
+Packages are only released from the `master` branch after peer review.
 
-- `npm version <major | minor | patch>`
+1. make sure you have the latest:
+	* `$ git checkout master`
+	* `$ git pull`
+2. make sure tests pass
+	* `$ npm test`
+3. bump the version
+	* `$ npm version <major|minor|patch>`
+4. push your tags:
+	* `$ git push origin main --follow-tags`
 
-  - This will bump the version in `package.json`, update the reference docs, and make a version commit and a tag for you.
-
-- `git push && git push --tags`
-
-  - Travis will publish to npm when the build succeeds.
+_CI will publish to npm when the build succeeds_
