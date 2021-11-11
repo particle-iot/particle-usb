@@ -102,8 +102,6 @@ export class DeviceBase extends EventEmitter {
 		this._fwVer = null; // Firmware version
 		this._id = null; // Device ID
 		this._dfu = null; // DFU class implementation
-
-		this._addIsPlatform();
 	}
 
 	/**
@@ -313,22 +311,10 @@ export class DeviceBase extends EventEmitter {
 	}
 
 	/**
-	 * Platform ID.C
+	 * Platform ID
 	 */
 	get platformId() {
 		return this._info.id;
-	}
-
-	/**
-	 * Adds properties like isPhoton, isElectron, etc for each platform
-	 * TODO: (Julien) Are there any consumers using the isPhoton methods? Can this be simply removed?
-	 * @private
-	 */
-	_addIsPlatform() {
-		for (const platform of PLATFORMS) {
-			const nameProp = platform.displayName.replace(/[^A-Za-z0-9]/g, '');
-			this[`is${nameProp}`] = this.type === platform.name;
-		}
 	}
 
 	/**
