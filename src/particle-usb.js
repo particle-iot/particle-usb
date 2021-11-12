@@ -4,6 +4,7 @@ import { Device } from './device';
 import { WifiDevice } from './wifi-device';
 import { CellularDevice } from './cellular-device';
 import { CloudDevice } from './cloud-device';
+import { Gen3Device } from './gen3-device';
 import { NetworkDevice } from './network-device';
 
 export { PollingPolicy } from './device-base';
@@ -19,6 +20,9 @@ export { config } from './config';
 // Create a class for each platform by mixing in different capabilities
 const DEVICE_PROTOTYPES = PLATFORMS.reduce((prototypes, platform) => {
 	let klass = class extends NetworkDevice(Device) {};
+	if (platform.generation === 3) {
+		klass = class extends Gen3Device(klass) {};
+	}
 	if (platform.features.includes('cellular')) {
 		klass = class extends CellularDevice(klass) {};
 	}
