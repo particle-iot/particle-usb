@@ -1,7 +1,7 @@
-import { ProtocolError } from './error';
+const { ProtocolError } = require('./error');
 
 // Service request types
-export const ServiceType = {
+const ServiceType = {
 	INIT: 1,
 	CHECK: 2,
 	SEND: 3,
@@ -10,7 +10,7 @@ export const ServiceType = {
 };
 
 // Field flags
-export const FieldFlag = {
+const FieldFlag = {
 	STATUS: 0x01,
 	ID: 0x02,
 	SIZE: 0x04,
@@ -18,7 +18,7 @@ export const FieldFlag = {
 };
 
 // Status codes
-export const Status = {
+const Status = {
 	OK: 0,
 	ERROR: 1,
 	PENDING: 2,
@@ -28,24 +28,24 @@ export const Status = {
 };
 
 // Values of the bmRequestType field used by the protocol
-export const BmRequestType = {
+const BmRequestType = {
 	HOST_TO_DEVICE: 0x40, // 01000000b (direction: host-to-device; type: vendor; recipient: device)
 	DEVICE_TO_HOST: 0xc0 // 11000000b (direction: device_to_host; type: vendor; recipient: device)
 };
 
 // Value of the bRequest field for Particle vendor requests
-export const PARTICLE_BREQUEST = 0x50; // ASCII code of the character 'P'
+const PARTICLE_BREQUEST = 0x50; // ASCII code of the character 'P'
 
 // Minimum length of the data stage for high-speed USB devices
-export const MIN_WLENGTH = 64;
+const MIN_WLENGTH = 64;
 
 // Misc. constraints defined by the protocol and the USB specification
-export const MAX_REQUEST_ID = 0xffff;
-export const MAX_REQUEST_TYPE = 0xffff;
-export const MAX_PAYLOAD_SIZE = 0xffff;
+const MAX_REQUEST_ID = 0xffff;
+const MAX_REQUEST_TYPE = 0xffff;
+const MAX_PAYLOAD_SIZE = 0xffff;
 
 // Returns the setup packet fields for the INIT service request
-export function initRequest(reqType, dataSize = 0) {
+function initRequest(reqType, dataSize = 0) {
 	return {
 		bmRequestType: BmRequestType.DEVICE_TO_HOST,
 		bRequest: ServiceType.INIT,
@@ -56,7 +56,7 @@ export function initRequest(reqType, dataSize = 0) {
 }
 
 // Returns the setup packet fields for the CHECK service request
-export function checkRequest(reqId) {
+function checkRequest(reqId) {
 	return {
 		bmRequestType: BmRequestType.DEVICE_TO_HOST,
 		bRequest: ServiceType.CHECK,
@@ -67,7 +67,7 @@ export function checkRequest(reqId) {
 }
 
 // Returns the setup packet fields for the SEND service request
-export function sendRequest(reqId, dataSize) {
+function sendRequest(reqId, dataSize) {
 	return {
 		// SEND is the only host-to-device service request defined by the protocol
 		bmRequestType: BmRequestType.HOST_TO_DEVICE,
@@ -79,7 +79,7 @@ export function sendRequest(reqId, dataSize) {
 }
 
 // Returns the setup packet fields for the RECV service request
-export function recvRequest(reqId, dataSize) {
+function recvRequest(reqId, dataSize) {
 	return {
 		bmRequestType: BmRequestType.DEVICE_TO_HOST,
 		bRequest: ServiceType.RECV,
@@ -90,7 +90,7 @@ export function recvRequest(reqId, dataSize) {
 }
 
 // Returns the setup packet fields for the RESET service request
-export function resetRequest(reqId = 0) {
+function resetRequest(reqId = 0) {
 	return {
 		bmRequestType: BmRequestType.DEVICE_TO_HOST,
 		bRequest: ServiceType.RESET,
@@ -101,7 +101,7 @@ export function resetRequest(reqId = 0) {
 }
 
 // Parses service reply data
-export function parseReply(data) {
+function parseReply(data) {
 	try {
 		const rep = {};
 		let offs = 0;
@@ -139,7 +139,7 @@ export function parseReply(data) {
 }
 
 // Serializes service reply data
-export function encodeReply(rep) {
+function encodeReply(rep) {
 	let flags = FieldFlag.STATUS; // Status code is a mandatory field
 	let size = 6; // 4 bytes for field flags and 2 bytes for status code
 	if ('id' in rep) {
@@ -179,3 +179,22 @@ export function encodeReply(rep) {
 	}
 	return data;
 }
+
+module.exports = {
+	ServiceType,
+	FieldFlag,
+	Status,
+	BmRequestType,
+	PARTICLE_BREQUEST,
+	MIN_WLENGTH,
+	MAX_REQUEST_ID,
+	MAX_REQUEST_TYPE,
+	MAX_PAYLOAD_SIZE,
+	initRequest,
+	checkRequest,
+	sendRequest,
+	recvRequest,
+	resetRequest,
+	parseReply,
+	encodeReply
+};

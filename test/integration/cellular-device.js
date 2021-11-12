@@ -1,6 +1,6 @@
-import { getDevices } from '../../src/particle-usb';
+const { getDevices } = require('../../src/particle-usb');
 
-import { expect, integrationTest } from '../support';
+const { expect, integrationTest } = require('../support');
 
 describe('cellular-device', function desc() {
 	// Cellular device operations may take a while

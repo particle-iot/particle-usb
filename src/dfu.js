@@ -1,9 +1,9 @@
-import { DeviceError } from './error';
+const { DeviceError } = require('./error');
 
 /**
  * A generic DFU error.
  */
-export class DfuError extends DeviceError {
+class DfuError extends DeviceError {
 	constructor(...args) {
 		super(...args);
 		Error.captureStackTrace(this, this.constructor);
@@ -11,7 +11,7 @@ export class DfuError extends DeviceError {
 }
 
 // 3. Requests, USB Device Firmware Upgrade Specification, Revision 1.1
-export const DfuRequestType = {
+const DfuRequestType = {
 	// | wValue    | wIndex    | wLength | Data     |
 	// +-----------+-----------+---------+----------+
 	DFU_DETACH: 0, // | wTimeout  | Interface | Zero    | None     |
@@ -24,7 +24,7 @@ export const DfuRequestType = {
 };
 
 // 6.1.2 DFU_GETSTATUS Request, USB Device Firmware Upgrade Specification, Revision 1.1
-export const DfuDeviceStatus = {
+const DfuDeviceStatus = {
 	// No error condition is present.
 	OK: 0x00,
 	// File is not targeted for use by this device.
@@ -59,13 +59,13 @@ export const DfuDeviceStatus = {
 	errSTALLEDPKT: 0x0F,
 };
 
-export const DfuDeviceStatusMap = Object.keys(DfuDeviceStatus).reduce((obj, key) => {
+const DfuDeviceStatusMap = Object.keys(DfuDeviceStatus).reduce((obj, key) => {
 	obj[DfuDeviceStatus[key]] = key;
 	return obj;
 }, {});
 
 // 6.1.2 DFU_GETSTATUS Request, USB Device Firmware Upgrade Specification, Revision 1.1
-export const DfuDeviceState = {
+const DfuDeviceState = {
 	// Device is running its normal application.
 	appIDLE: 0,
 	// Device is running its normal application, has received the DFU_DETACH request, and is waiting
@@ -96,7 +96,7 @@ export const DfuDeviceState = {
 	dfuERROR: 10
 };
 
-export const DfuDeviceStateMap = Object.keys(DfuDeviceState).reduce((obj, key) => {
+const DfuDeviceStateMap = Object.keys(DfuDeviceState).reduce((obj, key) => {
 	obj[DfuDeviceState[key]] = key;
 	return obj;
 }, {});
@@ -107,7 +107,7 @@ export const DfuDeviceStateMap = Object.keys(DfuDeviceState).reduce((obj, key) =
  *
  * AN3156: USB DFU protocol used in the STM32 bootloader.
  */
-export const DfuseCommand = {
+const DfuseCommand = {
 	DFUSE_COMMAND_NONE: 0xff,
 	DFUSE_COMMAND_GET_COMMAND: 0x00,
 	DFUSE_COMMAND_SET_ADDRESS_POINTER: 0x21,
@@ -115,17 +115,17 @@ export const DfuseCommand = {
 	DFUSE_COMMAND_READ_UNPROTECT: 0x92
 };
 
-export const DfuBmRequestType = {
+const DfuBmRequestType = {
 	HOST_TO_DEVICE: 0x21,
 	DEVICE_TO_HOST: 0xA1
 };
 
-export const DFU_STATUS_SIZE = 6;
+const DFU_STATUS_SIZE = 6;
 // FIXME:
 const DEFAULT_INTERFACE = 0;
 const DEFAULT_ALTERNATE = 0;
 
-export class Dfu {
+class Dfu {
 	constructor(dev, logger) {
 		this._dev = dev;
 		this._log = logger;
@@ -265,3 +265,16 @@ export class Dfu {
 		return this._dev.transferOut(setup, Buffer.alloc(0));
 	}
 }
+
+module.exports = {
+	DfuError,
+	DfuRequestType,
+	DfuDeviceStatus,
+	DfuDeviceStatusMap,
+	DfuDeviceState,
+	DfuDeviceStateMap,
+	DfuseCommand,
+	DfuBmRequestType,
+	DFU_STATUS_SIZE,
+	Dfu
+};

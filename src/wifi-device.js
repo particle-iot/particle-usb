@@ -1,12 +1,12 @@
-import { Request } from './request';
-import { fromProtobufEnum, fromProtobufMessage, toProtobufMessage } from './protobuf-util';
+const { Request } = require('./request');
+const { fromProtobufEnum, fromProtobufMessage, toProtobufMessage } = require('./protobuf-util');
 
-import proto from './protocol';
+const proto = require('./protocol');
 
 /**
  * WiFi antenna types.
  */
-export const WifiAntenna = fromProtobufEnum(proto.WiFiAntenna, {
+const WifiAntenna = fromProtobufEnum(proto.WiFiAntenna, {
 	INTERNAL: 'INTERNAL',
 	EXTERNAL: 'EXTERNAL',
 	AUTO: 'AUTO'
@@ -15,7 +15,7 @@ export const WifiAntenna = fromProtobufEnum(proto.WiFiAntenna, {
 /**
  * WiFi security types.
  */
-export const WifiSecurity = fromProtobufEnum(proto.WiFiSecurityType, {
+const WifiSecurity = fromProtobufEnum(proto.WiFiSecurityType, {
 	NONE: 'UNSEC',
 	WEP: 'WEP',
 	WPA: 'WPA',
@@ -28,7 +28,7 @@ export const WifiSecurity = fromProtobufEnum(proto.WiFiSecurityType, {
 /**
  * WiFi cipher types.
  */
-export const WifiCipher = fromProtobufEnum(proto.WiFiSecurityCipher, {
+const WifiCipher = fromProtobufEnum(proto.WiFiSecurityCipher, {
 	AES: 'AES',
 	TKIP: 'TKIP',
 	AES_TKIP: 'AES_TKIP'
@@ -37,7 +37,7 @@ export const WifiCipher = fromProtobufEnum(proto.WiFiSecurityCipher, {
 /**
  * EAP methods.
  */
-export const EapMethod = fromProtobufEnum(proto.EapType, {
+const EapMethod = fromProtobufEnum(proto.EapType, {
 	TLS: 'TLS',
 	PEAP: 'PEAP'
 });
@@ -81,7 +81,7 @@ const accessPointToProtobuf = toProtobufMessage(proto.WiFiAccessPoint, accessPoi
  *
  * @mixin
  */
-export const WifiDevice = base => class extends base {
+const WifiDevice = base => class extends base {
 	/**
 	 * Set the WiFi antenna to use.
 	 *
@@ -189,4 +189,12 @@ export const WifiDevice = base => class extends base {
 	clearWifiCredentials() {
 		return this.sendRequest(Request.WIFI_CLEAR_CREDENTIALS);
 	}
+};
+
+module.exports = {
+	WifiAntenna,
+	WifiSecurity,
+	WifiCipher,
+	EapMethod,
+	WifiDevice
 };

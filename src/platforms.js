@@ -1,6 +1,6 @@
-import deviceConstants from '@particle/device-constants';
+const deviceConstants = require('@particle/device-constants');
 
-export const PLATFORMS = Object.values(clone(deviceConstants)); // TODO: (Julien) .filter((platform) => platform.features.include('usb-requests'));
+const PLATFORMS = Object.values(clone(deviceConstants)); // TODO: (Julien) .filter((platform) => platform.features.include('usb-requests'));
 
 PLATFORMS.forEach((platform) => {
 	if (platform.usb) {
@@ -23,3 +23,7 @@ function parseUsbInfo({ vendorId, productId, quirks }) {
 function clone(x) {
 	return JSON.parse(JSON.stringify(x));
 }
+
+module.exports = {
+	PLATFORMS
+};

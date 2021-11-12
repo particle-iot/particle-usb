@@ -1,6 +1,6 @@
 // Transforms a Protobuf enum to an API object according to the provided mapping. Resulting object
 // provides functions for a checked conversion between the protocol and API values
-export function fromProtobufEnum(pbEnum, map, unknownVal) {
+function fromProtobufEnum(pbEnum, map, unknownVal) {
 	const mapToProtobuf = {};
 	const mapFromProtobuf = {};
 	const funcs = {
@@ -102,15 +102,21 @@ function assignMessagePropertyMaps(obj, ...maps) {
 }
 
 // Returns a function that transforms a Protobuf message to an API object according to the provided mapping
-export function fromProtobufMessage(pbMsg, ...maps) {
+function fromProtobufMessage(pbMsg, ...maps) {
 	const map = assignMessagePropertyMaps({}, ...maps);
 	checkFromProtobufMessageMap(pbMsg.prototype, map);
 	return msg => transformMessage(msg, map);
 }
 
 // Returns a function that transforms an API object to a Protobuf message according to the provided mapping
-export function toProtobufMessage(pbMsg, ...maps) {
+function toProtobufMessage(pbMsg, ...maps) {
 	const map = assignMessagePropertyMaps({}, ...maps);
 	checkToProtobufMessageMap(pbMsg.prototype, map);
 	return msg => transformMessage(msg, map);
 }
+
+module.exports = {
+	fromProtobufEnum,
+	fromProtobufMessage,
+	toProtobufMessage
+};

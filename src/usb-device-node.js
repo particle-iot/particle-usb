@@ -1,5 +1,5 @@
-import { UsbError, NotAllowedError } from './error';
-import { globalOptions } from './config';
+const { UsbError, NotAllowedError } = require('./error');
+const { globalOptions } = require('./config');
 
 let usb = null;
 
@@ -13,7 +13,7 @@ try {
 }
 
 // Maximum size of a control transfer's data stage
-export const MAX_CONTROL_TRANSFER_DATA_SIZE = 4096;
+const MAX_CONTROL_TRANSFER_DATA_SIZE = 4096;
 
 function wrapUsbError(err, message) {
 	if (err.message === 'LIBUSB_ERROR_ACCESS') {
@@ -22,7 +22,7 @@ function wrapUsbError(err, message) {
 	return new UsbError(err, message);
 }
 
-export class UsbDevice {
+class UsbDevice {
 	constructor(dev) {
 		this._dev = dev;
 		this._dev.timeout = 5000; // Use longer timeout for control transfers
@@ -192,7 +192,7 @@ export class UsbDevice {
 	}
 }
 
-export async function getUsbDevices(filters) {
+async function getUsbDevices(filters) {
 	// Validate the filtering options
 	if (filters) {
 		filters = filters.map(f => {
@@ -253,3 +253,9 @@ export async function getUsbDevices(filters) {
 	}
 	return devs;
 }
+
+module.exports = {
+	MAX_CONTROL_TRANSFER_DATA_SIZE,
+	UsbDevice,
+	getUsbDevices
+};

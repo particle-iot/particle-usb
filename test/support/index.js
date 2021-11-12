@@ -1,16 +1,15 @@
-import * as fakeUsb from './fake-usb';
-import { config } from '../../src/config';
+const fakeUsb = require('./fake-usb');
+const { config } = require('../../src/config');
 
-import chai from 'chai';
-import chaiAsPromised from 'chai-as-promised';
-import chaiSubset from 'chai-subset';
-import sinon from 'sinon';
-import sinonChai from 'sinon-chai';
-import 'mocha-sinon';
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
+const chaiSubset = require('chai-subset');
+const sinon = require('sinon');
+const sinonChai = require('sinon-chai');
 
-chai.use(chaiAsPromised);
-chai.use(sinonChai);
-chai.use(chaiSubset);
+require('mocha-sinon');
+
+const { expect, assert } = chai;
 
 const PRINTABLE_CHARS = ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~';
 
@@ -61,14 +60,15 @@ function nextTick() {
 	});
 }
 
+chai.use(chaiAsPromised);
+chai.use(sinonChai);
+chai.use(chaiSubset);
+
 config({
 	log: new Logger()
 });
 
-const expect = chai.expect;
-const assert = chai.assert;
-
-export {
+module.exports = {
 	fakeUsb,
 	sinon,
 	expect,

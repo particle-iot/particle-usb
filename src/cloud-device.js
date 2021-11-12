@@ -1,16 +1,16 @@
-import { Request } from './request';
-import { fromProtobufEnum } from './protobuf-util';
-import * as usbProto from './usb-protocol';
-import { globalOptions } from './config';
+const { Request } = require('./request');
+const { fromProtobufEnum } = require('./protobuf-util');
+const usbProto = require('./usb-protocol');
+const { globalOptions } = require('./config');
 
-import proto from './protocol';
+const proto = require('./protocol');
 
 /**
  * Cloud connection status.
  *
  * @enum {String}
  */
-export const CloudConnectionStatus = fromProtobufEnum(proto.cloud.ConnectionStatus, {
+const CloudConnectionStatus = fromProtobufEnum(proto.cloud.ConnectionStatus, {
 	/** Disconnected. */
 	DISCONNECTED: 'DISCONNECTED',
 	/** Connecting. */
@@ -26,7 +26,7 @@ export const CloudConnectionStatus = fromProtobufEnum(proto.cloud.ConnectionStat
  *
  * @enum {String}
  */
-export const ServerProtocol = fromProtobufEnum(proto.ServerProtocolType, {
+const ServerProtocol = fromProtobufEnum(proto.ServerProtocolType, {
 	/** TCP. */
 	TCP: 'TCP_PROTOCOL',
 	/** UDP. */
@@ -41,7 +41,7 @@ export const ServerProtocol = fromProtobufEnum(proto.ServerProtocolType, {
  *
  * @mixin
  */
-export const CloudDevice = base => class extends base {
+const CloudDevice = base => class extends base {
 	/**
 	 * Connect to the cloud.
 	 *
@@ -377,4 +377,10 @@ export const CloudDevice = base => class extends base {
 		}
 		return this.sendRequest(Request.GET_SERVER_PROTOCOL).then(rep => rep.protocol);
 	}
+};
+
+module.exports = {
+	CloudConnectionStatus,
+	ServerProtocol,
+	CloudDevice
 };

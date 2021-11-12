@@ -1,8 +1,8 @@
-import { PollingPolicy } from '../src/device-base';
-import { getDevices } from '../src/particle-usb';
-import * as usbImpl from '../src/usb-device-node';
+const { PollingPolicy } = require('../src/device-base');
+const { getDevices } = require('../src/particle-usb');
+const usbImpl = require('../src/usb-device-node');
 
-import { fakeUsb, sinon, expect, nextTick } from './support';
+const { fakeUsb, sinon, expect, nextTick } = require('./support');
 
 describe('device', () => {
 	before(() => {

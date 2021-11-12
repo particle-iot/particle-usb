@@ -1,7 +1,7 @@
-import { UsbError } from './error';
+const { UsbError } = require('./error');
 
 // Maximum size of a control transfer's data stage
-export const MAX_CONTROL_TRANSFER_DATA_SIZE = 4096;
+const MAX_CONTROL_TRANSFER_DATA_SIZE = 4096;
 
 function bmRequestTypeToString(type) {
 	type = (type >> 5) & 0x03;
@@ -40,7 +40,7 @@ function bmRequestTypeToRecipientString(type) {
 	}
 }
 
-export class UsbDevice {
+class UsbDevice {
 	constructor(dev) {
 		this._dev = dev;
 		this._dev.timeout = 5000; // Use longer timeout for control transfers
@@ -148,7 +148,7 @@ export class UsbDevice {
 	}
 }
 
-export async function getUsbDevices(filters) {
+async function getUsbDevices(filters) {
 	if (filters) {
 		// Validate filtering options
 		filters.forEach(f => {
@@ -195,3 +195,9 @@ export async function getUsbDevices(filters) {
 	devs = devs.map(dev => new UsbDevice(dev));
 	return devs;
 }
+
+module.exports = {
+	MAX_CONTROL_TRANSFER_DATA_SIZE,
+	UsbDevice,
+	getUsbDevices
+};

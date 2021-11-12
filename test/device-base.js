@@ -1,9 +1,9 @@
-import { getDevices, openDeviceById, PollingPolicy } from '../src/device-base';
-import * as usbImpl from '../src/usb-device-node';
-import * as proto from '../src/usb-protocol';
-import * as error from '../src/error';
+const { getDevices, openDeviceById, PollingPolicy } = require('../src/device-base');
+const usbImpl = require('../src/usb-device-node');
+const proto = require('../src/usb-protocol');
+const error = require('../src/error');
 
-import { fakeUsb, sinon, expect, assert, nextTick } from './support';
+const { fakeUsb, sinon, expect, assert, nextTick } = require('./support');
 
 // Application-specific request types
 const REQUEST_1 = 1;

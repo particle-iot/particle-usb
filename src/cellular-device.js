@@ -1,5 +1,5 @@
-import { Request } from './request';
-import { globalOptions } from './config';
+const { Request } = require('./request');
+const { globalOptions } = require('./config');
 
 /**
  * Cellular device.
@@ -9,7 +9,7 @@ import { globalOptions } from './config';
  *
  * @mixin
  */
-export const CellularDevice = base => class extends base {
+const CellularDevice = base => class extends base {
 	/**
 	 * Get ICCID of the active SIM card.
 	 *
@@ -32,4 +32,8 @@ export const CellularDevice = base => class extends base {
 	get isCellularDevice() {
 		return true;
 	}
+};
+
+module.exports = {
+	CellularDevice
 };

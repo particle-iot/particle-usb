@@ -1,14 +1,14 @@
-import { Request } from './request';
-import { fromProtobufEnum } from './protobuf-util';
+const { Request } = require('./request');
+const { fromProtobufEnum } = require('./protobuf-util');
 
-import proto from './protocol';
+const proto = require('./protocol');
 
 const DEFAULT_INTERFACE = 1;
 
 /**
  * Network status.
  */
-export const NetworkStatus = fromProtobufEnum(proto.NetworkState, {
+const NetworkStatus = fromProtobufEnum(proto.NetworkState, {
 	DOWN: 'DOWN',
 	UP: 'UP'
 });
@@ -21,7 +21,7 @@ export const NetworkStatus = fromProtobufEnum(proto.NetworkState, {
  *
  * @mixin
  */
-export const NetworkDevice = base => class extends base {
+const NetworkDevice = base => class extends base {
 	/**
 	 * Get network status.
 	 *
@@ -71,4 +71,9 @@ export const NetworkDevice = base => class extends base {
 	setNetworkConfig(config) {
 		return this.sendRequest(Request.NETWORK_SET_CONFIGURATION, config); // TODO
 	}
+};
+
+module.exports = {
+	NetworkStatus,
+	NetworkDevice
 };
