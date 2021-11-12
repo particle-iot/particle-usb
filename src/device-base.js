@@ -1,36 +1,41 @@
 import { getUsbDevices, MAX_CONTROL_TRANSFER_DATA_SIZE } from './usb-device-node';
 import * as proto from './usb-protocol';
-import { DeviceType, DEVICES } from './device-type';
+import { PLATFORMS } from './platforms';
 import { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, assert } from './error';
 import { globalOptions } from './config';
 import { Dfu } from './dfu';
 
 import EventEmitter from 'events';
 
-// Device descriptions arranged by vendor/product IDs
-const DEVICE_INFO = DEVICES.reduce((obj, dev) => {
-	dev = Object.assign({}, dev);
-	const ids = dev.usbIds;
-	delete dev.usbIds;
-	const dfuIds = dev.dfuUsbIds;
-	delete dev.dfuUsbIds;
-	if (!(ids.vendorId in obj)) {
-		obj[ids.vendorId] = {};
+// Platforms arranged by vendor/product IDs
+const PLATFORM_USB_IDS = PLATFORMS.reduce((obj, platform) => {
+	const addMapping = (obj, { vendorId, productId }, dfu) => {
+		if (!vendorId) {
+			return;
+		}
+		if (!obj[vendorId]) {
+			obj[vendorId] = {};
+		}
+		obj[vendorId][productId] = {
+			type: platform.name,
+			id: platform.id,
+			vendorId,
+			productId,
+			dfu
+		};
+	};
+
+	if (platform.usb) {
+		addMapping(obj, platform.usb, false);
 	}
-	obj[ids.vendorId][ids.productId] = Object.assign({ dfu: false }, dev);
-	if (!(dfuIds.vendorId in obj)) {
-		obj[dfuIds.vendorId] = {};
+	if (platform.dfu) {
+		addMapping(obj, platform.dfu, true);
 	}
-	obj[dfuIds.vendorId][dfuIds.productId] = Object.assign({ dfu: true }, dev);
 	return obj;
 }, {});
 
-function deviceInfoForUsbIds(vendorId, productId) {
-	let info = DEVICE_INFO[vendorId];
-	if (info) {
-		info = info[productId];
-	}
-	return info;
+function platformForUsbIds(vendorId, productId) {
+	return (PLATFORM_USB_IDS[vendorId] || {})[productId];
 }
 
 // Default backoff intervals for the CHECK service request
@@ -299,73 +304,17 @@ export class DeviceBase extends EventEmitter {
 	}
 
 	/**
-	 * Device type (see {@link DeviceType}).
+	 * Device type (photon, boron, tracker, etc)
 	 */
 	get type() {
 		return this._info.type;
 	}
 
 	/**
-	 * Platform ID.
+	 * Platform ID
 	 */
 	get platformId() {
-		return this._info.platformId;
-	}
-
-	/**
-	 * Set to `true` if this is a Core device.
-	 */
-	get isCore() {
-		return (this.type === DeviceType.CORE);
-	}
-
-	/**
-	 * Set to `true` if this is a Photon device.
-	 */
-	get isPhoton() {
-		return (this.type === DeviceType.PHOTON);
-	}
-
-	/**
-	 * Set to `true` if this is a P1 device.
-	 */
-	get isP1() {
-		return (this.type === DeviceType.P1);
-	}
-
-	/**
-	 * Set to `true` if this is an Electron device.
-	 */
-	get isElectron() {
-		return (this.type === DeviceType.ELECTRON);
-	}
-
-	/**
-	 * Set to `true` if this is a RedBear Duo device.
-	 */
-	get isDuo() {
-		return (this.type === DeviceType.DUO);
-	}
-
-	/**
-	 * Set to `true` if this is a Xenon device.
-	 */
-	get isXenon() {
-		return (this.type === DeviceType.XENON);
-	}
-
-	/**
-	 * Set to `true` if this is an Argon device.
-	 */
-	get isArgon() {
-		return (this.type === DeviceType.ARGON);
-	}
-
-	/**
-	 * Set to `true` if this is a Boron device.
-	 */
-	get isBoron() {
-		return (this.type === DeviceType.BORON);
+		return this._info.id;
 	}
 
 	/**
@@ -767,11 +716,13 @@ export class DeviceBase extends EventEmitter {
 export async function getDevices({ types = [], includeDfu = true } = {}) {
 	types = types.map(type => type.toLowerCase());
 	const filters = [];
-	DEVICES.forEach(dev => {
-		if (types.length === 0 || types.includes(dev.type.toLowerCase())) {
-			filters.push(dev.usbIds);
-			if (includeDfu) {
-				filters.push(dev.dfuUsbIds);
+	PLATFORMS.forEach((platform) => {
+		if (types.length === 0 || types.includes(platform.name)) {
+			if (platform.usb.vendorId) {
+				filters.push(platform.usb);
+			}
+			if (includeDfu && platform.dfu.vendorId) {
+				filters.push(platform.dfu);
 			}
 		}
 	});
@@ -780,18 +731,22 @@ export async function getDevices({ types = [], includeDfu = true } = {}) {
 	}
 	const devs = await getUsbDevices(filters);
 	return devs.map(dev => {
-		const info = deviceInfoForUsbIds(dev.vendorId, dev.productId);
-		assert(info);
-		return new DeviceBase(dev, info);
+		const platform = platformForUsbIds(dev.vendorId, dev.productId);
+		assert(platform);
+		return new DeviceBase(dev, platform);
 	});
 }
 
 export async function openDeviceById(id, options = null) {
 	const log = globalOptions.log;
 	const filters = [];
-	DEVICES.forEach(dev => {
-		filters.push(Object.assign({ serialNumber: id }, dev.usbIds));
-		filters.push(Object.assign({ serialNumber: id }, dev.dfuUsbIds));
+	PLATFORMS.forEach((platform) => {
+		if (platform.usb.vendorId) {
+			filters.push(Object.assign({ serialNumber: id }, platform.usb));
+		}
+		if (platform.dfu.vendorId) {
+			filters.push(Object.assign({ serialNumber: id }, platform.dfu));
+		}
 	});
 	const devs = await getUsbDevices(filters);
 	if (devs.length === 0) {
@@ -801,9 +756,9 @@ export async function openDeviceById(id, options = null) {
 		log.warn(`Found multiple devices with the same ID: ${id}`); // lol
 	}
 	let dev = devs[0];
-	const info = deviceInfoForUsbIds(dev.vendorId, dev.productId);
-	assert(info);
-	dev = new DeviceBase(dev, info);
+	const platform = platformForUsbIds(dev.vendorId, dev.productId);
+	assert(platform);
+	dev = new DeviceBase(dev, platform);
 	await dev.open(options);
 	return dev;
 }

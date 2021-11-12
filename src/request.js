@@ -207,67 +207,6 @@ export const Request = {
 		request: proto.cellular.GetIccidRequest,
 		reply: proto.cellular.GetIccidReply
 	},
-	// Mesh network management
-	MESH_AUTH: {
-		id: 1001,
-		request: proto.mesh.AuthRequest,
-		reply: proto.mesh.AuthReply
-	},
-	MESH_CREATE_NETWORK: {
-		id: 1002,
-		request: proto.mesh.CreateNetworkRequest,
-		reply: proto.mesh.CreateNetworkReply
-	},
-	MESH_START_COMMISSIONER: {
-		id: 1003,
-		request: proto.mesh.StartCommissionerRequest,
-		reply: proto.mesh.StartCommissionerReply
-	},
-	MESH_STOP_COMMISSIONER: {
-		id: 1004,
-		request: proto.mesh.StopCommissionerRequest,
-		reply: proto.mesh.StopCommissionerReply
-	},
-	MESH_PREPARE_JOINER: {
-		id: 1005,
-		request: proto.mesh.PrepareJoinerRequest,
-		reply: proto.mesh.PrepareJoinerReply
-	},
-	MESH_ADD_JOINER: {
-		id: 1006,
-		request: proto.mesh.AddJoinerRequest,
-		reply: proto.mesh.AddJoinerReply
-	},
-	MESH_REMOVE_JOINER: {
-		id: 1007,
-		request: proto.mesh.RemoveJoinerRequest,
-		reply: proto.mesh.RemoveJoinerReply
-	},
-	MESH_JOIN_NETWORK: {
-		id: 1008,
-		request: proto.mesh.JoinNetworkRequest,
-		reply: proto.mesh.JoinNetworkReply
-	},
-	MESH_LEAVE_NETWORK: {
-		id: 1009,
-		request: proto.mesh.LeaveNetworkRequest,
-		reply: proto.mesh.LeaveNetworkReply
-	},
-	MESH_GET_NETWORK_INFO: {
-		id: 1010,
-		request: proto.mesh.GetNetworkInfoRequest,
-		reply: proto.mesh.GetNetworkInfoReply
-	},
-	MESH_SCAN_NETWORKS: {
-		id: 1011,
-		request: proto.mesh.ScanNetworksRequest,
-		reply: proto.mesh.ScanNetworksReply
-	},
-	MESH_GET_NETWORK_DIAGNOSTICS: {
-		id: 1012,
-		request: proto.mesh.GetNetworkDiagnosticsRequest,
-		reply: proto.mesh.GetNetworkDiagnosticsReply
-	},
 	// Logging configuration
 	ADD_LOG_HANDLER: {
 		id: 1100,

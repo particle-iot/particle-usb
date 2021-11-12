@@ -1,13 +1,12 @@
-import { DeviceType } from './device-type';
-import { DeviceBase, getDevices as getUsbDevices, openDeviceById as openUsbDeviceById } from './device-base';
+import { getDevices as getUsbDevices, openDeviceById as openUsbDeviceById } from './device-base';
+import { PLATFORMS } from './platforms';
 import { Device } from './device';
 import { WifiDevice } from './wifi-device';
 import { CellularDevice } from './cellular-device';
 import { CloudDevice } from './cloud-device';
-import { MeshDevice } from './mesh-device';
+import { Gen3Device } from './gen3-device';
 import { NetworkDevice } from './network-device';
 
-export { DeviceType } from './device-type';
 export { PollingPolicy } from './device-base';
 export { FirmwareModule } from './device';
 export { NetworkStatus } from './network-device';
@@ -18,56 +17,24 @@ export { DeviceError, NotFoundError, NotAllowedError, StateError, TimeoutError, 
 	InternalError, RequestError } from './error';
 export { config } from './config';
 
-export class Core extends DeviceBase {
-}
+// Create a class for each platform by mixing in different capabilities
+const DEVICE_PROTOTYPES = PLATFORMS.reduce((prototypes, platform) => {
+	let klass = class extends NetworkDevice(Device) {};
+	if (platform.generation === 3) {
+		klass = class extends Gen3Device(klass) {};
+	}
+	if (platform.features.includes('cellular')) {
+		klass = class extends CellularDevice(klass) {};
+	}
+	if (platform.features.includes('wifi')) {
+		klass = class extends WifiDevice(klass) {};
+	}
+	klass = class extends CloudDevice(klass) {};
 
-export class Photon extends CloudDevice(WifiDevice(NetworkDevice(Device))) {
-}
+	prototypes[platform.name] = klass.prototype;
 
-export class P1 extends CloudDevice(WifiDevice(NetworkDevice(Device))) {
-}
-
-export class Electron extends CloudDevice(CellularDevice(NetworkDevice(Device))) {
-}
-
-export class Argon extends CloudDevice(WifiDevice(MeshDevice(NetworkDevice(Device)))) {
-}
-
-export class Boron extends CloudDevice(CellularDevice(MeshDevice(NetworkDevice(Device)))) {
-}
-
-export class Xenon extends CloudDevice(MeshDevice(NetworkDevice(Device))) {
-}
-
-export class ArgonSom extends CloudDevice(WifiDevice(MeshDevice(NetworkDevice(Device)))) {
-}
-
-export class BoronSom extends CloudDevice(CellularDevice(MeshDevice(NetworkDevice(Device)))) {
-}
-
-export class XenonSom extends CloudDevice(MeshDevice(NetworkDevice(Device))) {
-}
-
-export class B5Som extends CloudDevice(CellularDevice(MeshDevice(NetworkDevice(Device)))) {
-}
-
-export class AssetTracker extends CloudDevice(CellularDevice(NetworkDevice(Device))) {
-}
-
-const DEVICE_PROTOTYPES = {
-	[DeviceType.CORE]: Core.prototype,
-	[DeviceType.PHOTON]: Photon.prototype,
-	[DeviceType.P1]: P1.prototype,
-	[DeviceType.ELECTRON]: Electron.prototype,
-	[DeviceType.ARGON]: Argon.prototype,
-	[DeviceType.BORON]: Boron.prototype,
-	[DeviceType.XENON]: Xenon.prototype,
-	[DeviceType.ARGON_SOM]: ArgonSom.prototype,
-	[DeviceType.BORON_SOM]: BoronSom.prototype,
-	[DeviceType.XENON_SOM]: XenonSom.prototype,
-	[DeviceType.B5_SOM]: B5Som.prototype,
-	[DeviceType.ASSET_TRACKER]: AssetTracker.prototype
-};
+	return prototypes;
+}, {});
 
 function setDevicePrototype(dev) {
 	const proto = DEVICE_PROTOTYPES[dev.type];
@@ -81,7 +48,7 @@ function setDevicePrototype(dev) {
  * Enumerate Particle USB devices attached to the host.
  *
  * @param {Object} options Options.
- * @param {Array<String>} [options.types] Device types (see {@link DeviceType}). By default, this
+ * @param {Array<String>} [options.types] Device types (photon, boron, tracker, etc). By default, this
  *        function enumerates devices of all platforms supported by the library.
  * @param {Boolean} [options.includeDfu=true] Whether to include devices in DFU mode.
  * @return {Promise<Array<Device>>}

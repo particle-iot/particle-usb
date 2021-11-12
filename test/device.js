@@ -1,7 +1,6 @@
 import { PollingPolicy } from '../src/device-base';
 import { getDevices } from '../src/particle-usb';
 import * as usbImpl from '../src/usb-device-node';
-import * as error from '../src/error';
 
 import { fakeUsb, sinon, expect, nextTick } from './support';
 
@@ -37,7 +36,6 @@ describe('device', () => {
 	describe('Device', () => {
 		describe('with multiple devices', () => {
 			beforeEach(async () => {
-				fakeUsb.addCore({ dfu: true });
 				fakeUsb.addPhoton({ dfu: true });
 				fakeUsb.addP1({ dfu: true });
 				fakeUsb.addElectron({ dfu: true });
@@ -47,7 +45,6 @@ describe('device', () => {
 				fakeUsb.addArgonSom({ dfu: true });
 				fakeUsb.addBoronSom({ dfu: true });
 				fakeUsb.addXenonSom({ dfu: true });
-				fakeUsb.addCore();
 				fakeUsb.addPhoton();
 				fakeUsb.addP1();
 				fakeUsb.addElectron();
@@ -67,12 +64,7 @@ describe('device', () => {
 				}
 
 				for (let dev of devs) {
-					if (dev.isCore && !dev.isInDfuMode) {
-						// Core can only be reset from DFU mode
-						expect(dev.reset()).to.be.rejectedWith(error.StateError);
-					} else {
-						await dev.reset();
-					}
+					await dev.reset();
 				}
 
 				for (let dev of devs) {
