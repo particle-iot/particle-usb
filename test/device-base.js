@@ -1,30 +1,24 @@
-const { getDevices, openDeviceById, PollingPolicy } = require('../src/device-base');
+const { fakeUsb, sinon, expect, assert, nextTick } = require('./support');
+const proxyquire = require('proxyquire');
+
+const { getDevices, openDeviceById, PollingPolicy } = proxyquire('../src/device-base', {
+	'./usb-device-node': fakeUsb
+});
 const usbImpl = require('../src/usb-device-node');
 const proto = require('../src/usb-protocol');
 const error = require('../src/error');
-
-const { fakeUsb, sinon, expect, assert, nextTick } = require('./support');
 
 // Application-specific request types
 const REQUEST_1 = 1;
 const REQUEST_2 = 2;
 
 describe('device-base', () => {
-	before(() => {
-		// Stub the USB implementation used by the library
-		sinon.stub(usbImpl, 'getUsbDevices').callsFake(fakeUsb.getDevices);
-	});
-
-	after(() => {
-		usbImpl.getUsbDevices.restore();
-	});
-
 	beforeEach(function setup() {
 		this.tick = async t => {
 			// Wait for the next event loop iteration to ensure that all promise callbacks get invoked:
 			// https://github.com/sinonjs/sinon/issues/738
 			await nextTick();
-			this.sinon.clock.tick(t);
+			sinon.clock.tick(t);
 		};
 		// Number of CHECK requests sent to a USB device during the test
 		this.checkCount = 0;
@@ -34,8 +28,12 @@ describe('device-base', () => {
 		this.checkTimeout = async () => {
 			await this.tick(this.pollingPolicy(this.checkCount++));
 		};
+	});
+
+	afterEach(() => {
 		// "Detach" all USB devices
 		fakeUsb.clearDevices();
+		sinon.restore();
 	});
 
 	describe('getDevices()', () => {
@@ -177,13 +175,13 @@ describe('device-base', () => {
 			expect(photon.isOpen).to.be.false;
 		});
 
-		it('ignores non-Particle devices with a matching serial number', async function test() {
+		it('ignores non-Particle devices with a matching serial number', async () => {
 			const unknown = fakeUsb.addDevice({
 				vendorId: 0xaaaa,
 				productId: 0xbbbb,
 				serialNumber: '111111111111111111111111'
 			});
-			const open = this.sinon.spy(unknown, 'open');
+			const open = sinon.spy(unknown, 'open');
 			const dev = openDeviceById('111111111111111111111111');
 			await expect(dev).to.be.rejectedWith(error.NotFoundError);
 			expect(open).to.have.not.been.called;
@@ -246,8 +244,8 @@ describe('device-base', () => {
 					expect(dev.firmwareVersion).to.be.null;
 				});
 
-				it('resets all pending requests after opening the USB device', async function test() {
-					const resetAllRequests = this.sinon.spy(usbDev.protocol, 'resetAllRequests');
+				it('resets all pending requests after opening the USB device', async () => {
+					const resetAllRequests = sinon.spy(usbDev.protocol, 'resetAllRequests');
 					await dev.open();
 					expect(resetAllRequests).to.have.been.calledOnce;
 				});
@@ -290,8 +288,8 @@ describe('device-base', () => {
 				});
 
 				it('cancels pending requests when the timeout is reached', async function test() {
-					this.sinon.useFakeTimers();
-					this.sinon.stub(usbDev.protocol, 'checkRequest').returns(proto.Status.PENDING);
+					sinon.useFakeTimers();
+					sinon.stub(usbDev.protocol, 'checkRequest').returns(proto.Status.PENDING);
 					await dev.open();
 					const req1 = dev.sendControlRequest(REQUEST_1);
 					const req2 = dev.sendControlRequest(REQUEST_2);
@@ -303,9 +301,9 @@ describe('device-base', () => {
 				});
 
 				it('resets active requests when the timeout is reached', async function test() {
-					this.sinon.useFakeTimers();
-					this.sinon.stub(usbDev.protocol, 'checkRequest').returns(proto.Status.PENDING);
-					const resetAllRequests = this.sinon.spy(usbDev.protocol, 'resetAllRequests');
+					sinon.useFakeTimers();
+					sinon.stub(usbDev.protocol, 'checkRequest').returns(proto.Status.PENDING);
+					const resetAllRequests = sinon.spy(usbDev.protocol, 'resetAllRequests');
 					await dev.open();
 					expect(resetAllRequests).to.have.been.calledOnce;
 					const req = dev.sendControlRequest(REQUEST_1);
@@ -323,9 +321,9 @@ describe('device-base', () => {
 				});
 
 				it('can send a request without payload data', async function test() {
-					this.sinon.useFakeTimers();
-					const initRequest = this.sinon.spy(usbDev.protocol, 'initRequest');
-					const sendRequest = this.sinon.spy(usbDev.protocol, 'sendRequest');
+					sinon.useFakeTimers();
+					const initRequest = sinon.spy(usbDev.protocol, 'initRequest');
+					const sendRequest = sinon.spy(usbDev.protocol, 'sendRequest');
 					const req = dev.sendControlRequest(REQUEST_1);
 					await this.checkTimeout();
 					await req;
@@ -337,9 +335,9 @@ describe('device-base', () => {
 				});
 
 				it('can send a request with payload data', async function test() {
-					this.sinon.useFakeTimers();
-					const initRequest = this.sinon.spy(usbDev.protocol, 'initRequest');
-					const sendRequest = this.sinon.spy(usbDev.protocol, 'sendRequest');
+					sinon.useFakeTimers();
+					const initRequest = sinon.spy(usbDev.protocol, 'initRequest');
+					const sendRequest = sinon.spy(usbDev.protocol, 'sendRequest');
 					const reqData = Buffer.from('request data');
 					const reqId = usbDev.protocol.nextRequestId;
 					const req = dev.sendControlRequest(REQUEST_1, reqData);
@@ -356,9 +354,9 @@ describe('device-base', () => {
 				});
 
 				it('can send request data in multiple chunks', async function test() {
-					this.sinon.useFakeTimers();
-					const initRequest = this.sinon.spy(usbDev.protocol, 'initRequest');
-					const sendRequest = this.sinon.spy(usbDev.protocol, 'sendRequest');
+					sinon.useFakeTimers();
+					const initRequest = sinon.spy(usbDev.protocol, 'initRequest');
+					const sendRequest = sinon.spy(usbDev.protocol, 'sendRequest');
 					const chunk1 = Buffer.from('A'.repeat(usbImpl.MAX_CONTROL_TRANSFER_DATA_SIZE));
 					const chunk2 = Buffer.from('B'.repeat(usbImpl.MAX_CONTROL_TRANSFER_DATA_SIZE - 1));
 					const reqId = usbDev.protocol.nextRequestId;
@@ -381,8 +379,8 @@ describe('device-base', () => {
 				});
 
 				it('can receive a reply without payload data', async function test() {
-					this.sinon.useFakeTimers();
-					const recvRequest = this.sinon.spy(usbDev.protocol, 'recvRequest');
+					sinon.useFakeTimers();
+					const recvRequest = sinon.spy(usbDev.protocol, 'recvRequest');
 					const req = dev.sendControlRequest(REQUEST_1);
 					await this.checkTimeout();
 					await req;
@@ -390,10 +388,10 @@ describe('device-base', () => {
 				});
 
 				it('can receive a reply with payload data', async function test() {
-					this.sinon.useFakeTimers();
+					sinon.useFakeTimers();
 					const repData = Buffer.from('reply data');
-					this.sinon.stub(usbDev.protocol, 'replyData').returns(repData);
-					const recvRequest = this.sinon.spy(usbDev.protocol, 'recvRequest');
+					sinon.stub(usbDev.protocol, 'replyData').returns(repData);
+					const recvRequest = sinon.spy(usbDev.protocol, 'recvRequest');
 					const reqId = usbDev.protocol.nextRequestId;
 					const req = dev.sendControlRequest(REQUEST_1);
 					await this.checkTimeout();
@@ -405,11 +403,11 @@ describe('device-base', () => {
 				});
 
 				it('can receive reply data in multiple chunks', async function test() {
-					this.sinon.useFakeTimers();
+					sinon.useFakeTimers();
 					const chunk1 = Buffer.from('A'.repeat(usbImpl.MAX_CONTROL_TRANSFER_DATA_SIZE));
 					const chunk2 = Buffer.from('B'.repeat(usbImpl.MAX_CONTROL_TRANSFER_DATA_SIZE - 1));
-					this.sinon.stub(usbDev.protocol, 'replyData').returns(Buffer.concat([chunk1, chunk2]));
-					const recvRequest = this.sinon.spy(usbDev.protocol, 'recvRequest');
+					sinon.stub(usbDev.protocol, 'replyData').returns(Buffer.concat([chunk1, chunk2]));
+					const recvRequest = sinon.spy(usbDev.protocol, 'recvRequest');
 					const reqId = usbDev.protocol.nextRequestId;
 					const req = dev.sendControlRequest(REQUEST_1);
 					await this.checkTimeout();
@@ -426,10 +424,10 @@ describe('device-base', () => {
 				});
 
 				it('polls the USB device until it allocates a buffer for the request data', async function test() {
-					this.sinon.useFakeTimers();
-					this.sinon.stub(usbDev.protocol, 'initRequest')
+					sinon.useFakeTimers();
+					sinon.stub(usbDev.protocol, 'initRequest')
 						.returns(proto.Status.PENDING);
-					const checkBuffer = this.sinon.stub(usbDev.protocol, 'checkBuffer')
+					const checkBuffer = sinon.stub(usbDev.protocol, 'checkBuffer')
 						.onFirstCall().returns(proto.Status.PENDING)
 						.onSecondCall().returns(proto.Status.PENDING)
 						.returns(proto.Status.OK);
@@ -446,8 +444,8 @@ describe('device-base', () => {
 				});
 
 				it('polls the USB device until it completes processing of a request', async function test() {
-					this.sinon.useFakeTimers();
-					const checkRequest = this.sinon.stub(usbDev.protocol, 'checkRequest')
+					sinon.useFakeTimers();
+					const checkRequest = sinon.stub(usbDev.protocol, 'checkRequest')
 						.onFirstCall().returns(proto.Status.PENDING)
 						.onSecondCall().returns(proto.Status.PENDING)
 						.returns(proto.Status.OK);
@@ -462,8 +460,8 @@ describe('device-base', () => {
 				});
 
 				it('resolves to an object containing the result code', async function test() {
-					this.sinon.useFakeTimers();
-					this.sinon.stub(usbDev.protocol, 'replyResult').returns(1234);
+					sinon.useFakeTimers();
+					sinon.stub(usbDev.protocol, 'replyResult').returns(1234);
 					const req = dev.sendControlRequest(REQUEST_1);
 					await this.checkTimeout();
 					const rep = await req;
@@ -473,9 +471,9 @@ describe('device-base', () => {
 				});
 
 				it('resolves to an object containing the reply data', async function test() {
-					this.sinon.useFakeTimers();
-					this.sinon.stub(usbDev.protocol, 'replyResult').returns(0);
-					this.sinon.stub(usbDev.protocol, 'replyData').returns(Buffer.from('reply data'));
+					sinon.useFakeTimers();
+					sinon.stub(usbDev.protocol, 'replyResult').returns(0);
+					sinon.stub(usbDev.protocol, 'replyData').returns(Buffer.from('reply data'));
 					const req = dev.sendControlRequest(REQUEST_1);
 					await this.checkTimeout();
 					const rep = await req;
@@ -486,9 +484,9 @@ describe('device-base', () => {
 				});
 
 				it('sends requests to the USB device concurrently', async function test() {
-					this.sinon.useFakeTimers();
-					this.sinon.stub(usbDev.protocol, 'checkRequest').returns(proto.Status.PENDING);
-					const initRequest = this.sinon.spy(usbDev.protocol, 'initRequest');
+					sinon.useFakeTimers();
+					sinon.stub(usbDev.protocol, 'checkRequest').returns(proto.Status.PENDING);
+					const initRequest = sinon.spy(usbDev.protocol, 'initRequest');
 					dev.sendControlRequest(REQUEST_1);
 					dev.sendControlRequest(REQUEST_2);
 					await this.checkTimeout();
@@ -500,9 +498,9 @@ describe('device-base', () => {
 					// Reopen the device with different settings
 					await dev.close();
 					await dev.open({ concurrentRequests: 1 });
-					this.sinon.useFakeTimers();
-					this.sinon.stub(usbDev.protocol, 'checkRequest').returns(proto.Status.PENDING);
-					const initRequest = this.sinon.spy(usbDev.protocol, 'initRequest');
+					sinon.useFakeTimers();
+					sinon.stub(usbDev.protocol, 'checkRequest').returns(proto.Status.PENDING);
+					const initRequest = sinon.spy(usbDev.protocol, 'initRequest');
 					dev.sendControlRequest(REQUEST_1);
 					dev.sendControlRequest(REQUEST_2);
 					await this.checkTimeout();
@@ -511,16 +509,16 @@ describe('device-base', () => {
 				});
 
 				it('times out after a specified amount of time', async function test() {
-					this.sinon.useFakeTimers();
+					sinon.useFakeTimers();
 					const req = dev.sendControlRequest(REQUEST_1, null, { timeout: 1000 });
-					this.tick(1000);
+					await this.tick(1000);
 					await expect(req).to.be.rejectedWith(error.TimeoutError);
 				});
 
 				it('resets an active request when it times out', async function test() {
-					this.sinon.useFakeTimers();
-					this.sinon.stub(usbDev.protocol, 'checkRequest').returns(proto.Status.PENDING);
-					const resetRequest = this.sinon.spy(usbDev.protocol, 'resetRequest');
+					sinon.useFakeTimers();
+					sinon.stub(usbDev.protocol, 'checkRequest').returns(proto.Status.PENDING);
+					const resetRequest = sinon.spy(usbDev.protocol, 'resetRequest');
 					const req = dev.sendControlRequest(REQUEST_1, null, { timeout: 1000 });
 					await this.tick(1000);
 					await expect(req).to.be.rejectedWith(error.TimeoutError);
@@ -528,8 +526,8 @@ describe('device-base', () => {
 				});
 
 				it('converts the reply data to a string if the request data is a string', async function test() {
-					this.sinon.useFakeTimers();
-					this.sinon.stub(usbDev.protocol, 'replyData').returns(Buffer.from('reply data'));
+					sinon.useFakeTimers();
+					sinon.stub(usbDev.protocol, 'replyData').returns(Buffer.from('reply data'));
 					const req = dev.sendControlRequest(REQUEST_1, 'request data');
 					await this.checkTimeout();
 					const rep = await req;
@@ -584,6 +582,8 @@ describe('device-base', () => {
 
 			it('open and close', async () => {
 				const devs = await getDevices();
+				expect(devs).to.not.be.empty;
+
 				for (let dev of devs) {
 					await dev.open();
 					expect(dev.isOpen).to.be.true;

@@ -56,7 +56,7 @@ function randomString(minLen = 6, maxLen = -1) {
 
 function nextTick() {
 	return new Promise(resolve => {
-		setImmediate(resolve);
+		process.nextTick(resolve);
 	});
 }
 

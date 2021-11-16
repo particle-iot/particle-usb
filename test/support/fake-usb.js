@@ -638,7 +638,7 @@ class Device {
 	}
 }
 
-async function getDevices(filters) {
+async function getUsbDevices(filters) {
 	// Validate the filtering options
 	filters = !filters ? [] : filters.map(f => {
 		if (f.productId && !f.vendorId) {
@@ -759,7 +759,7 @@ module.exports = {
 	Protocol,
 	DfuClass,
 	Device,
-	getDevices,
+	getUsbDevices,
 	addDevice,
 	addDevices,
 	addPhoton,
