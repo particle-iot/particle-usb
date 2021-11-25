@@ -1,7 +1,7 @@
-const { fakeUsb, expect, nextTick } = require('./support');
+const { fakeUsb, expect } = require('./support');
 const proxyquire = require('proxyquire');
 
-const { getDevices, PollingPolicy } = proxyquire('../src/particle-usb', {
+const { getDevices } = proxyquire('../src/particle-usb', {
 	'./device-base': proxyquire('../src/device-base', {
 		'./usb-device-node': fakeUsb
 	})

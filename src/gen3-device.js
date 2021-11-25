@@ -28,7 +28,7 @@ const Gen3Device = (base) => class extends base {
 	get isGen3Device() {
 		return true;
 	}
-}
+};
 
 module.exports = {
 	Gen3Device

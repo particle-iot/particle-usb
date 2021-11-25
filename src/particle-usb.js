@@ -12,8 +12,7 @@ const { NetworkStatus } = require('./network-device');
 const { WifiAntenna, WifiSecurity, WifiCipher, EapMethod } = require('./wifi-device');
 const { CloudConnectionStatus, ServerProtocol } = require('./cloud-device');
 const { Result } = require('./result');
-const { DeviceError, NotFoundError, NotAllowedError, StateError, TimeoutError, MemoryError, ProtocolError, UsbError,
-	InternalError, RequestError } = require('./error');
+const { DeviceError, NotFoundError, NotAllowedError, StateError, TimeoutError, MemoryError, ProtocolError, UsbError, InternalError, RequestError } = require('./error');
 const { config } = require('./config');
 
 // Create a class for each platform by mixing in different capabilities
