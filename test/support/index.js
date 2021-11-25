@@ -7,8 +7,6 @@ const chaiSubset = require('chai-subset');
 const sinon = require('sinon');
 const sinonChai = require('sinon-chai');
 
-require('mocha-sinon');
-
 const { expect, assert } = chai;
 
 const PRINTABLE_CHARS = ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~';
