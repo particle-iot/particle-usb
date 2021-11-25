@@ -47,6 +47,7 @@
     "@particle/device-constants": "^1.2.0"
   },
   "devDependencies": {
+    "@particle/device-constants": "^1.0.1",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chai-subset": "^1.6.0",
