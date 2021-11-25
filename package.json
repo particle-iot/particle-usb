@@ -38,7 +38,6 @@
     "reinstall": "npm run clean && rm -rf ./node_modules && npm i"
   },
   "dependencies": {
-    "ip": "^1.1.5",
     "protobufjs": "^6.8.9",
     "usb": "<= 1.6.2"
   },
