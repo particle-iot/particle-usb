@@ -1,12 +1,10 @@
-const { VError } = require('verror');
-
 /**
  * Generic device error. This is a base class for all errors reported by the library.
  */
-class DeviceError extends VError {
+class DeviceError extends Error {
 	constructor(...args) {
 		super(...args);
-		Error.captureStackTrace(this, this.constructor);
+		this.name = this.constructor.name;
 	}
 }
 
@@ -16,7 +14,7 @@ class DeviceError extends VError {
 class NotFoundError extends DeviceError {
 	constructor(...args) {
 		super(...args);
-		Error.captureStackTrace(this, this.constructor);
+		this.name = this.constructor.name;
 	}
 }
 
@@ -26,7 +24,7 @@ class NotFoundError extends DeviceError {
 class NotAllowedError extends DeviceError {
 	constructor(...args) {
 		super(...args);
-		Error.captureStackTrace(this, this.constructor);
+		this.name = this.constructor.name;
 	}
 }
 
@@ -36,7 +34,7 @@ class NotAllowedError extends DeviceError {
 class StateError extends DeviceError {
 	constructor(...args) {
 		super(...args);
-		Error.captureStackTrace(this, this.constructor);
+		this.name = this.constructor.name;
 	}
 }
 
@@ -46,7 +44,7 @@ class StateError extends DeviceError {
 class TimeoutError extends DeviceError {
 	constructor(...args) {
 		super(...args);
-		Error.captureStackTrace(this, this.constructor);
+		this.name = this.constructor.name;
 	}
 }
 
@@ -56,7 +54,7 @@ class TimeoutError extends DeviceError {
 class MemoryError extends DeviceError {
 	constructor(...args) {
 		super(...args);
-		Error.captureStackTrace(this, this.constructor);
+		this.name = this.constructor.name;
 	}
 }
 
@@ -66,7 +64,7 @@ class MemoryError extends DeviceError {
 class ProtocolError extends DeviceError {
 	constructor(...args) {
 		super(...args);
-		Error.captureStackTrace(this, this.constructor);
+		this.name = this.constructor.name;
 	}
 }
 
@@ -76,7 +74,7 @@ class ProtocolError extends DeviceError {
 class UsbError extends DeviceError {
 	constructor(...args) {
 		super(...args);
-		Error.captureStackTrace(this, this.constructor);
+		this.name = this.constructor.name;
 	}
 }
 
@@ -86,7 +84,7 @@ class UsbError extends DeviceError {
 class InternalError extends DeviceError {
 	constructor(...args) {
 		super(...args);
-		Error.captureStackTrace(this, this.constructor);
+		this.name = this.constructor.name;
 	}
 }
 
@@ -96,8 +94,8 @@ class InternalError extends DeviceError {
 class RequestError extends DeviceError {
 	constructor(result, ...args) {
 		super(...args);
+		this.name = this.constructor.name;
 		this.result = result;
-		Error.captureStackTrace(this, this.constructor);
 	}
 }
 

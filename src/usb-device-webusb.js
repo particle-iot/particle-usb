@@ -51,7 +51,7 @@ class UsbDevice {
 		try {
 			await this._dev.open();
 		} catch (err) {
-			throw new UsbError(err, 'Unable to open USB device');
+			throw new UsbError('Unable to open USB device', { cause: err });
 		}
 	}
 
@@ -59,7 +59,7 @@ class UsbDevice {
 		try {
 			await this._dev.close();
 		} catch (err) {
-			throw new UsbError(err, 'Unable to close USB device');
+			throw new UsbError('Unable to close USB device', { cause: err });
 		}
 	}
 
@@ -74,7 +74,7 @@ class UsbDevice {
 			}, setup.wLength);
 			return Buffer.from(res.data.buffer);
 		} catch (err) {
-			throw new UsbError(err, 'IN control transfer failed');
+			throw new UsbError('IN control transfer failed', { cause: err });
 		}
 	}
 
@@ -91,7 +91,7 @@ class UsbDevice {
 				index: setup.wIndex
 			}, data); // data is optional
 		} catch (err) {
-			throw new UsbError(err, 'OUT control transfer failed');
+			throw new UsbError('OUT control transfer failed', { cause: err });
 		}
 	}
 
@@ -99,7 +99,7 @@ class UsbDevice {
 		try {
 			await this._dev.claimInterface(intrface);
 		} catch (err) {
-			throw new UsbError(err, 'Failed to claim interface');
+			throw new UsbError('Failed to claim interface', { cause: err });
 		}
 	}
 
@@ -107,7 +107,7 @@ class UsbDevice {
 		try {
 			await this._dev.releaseInterface(intrface);
 		} catch (err) {
-			throw new UsbError(err, 'Failed to release interface');
+			throw new UsbError('Failed to release interface', { cause: err });
 		}
 	}
 
@@ -115,7 +115,7 @@ class UsbDevice {
 		try {
 			await this._dev.selectAlternateInterface(intrface, setting);
 		} catch (err) {
-			throw new UsbError(err, 'Failed to set alt setting');
+			throw new UsbError('Failed to set alt setting', { cause: err });
 		}
 	}
 
@@ -190,7 +190,7 @@ async function getUsbDevices(filters) {
 			}
 		}
 	} catch (err) {
-		throw new UsbError(err, 'Unable to enumerate USB devices');
+		throw new UsbError('Unable to enumerate USB devices', { cause: err });
 	}
 	devs = devs.map(dev => new UsbDevice(dev));
 	return devs;

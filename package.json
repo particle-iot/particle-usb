@@ -40,8 +40,7 @@
   "dependencies": {
     "ip": "^1.1.5",
     "protobufjs": "^6.8.9",
-    "usb": "<= 1.6.2",
-    "verror": "^1.10.0"
+    "usb": "<= 1.6.2"
   },
   "peerDependencies": {
     "@particle/device-constants": "^1.2.0"

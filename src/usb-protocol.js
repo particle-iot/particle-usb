@@ -132,7 +132,7 @@ function parseReply(data) {
 		return rep;
 	} catch (err) {
 		if (!(err instanceof ProtocolError)) {
-			throw new ProtocolError(err, 'Unable to parse service reply');
+			throw new ProtocolError('Unable to parse service reply', { cause: err });
 		}
 		throw err;
 	}

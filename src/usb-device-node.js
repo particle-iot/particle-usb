@@ -17,9 +17,9 @@ const MAX_CONTROL_TRANSFER_DATA_SIZE = 4096;
 
 function wrapUsbError(err, message) {
 	if (err.message === 'LIBUSB_ERROR_ACCESS') {
-		return new NotAllowedError(err, message);
+		return new NotAllowedError(message, { cause: err });
 	}
-	return new UsbError(err, message);
+	return new UsbError(message, { cause: err });
 }
 
 class UsbDevice {
