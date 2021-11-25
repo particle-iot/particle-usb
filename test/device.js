@@ -40,16 +40,16 @@ describe('device', () => {
 				const devs = await getDevices();
 				expect(devs).to.not.be.empty;
 
-				for (let dev of devs) {
+				for (const dev of devs) {
 					await dev.open();
 					expect(dev.isOpen).to.be.true;
 				}
 
-				for (let dev of devs) {
+				for (const dev of devs) {
 					await dev.reset();
 				}
 
-				for (let dev of devs) {
+				for (const dev of devs) {
 					await dev.close();
 					expect(dev.isOpen).to.be.false;
 				}

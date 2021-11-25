@@ -20,7 +20,7 @@ function fromProtobufEnum(pbEnum, map, unknownVal) {
 		}
 	};
 	const obj = Object.create(funcs);
-	for (let val in map) {
+	for (const val in map) {
 		const pbName = map[val];
 		const pbVal = pbEnum[pbName];
 		if (pbVal === undefined) {
@@ -65,7 +65,7 @@ function transformMessage(msg, map) {
 }
 
 function checkFromProtobufMessageMap(pbMsgProto, map) {
-	for (let name in map) {
+	for (const name in map) {
 		if (!Object.prototype.hasOwnProperty.call(pbMsgProto, name)) {
 			throw new Error(`Unknown message field: ${name}`);
 		}

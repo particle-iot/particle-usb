@@ -36,7 +36,7 @@ const VendorRequest = {
 const MAX_REQUEST_ID = 0xffff;
 
 // USB devices "attached" to the host
-let devices = new Map();
+const devices = new Map();
 
 // Last used internal device ID
 let lastDeviceId = 0;
@@ -680,8 +680,8 @@ function addDevice(options) {
 }
 
 function addDevices(options) {
-	let devs = [];
-	for (let opts of options) {
+	const devs = [];
+	for (const opts of options) {
 		devs.push(addDevice(opts));
 	}
 	return devs;
@@ -749,7 +749,7 @@ function removeDevice(dev) {
 }
 
 function clearDevices() {
-	for (let dev of devices.values()) {
+	for (const dev of devices.values()) {
 		dev.detach();
 	}
 	devices.clear();

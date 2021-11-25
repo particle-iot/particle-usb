@@ -79,12 +79,13 @@ class UsbDevice {
 
 	transferIn(setup) {
 		return new Promise((resolve, reject) => {
-			this._dev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, setup.wLength, (err, data) => {
-				if (err) {
-					return reject(wrapUsbError(err, 'IN control transfer failed'));
-				}
-				resolve(data);
-			});
+			this._dev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, setup.wLength,
+				(err, data) => {
+					if (err) {
+						return reject(wrapUsbError(err, 'IN control transfer failed'));
+					}
+					resolve(data);
+				});
 		});
 	}
 
@@ -219,9 +220,9 @@ async function getUsbDevices(filters) {
 	if (filters.length > 0) {
 		// Filter the list of devices
 		const filtDevs = [];
-		for (let dev of devs) {
+		for (const dev of devs) {
 			let serialNum = null;
-			for (let f of filters) {
+			for (const f of filters) {
 				if (f.vendorId && dev.vendorId !== f.vendorId) {
 					continue;
 				}

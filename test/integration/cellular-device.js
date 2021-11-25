@@ -12,7 +12,7 @@ describe('cellular-device', function desc() {
 
 	before(function setup() {
 		return integrationTest(this, async () => {
-			let devs = await getDevices();
+			devs = await getDevices();
 			devs = devs.filter(dev => dev.isCellularDevice);
 			if (!devs.length) {
 				throw new Error('This test suite requires at least one cellular device');
@@ -22,7 +22,7 @@ describe('cellular-device', function desc() {
 	});
 
 	afterEach(async () => {
-		for (let dev of devs) {
+		for (const dev of devs) {
 			await dev.close();
 		}
 	});

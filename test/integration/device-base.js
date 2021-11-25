@@ -25,7 +25,7 @@ describe('device-base', function desc() {
 	});
 
 	afterEach(async () => {
-		for (let dev of devs) {
+		for (const dev of devs) {
 			await dev.close();
 		}
 	});

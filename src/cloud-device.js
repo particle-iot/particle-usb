@@ -178,8 +178,8 @@ const CloudDevice = base => class extends base {
 	 */
 	setDevicePrivateKey(data, protocol) {
 		return this._getServerProtocol(protocol).then(protocol => {
-			const keyType = (protocol === proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_DEVICE_PRIVATE_KEY :
-				proto.SecurityKeyType.TCP_DEVICE_PRIVATE_KEY);
+			const keyType = (protocol === proto.ServerProtocolType.UDP_PROTOCOL ?
+				proto.SecurityKeyType.UDP_DEVICE_PRIVATE_KEY : proto.SecurityKeyType.TCP_DEVICE_PRIVATE_KEY);
 			return this._setSecurityKey(keyType, data);
 		});
 	}
@@ -198,8 +198,8 @@ const CloudDevice = base => class extends base {
 	 */
 	getDevicePrivateKey(protocol) {
 		return this._getServerProtocol(protocol).then(protocol => {
-			const keyType = (protocol === proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_DEVICE_PRIVATE_KEY :
-				proto.SecurityKeyType.TCP_DEVICE_PRIVATE_KEY);
+			const keyType = (protocol === proto.ServerProtocolType.UDP_PROTOCOL ?
+				proto.SecurityKeyType.UDP_DEVICE_PRIVATE_KEY : proto.SecurityKeyType.TCP_DEVICE_PRIVATE_KEY);
 			return this._getSecurityKey(keyType);
 		});
 	}
@@ -219,8 +219,8 @@ const CloudDevice = base => class extends base {
 	 */
 	setDevicePublicKey(data, protocol) {
 		return this._getServerProtocol(protocol).then(protocol => {
-			const keyType = (protocol === proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_DEVICE_PUBLIC_KEY :
-				proto.SecurityKeyType.TCP_DEVICE_PUBLIC_KEY);
+			const keyType = (protocol === proto.ServerProtocolType.UDP_PROTOCOL ?
+				proto.SecurityKeyType.UDP_DEVICE_PUBLIC_KEY : proto.SecurityKeyType.TCP_DEVICE_PUBLIC_KEY);
 			return this._setSecurityKey(keyType, data);
 		});
 	}
@@ -239,8 +239,8 @@ const CloudDevice = base => class extends base {
 	 */
 	getDevicePublicKey(data, protocol) {
 		return this._getServerProtocol(protocol).then(protocol => {
-			const keyType = (protocol === proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_DEVICE_PUBLIC_KEY :
-				proto.SecurityKeyType.TCP_DEVICE_PUBLIC_KEY);
+			const keyType = (protocol === proto.ServerProtocolType.UDP_PROTOCOL ?
+				proto.SecurityKeyType.UDP_DEVICE_PUBLIC_KEY : proto.SecurityKeyType.TCP_DEVICE_PUBLIC_KEY);
 			return this._getSecurityKey(keyType);
 		});
 	}
@@ -260,8 +260,8 @@ const CloudDevice = base => class extends base {
 	 */
 	setServerPublicKey(data, protocol) {
 		return this._getServerProtocol(protocol).then(protocol => {
-			const keyType = (protocol === proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_SERVER_PUBLIC_KEY :
-				proto.SecurityKeyType.TCP_SERVER_PUBLIC_KEY);
+			const keyType = (protocol === proto.ServerProtocolType.UDP_PROTOCOL ?
+				proto.SecurityKeyType.UDP_SERVER_PUBLIC_KEY : proto.SecurityKeyType.TCP_SERVER_PUBLIC_KEY);
 			return this._setSecurityKey(keyType, data);
 		});
 	}
@@ -280,8 +280,8 @@ const CloudDevice = base => class extends base {
 	 */
 	getServerPublicKey(data, protocol) {
 		return this._getServerProtocol(protocol).then(protocol => {
-			const keyType = (protocol === proto.ServerProtocolType.UDP_PROTOCOL ? proto.SecurityKeyType.UDP_SERVER_PUBLIC_KEY :
-				proto.SecurityKeyType.TCP_SERVER_PUBLIC_KEY);
+			const keyType = (protocol === proto.ServerProtocolType.UDP_PROTOCOL ?
+				proto.SecurityKeyType.UDP_SERVER_PUBLIC_KEY : proto.SecurityKeyType.TCP_SERVER_PUBLIC_KEY);
 			return this._getSecurityKey(keyType);
 		});
 	}
