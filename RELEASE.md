@@ -1,9 +1,9 @@
 # Releasing a new version
 
-Packages are only released from the `master` branch after peer review.
+Packages are only released from the `main` branch after peer review.
 
 1. make sure you have the latest:
-	* `$ git checkout master`
+	* `$ git checkout main`
 	* `$ git pull`
 2. make sure tests pass
 	* `$ npm test`
