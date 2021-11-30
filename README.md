@@ -1,6 +1,6 @@
 # particle-usb
 
-[![Build Status](https://travis-ci.org/particle-iot/particle-usb.svg?branch=master)](https://travis-ci.org/particle-iot/particle-usb)
+![CI](https://github.com/particle-iot/particle-usb/workflows/CICD/badge.svg?branch=main)
 
 A library for accessing Particle USB devices.
 
