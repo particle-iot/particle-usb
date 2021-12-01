@@ -103,9 +103,6 @@ export class DeviceBase extends EventEmitter {
 		this._fwVer = null; // Firmware version
 		this._id = null; // Device ID
 		this._dfu = null; // DFU class implementation
-
-		// Apply device quirks
-		this._dev.quirks = this._info.quirks;
 	}
 
 	/**
@@ -118,6 +115,9 @@ export class DeviceBase extends EventEmitter {
 	 * @return {Promise}
 	 */
 	open(options) {
+		// Apply device quirks
+		this._dev.quirks = this._info.quirks;
+
 		options = Object.assign({
 			concurrentRequests: null // The maximum number of concurrent requests is limited by the device
 		}, options);
@@ -347,6 +347,13 @@ export class DeviceBase extends EventEmitter {
 	 */
 	get usbDevice() {
 		return this._dev;
+	}
+
+	/**
+	 * Device USB quirks
+	 */
+	get quirks() {
+		return this._info.quirks;
 	}
 
 	_process() {
