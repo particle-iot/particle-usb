@@ -14,9 +14,10 @@ A library for accessing Particle USB devices.
 Using npm:
 
 ```sh
-$ npm install particle-usb
+$ npm install particle-usb @particle/device-constants
 ```
 
+_NOTE: `particle-usb` declares `@particle/device-constants` as a [`peerDependency`](https://docs.npmjs.com/cli/v6/configuring-npm/package-json#peerdependencies) - this ensures your app only ever has one copy of that dependency_
 
 ## Usage
 
