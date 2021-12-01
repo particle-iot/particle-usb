@@ -9,7 +9,7 @@ import EventEmitter from 'events';
 
 // Platforms arranged by vendor/product IDs
 const PLATFORM_USB_IDS = PLATFORMS.reduce((obj, platform) => {
-	const addMapping = (obj, { vendorId, productId }, dfu) => {
+	const addMapping = (obj, { vendorId, productId, quirks }, dfu) => {
 		if (!vendorId) {
 			return;
 		}
@@ -21,7 +21,8 @@ const PLATFORM_USB_IDS = PLATFORMS.reduce((obj, platform) => {
 			id: platform.id,
 			vendorId,
 			productId,
-			dfu
+			dfu,
+			quirks
 		};
 	};
 
@@ -114,6 +115,9 @@ export class DeviceBase extends EventEmitter {
 	 * @return {Promise}
 	 */
 	open(options) {
+		// Apply device quirks
+		this._dev.quirks = this._info.quirks;
+
 		options = Object.assign({
 			concurrentRequests: null // The maximum number of concurrent requests is limited by the device
 		}, options);
@@ -343,6 +347,13 @@ export class DeviceBase extends EventEmitter {
 	 */
 	get usbDevice() {
 		return this._dev;
+	}
+
+	/**
+	 * Device USB quirks
+	 */
+	get quirks() {
+		return this._info.quirks;
 	}
 
 	_process() {

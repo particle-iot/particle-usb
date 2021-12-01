@@ -36,6 +36,7 @@ export class UsbDevice {
 				serialNumber: null
 			};
 		}
+		this._quirks = {};
 	}
 
 	open() {
@@ -90,7 +91,15 @@ export class UsbDevice {
 	transferOut(setup, data) {
 		return new Promise((resolve, reject) => {
 			if (!data) {
-				data = Buffer.alloc(0);
+				// NOTE: this is a quirk of some USB device-side implementations
+				// where zero-length (no data stage) OUT control requests are not
+				// completed and cause a timeout.
+				// The workaround is always including a data stage.
+				if (!this._quirks.controlOutTransfersRequireDataStage) {
+					data = Buffer.alloc(0);
+				} else {
+					data = Buffer.alloc(1);
+				}
 			}
 			this._dev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, data, err => {
 				if (err) {
@@ -172,6 +181,14 @@ export class UsbDevice {
 
 	get internalObject() {
 		return this._dev;
+	}
+
+	get quirks() {
+		return this._quirks;
+	}
+
+	set quirks(qs) {
+		this._quirks = qs;
 	}
 }
 
