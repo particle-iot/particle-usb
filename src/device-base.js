@@ -9,7 +9,7 @@ import EventEmitter from 'events';
 
 // Platforms arranged by vendor/product IDs
 const PLATFORM_USB_IDS = PLATFORMS.reduce((obj, platform) => {
-	const addMapping = (obj, { vendorId, productId }, dfu) => {
+	const addMapping = (obj, { vendorId, productId, quirks }, dfu) => {
 		if (!vendorId) {
 			return;
 		}
@@ -21,7 +21,8 @@ const PLATFORM_USB_IDS = PLATFORMS.reduce((obj, platform) => {
 			id: platform.id,
 			vendorId,
 			productId,
-			dfu
+			dfu,
+			quirks
 		};
 	};
 
@@ -102,6 +103,9 @@ export class DeviceBase extends EventEmitter {
 		this._fwVer = null; // Firmware version
 		this._id = null; // Device ID
 		this._dfu = null; // DFU class implementation
+
+		// Apply device quirks
+		this._dev.quirks = this._info.quirks;
 	}
 
 	/**

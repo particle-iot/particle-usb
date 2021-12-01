@@ -12,11 +12,12 @@ PLATFORMS.forEach((platform) => {
 });
 
 // Convert the "0x2b04" id strings to 0x2b04 numbers
-function parseIds({ vendorId, productId }) {
-	return {
+function parseIds({ vendorId, productId, quirks }) {
+	return Object.assign({
 		vendorId: Number(vendorId),
-		productId: Number(productId)
-	};
+		productId: Number(productId),
+		quirks: quirks || {}
+	});
 }
 
 function clone(x) {

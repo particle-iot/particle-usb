@@ -44,6 +44,7 @@ export class UsbDevice {
 	constructor(dev) {
 		this._dev = dev;
 		this._dev.timeout = 5000; // Use longer timeout for control transfers
+		this._quirks = {};
 	}
 
 	async open() {
@@ -79,6 +80,9 @@ export class UsbDevice {
 
 	async transferOut(setup, data) {
 		try {
+			if (!data && this._quirks.controlOutTransfersRequireDataStage) {
+				data = Buffer.alloc(1);
+			}
 			await this._dev.controlTransferOut({
 				requestType: bmRequestTypeToString(setup.bmRequestType),
 				recipient: bmRequestTypeToRecipientString(setup.bmRequestType),
@@ -133,6 +137,14 @@ export class UsbDevice {
 
 	get internalObject() {
 		return this._dev;
+	}
+
+	get quirks() {
+		return this._quirks;
+	}
+
+	set quirks(qs) {
+		this._quirks = qs;
 	}
 }
 
