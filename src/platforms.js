@@ -4,20 +4,20 @@ export const PLATFORMS = Object.values(clone(deviceConstants)); // TODO: (Julien
 
 PLATFORMS.forEach((platform) => {
 	if (platform.usb) {
-		platform.usb = parseIds(platform.usb);
+		platform.usb = parseUsbInfo(platform.usb);
 	}
 	if (platform.dfu) {
-		platform.dfu = parseIds(platform.dfu);
+		platform.dfu = parseUsbInfo(platform.dfu);
 	}
 });
 
 // Convert the "0x2b04" id strings to 0x2b04 numbers
-function parseIds({ vendorId, productId, quirks }) {
-	return Object.assign({
+function parseUsbInfo({ vendorId, productId, quirks }) {
+	return {
 		vendorId: Number(vendorId),
 		productId: Number(productId),
 		quirks: quirks || {}
-	});
+	};
 }
 
 function clone(x) {
