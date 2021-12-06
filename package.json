@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "protobufjs": "^6.11.2",
-    "usb": "<= 1.6.2"
+    "usb": "^1.9.2"
   },
   "peerDependencies": {
     "@particle/device-constants": "^1.2.0"
