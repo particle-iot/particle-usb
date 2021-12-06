@@ -1,6 +1,6 @@
-import { getDevices } from '../../src/particle-usb';
+const { getDevices } = require('../../src/particle-usb');
 
-import { expect, integrationTest } from '../support';
+const { integrationTest } = require('../support');
 
 describe('device-quirks', function desc() {
 	// Cellular device operations may take a while
@@ -21,20 +21,20 @@ describe('device-quirks', function desc() {
 	});
 
 	afterEach(async () => {
-		for (let dev of devs) {
+		for (const dev of devs) {
 			await dev.close();
 		}
 	});
 
-    describe('controlOutTransfersRequireDataStage', () => {
-        it('disconnectFromCloud() does not timeout', async () => {
-            await dev.open();
-            // Force controlOutTransfersRequireDataStage quirk
-            let quirks = dev.usbDevice.quirks;
-            quirks.controlOutTransfersRequireDataStage = true;
-            dev.usbDevice.quirks = quirks;
-            // This is one of the requests without a data stage
-            await dev.disconnectFromCloud({force: true});
-        });
-    });
+	describe('controlOutTransfersRequireDataStage', () => {
+		it('disconnectFromCloud() does not timeout', async () => {
+			await dev.open();
+			// Force controlOutTransfersRequireDataStage quirk
+			const quirks = dev.usbDevice.quirks;
+			quirks.controlOutTransfersRequireDataStage = true;
+			dev.usbDevice.quirks = quirks;
+			// This is one of the requests without a data stage
+			await dev.disconnectFromCloud({ force: true });
+		});
+	});
 });
