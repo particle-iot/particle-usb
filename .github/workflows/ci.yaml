@@ -27,9 +27,10 @@ jobs:
         with:
           registry-url: 'https://registry.npmjs.org'
           node-version: ${{ matrix.node_version }}
+          cache: 'npm'
       - name: Install Dependencies
         run: |
-          npm install
+          npm ci
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Run Tests
@@ -49,9 +50,10 @@ jobs:
         with:
           registry-url: 'https://registry.npmjs.org'
           node-version: '16'
+          cache: 'npm'
       - name: Install Dependencies
         run: |
-          npm install
+          npm ci
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Build & Publish Packages
