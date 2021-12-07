@@ -118,7 +118,7 @@ const RESULT_CODE_MESSAGES = RESULT_CODES.reduce((obj, result) => {
  *
  * @enum {Number}
  */
-export const Result = RESULT_CODES.reduce((obj, result) => {
+const Result = RESULT_CODES.reduce((obj, result) => {
 	obj[result.id] = result.value;
 	return obj;
 }, {});
@@ -129,6 +129,11 @@ export const Result = RESULT_CODES.reduce((obj, result) => {
  * @param {Number} result Result code.
  * @return {String} Error message.
  */
-export function messageForResultCode(result) {
+function messageForResultCode(result) {
 	return (RESULT_CODE_MESSAGES[result] || 'Request error');
 }
+
+module.exports = {
+	Result,
+	messageForResultCode
+};

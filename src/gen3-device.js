@@ -1,4 +1,4 @@
-import { Request } from './request';
+const { Request } = require('./request');
 
 /**
  * Gen 3 device.
@@ -8,7 +8,7 @@ import { Request } from './request';
  *
  * @mixin
  */
-export const Gen3Device = (base) => class extends base {
+const Gen3Device = (base) => class extends base {
 	/**
 	 * Set the setup done flag.
 	 *
@@ -28,4 +28,8 @@ export const Gen3Device = (base) => class extends base {
 	get isGen3Device() {
 		return true;
 	}
-}
+};
+
+module.exports = {
+	Gen3Device
+};

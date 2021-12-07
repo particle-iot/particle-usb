@@ -1,19 +1,19 @@
-import { DeviceBase, openDeviceById } from './device-base';
-import { Request } from './request';
-import { Result, messageForResultCode } from './result';
-import { fromProtobufEnum } from './protobuf-util';
-import * as usbProto from './usb-protocol';
-import { RequestError, NotFoundError, TimeoutError } from './error';
-import { globalOptions } from './config';
+const { DeviceBase, openDeviceById } = require('./device-base');
+const { Request } = require('./request');
+const { Result, messageForResultCode } = require('./result');
+const { fromProtobufEnum } = require('./protobuf-util');
+const usbProto = require('./usb-protocol');
+const { RequestError, NotFoundError, TimeoutError } = require('./error');
+const { globalOptions } = require('./config');
 
-import proto from './protocol';
+const proto = require('./protocol');
 
 /**
  * Firmware module types.
  *
  * @enum {String}
  */
-export const FirmwareModule = fromProtobufEnum(proto.FirmwareModuleType, {
+const FirmwareModule = fromProtobufEnum(proto.FirmwareModuleType, {
 	/** Bootloader module. */
 	BOOTLOADER: 'BOOTLOADER',
 	/** System part module. */
@@ -29,7 +29,7 @@ export const FirmwareModule = fromProtobufEnum(proto.FirmwareModuleType, {
  *
  * @enum {String}
  */
-export const DeviceMode = fromProtobufEnum(proto.DeviceMode, {
+const DeviceMode = fromProtobufEnum(proto.DeviceMode, {
 	/** Device is in normal mode. */
 	NORMAL: 'NORMAL_MODE',
 	/** Device is in listening mode. */
@@ -41,7 +41,7 @@ export const DeviceMode = fromProtobufEnum(proto.DeviceMode, {
  *
  * @enum {String}
  */
-export const LogLevel = fromProtobufEnum(proto.logging.LogLevel, {
+const LogLevel = fromProtobufEnum(proto.logging.LogLevel, {
 	/** Enables logging of all messages. */
 	ALL: 'ALL',
 	/** Enables logging of trace messages. */
@@ -103,7 +103,7 @@ class RequestSender {
  * This class is not meant to be instantiated directly. Use {@link getDevices} and
  * {@link openDeviceById} to create device instances.
  */
-export class Device extends DeviceBase {
+class Device extends DeviceBase {
 	/**
 	 * Get the device's serial number.
 	 *
@@ -853,3 +853,10 @@ export class Device extends DeviceBase {
 		});
 	}
 }
+
+module.exports = {
+	FirmwareModule,
+	DeviceMode,
+	LogLevel,
+	Device
+};

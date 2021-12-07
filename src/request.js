@@ -1,7 +1,7 @@
-import proto from './protocol';
+const proto = require('./protocol');
 
 // Mapping of request types to Protobuf messages
-export const Request = {
+const Request = {
 	GET_SERIAL_NUMBER: {
 		id: 21,
 		request: proto.GetSerialNumberRequest,
@@ -223,4 +223,8 @@ export const Request = {
 		request: proto.logging.GetLogHandlersRequest,
 		reply: proto.logging.GetLogHandlersReply
 	}
+};
+
+module.exports = {
+	Request
 };

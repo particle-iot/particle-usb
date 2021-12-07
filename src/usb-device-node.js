@@ -1,5 +1,5 @@
-import { UsbError, NotAllowedError } from './error';
-import { globalOptions } from './config';
+const { UsbError, NotAllowedError } = require('./error');
+const { globalOptions } = require('./config');
 
 let usb = null;
 
@@ -13,16 +13,16 @@ try {
 }
 
 // Maximum size of a control transfer's data stage
-export const MAX_CONTROL_TRANSFER_DATA_SIZE = 4096;
+const MAX_CONTROL_TRANSFER_DATA_SIZE = 4096;
 
 function wrapUsbError(err, message) {
 	if (err.message === 'LIBUSB_ERROR_ACCESS') {
-		return new NotAllowedError(err, message);
+		return new NotAllowedError(message, { cause: err });
 	}
-	return new UsbError(err, message);
+	return new UsbError(message, { cause: err });
 }
 
-export class UsbDevice {
+class UsbDevice {
 	constructor(dev) {
 		this._dev = dev;
 		this._dev.timeout = 5000; // Use longer timeout for control transfers
@@ -79,12 +79,13 @@ export class UsbDevice {
 
 	transferIn(setup) {
 		return new Promise((resolve, reject) => {
-			this._dev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, setup.wLength, (err, data) => {
-				if (err) {
-					return reject(wrapUsbError(err, 'IN control transfer failed'));
-				}
-				resolve(data);
-			});
+			this._dev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, setup.wLength,
+				(err, data) => {
+					if (err) {
+						return reject(wrapUsbError(err, 'IN control transfer failed'));
+					}
+					resolve(data);
+				});
 		});
 	}
 
@@ -192,7 +193,7 @@ export class UsbDevice {
 	}
 }
 
-export async function getUsbDevices(filters) {
+async function getUsbDevices(filters) {
 	// Validate the filtering options
 	if (filters) {
 		filters = filters.map(f => {
@@ -219,9 +220,9 @@ export async function getUsbDevices(filters) {
 	if (filters.length > 0) {
 		// Filter the list of devices
 		const filtDevs = [];
-		for (let dev of devs) {
+		for (const dev of devs) {
 			let serialNum = null;
-			for (let f of filters) {
+			for (const f of filters) {
 				if (f.vendorId && dev.vendorId !== f.vendorId) {
 					continue;
 				}
@@ -253,3 +254,9 @@ export async function getUsbDevices(filters) {
 	}
 	return devs;
 }
+
+module.exports = {
+	MAX_CONTROL_TRANSFER_DATA_SIZE,
+	UsbDevice,
+	getUsbDevices
+};

@@ -1,11 +1,11 @@
-import { getUsbDevices, MAX_CONTROL_TRANSFER_DATA_SIZE } from './usb-device-node';
-import * as proto from './usb-protocol';
-import { PLATFORMS } from './platforms';
-import { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, assert } from './error';
-import { globalOptions } from './config';
-import { Dfu } from './dfu';
+const { getUsbDevices, MAX_CONTROL_TRANSFER_DATA_SIZE } = require('./usb-device-node');
+const proto = require('./usb-protocol');
+const { PLATFORMS } = require('./platforms');
+const { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, assert } = require('./error');
+const { globalOptions } = require('./config');
+const { Dfu } = require('./dfu');
 
-import EventEmitter from 'events';
+const EventEmitter = require('events');
 
 // Platforms arranged by vendor/product IDs
 const PLATFORM_USB_IDS = PLATFORMS.reduce((obj, platform) => {
@@ -54,7 +54,7 @@ function checkInterval(attempts, intervals) {
  *
  * @enum {Function}
  */
-export const PollingPolicy = {
+const PollingPolicy = {
 	/** Default polling policy. */
 	DEFAULT: n => checkInterval(n, DEFAULT_CHECK_INTERVALS)
 };
@@ -82,7 +82,7 @@ function ignore() {
  * This class is not meant to be instantiated directly. Use {@link getDevices} and
  * {@link openDeviceById} to create device instances.
  */
-export class DeviceBase extends EventEmitter {
+class DeviceBase extends EventEmitter {
 	constructor(dev, info) {
 		super();
 		this._dev = dev; // USB device handle
@@ -724,7 +724,7 @@ export class DeviceBase extends EventEmitter {
 	}
 }
 
-export async function getDevices({ types = [], includeDfu = true } = {}) {
+async function getDevices({ types = [], includeDfu = true } = {}) {
 	types = types.map(type => type.toLowerCase());
 	const filters = [];
 	PLATFORMS.forEach((platform) => {
@@ -748,7 +748,7 @@ export async function getDevices({ types = [], includeDfu = true } = {}) {
 	});
 }
 
-export async function openDeviceById(id, options = null) {
+async function openDeviceById(id, options = null) {
 	const log = globalOptions.log;
 	const filters = [];
 	PLATFORMS.forEach((platform) => {
@@ -773,3 +773,10 @@ export async function openDeviceById(id, options = null) {
 	await dev.open(options);
 	return dev;
 }
+
+module.exports = {
+	PollingPolicy,
+	DeviceBase,
+	getDevices,
+	openDeviceById
+};

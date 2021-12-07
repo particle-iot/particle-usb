@@ -1,34 +1,14 @@
-import { PollingPolicy } from '../src/device-base';
-import { getDevices } from '../src/particle-usb';
-import * as usbImpl from '../src/usb-device-node';
+const { fakeUsb, expect } = require('./support');
+const proxyquire = require('proxyquire');
 
-import { fakeUsb, sinon, expect, nextTick } from './support';
+const { getDevices } = proxyquire('../src/particle-usb', {
+	'./device-base': proxyquire('../src/device-base', {
+		'./usb-device-node': fakeUsb
+	})
+});
 
 describe('device', () => {
-	before(() => {
-		// Stub the USB implementation used by the library
-		sinon.stub(usbImpl, 'getUsbDevices').callsFake(fakeUsb.getDevices);
-	});
-
-	after(() => {
-		usbImpl.getUsbDevices.restore();
-	});
-
-	beforeEach(function setup() {
-		this.tick = async t => {
-			// Wait for the next event loop iteration to ensure that all promise callbacks get invoked:
-			// https://github.com/sinonjs/sinon/issues/738
-			await nextTick();
-			this.sinon.clock.tick(t);
-		};
-		// Number of CHECK requests sent to a USB device during the test
-		this.checkCount = 0;
-		// Current polling policy
-		this.pollingPolicy = PollingPolicy.DEFAULT;
-		// Fires the CHECK request timer depending on current polling policy
-		this.checkTimeout = async () => {
-			await this.tick(this.pollingPolicy(this.checkCount++));
-		};
+	afterEach(() => {
 		// "Detach" all USB devices
 		fakeUsb.clearDevices();
 	});
@@ -58,16 +38,18 @@ describe('device', () => {
 
 			it('open, reset, close', async () => {
 				const devs = await getDevices();
-				for (let dev of devs) {
+				expect(devs).to.not.be.empty;
+
+				for (const dev of devs) {
 					await dev.open();
 					expect(dev.isOpen).to.be.true;
 				}
 
-				for (let dev of devs) {
+				for (const dev of devs) {
 					await dev.reset();
 				}
 
-				for (let dev of devs) {
+				for (const dev of devs) {
 					await dev.close();
 					expect(dev.isOpen).to.be.false;
 				}

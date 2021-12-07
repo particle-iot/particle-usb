@@ -1,7 +1,7 @@
-import { getDevices, openDeviceById } from '../../src/particle-usb';
-import { MAX_CONTROL_TRANSFER_DATA_SIZE } from '../../src/usb-device-node';
+const { getDevices, openDeviceById } = require('../../src/particle-usb');
+const { MAX_CONTROL_TRANSFER_DATA_SIZE } = require('../../src/usb-device-node');
 
-import { expect, randomString, integrationTest } from '../support';
+const { expect, randomString, integrationTest } = require('../support');
 
 const RequestType = {
 	ECHO: 1 // ctrl_request_type::CTRL_REQUEST_ECHO
@@ -25,7 +25,7 @@ describe('device-base', function desc() {
 	});
 
 	afterEach(async () => {
-		for (let dev of devs) {
+		for (const dev of devs) {
 			await dev.close();
 		}
 	});

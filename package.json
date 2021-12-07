@@ -2,7 +2,7 @@
   "name": "particle-usb",
   "version": "2.0.0-alpha.5",
   "description": "A library for accessing Particle USB devices",
-  "main": "lib/particle-usb.js",
+  "main": "src/particle-usb.js",
   "keywords": [
     "particle",
     "usb"
@@ -20,54 +20,45 @@
     "Andrey Tolstoy <avtolstoy@gmail.com>"
   ],
   "engines": {
-    "node": ">=8"
+    "node": ">=12"
   },
   "scripts": {
     "prepublish": "git submodule update --init && npm run build",
     "version": "npm run docs && git add docs",
-    "test": "mocha -r @babel/register -r @babel/polyfill test test/integration",
+    "test": "mocha test test/integration",
     "test:silent": "PARTICLE_NOOP=$(npm run test)",
     "lint": "eslint . --ext .js --ignore-path .gitignore",
     "lint:fix": "npm run lint -- --fix",
     "coverage": "nyc --reporter=text --include='src/**/*.js' --temp-dir=./tmp/ --check-coverage --lines 50 npm run test:silent",
-    "build": "npm run build:node && npm run build:proto && npm run build:web",
-    "build:proto": "pbjs proto/control/*.proto -t static-module -o lib/pb-message.js --no-beautify --no-comments --no-delimited --no-convert --no-verify",
-    "build:node": "babel src -s -d lib",
+    "build": "npm run build:proto && npm run build:web",
+    "build:proto": "mkdirp lib && pbjs proto/control/*.proto -t static-module -o lib/pb-message.js --no-beautify --no-comments --no-delimited --no-convert --no-verify",
     "build:web": "webpack-cli",
     "docs": "documentation build src/** -g -f md -o docs/reference.md",
     "clean": "rm -rf ./dist ./lib",
     "reinstall": "npm run clean && rm -rf ./node_modules && npm i"
   },
   "dependencies": {
-    "@babel/runtime-corejs2": "^7.10.2",
-    "ip": "^1.1.5",
-    "protobufjs": "^6.8.9",
-    "usb": "<= 1.6.2",
-    "verror": "^1.10.0"
+    "protobufjs": "^6.11.2",
+    "usb": "^1.9.2"
   },
   "peerDependencies": {
     "@particle/device-constants": "^1.2.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.10.1",
-    "@babel/core": "^7.10.2",
-    "@babel/plugin-transform-runtime": "^7.10.1",
-    "@babel/polyfill": "^7.10.1",
-    "@babel/preset-env": "^7.10.2",
-    "@babel/register": "^7.10.1",
     "@particle/device-constants": "^1.2.0",
-    "chai": "^4.2.0",
+    "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
     "chai-subset": "^1.6.0",
     "documentation": "^12.3.0",
     "eslint": "^6.8.0",
-    "eslint-config-particle": "^2.3.0",
+    "eslint-config-particle": "^2.5.0",
+    "mkdirp": "^1.0.4",
     "mocha": "^7.2.0",
-    "mocha-sinon": "^2.1.2",
     "nyc": "^15.1.0",
-    "sinon": "^9.0.2",
-    "sinon-chai": "^3.5.0",
-    "webpack": "^4.43.0",
-    "webpack-cli": "^3.3.11"
+    "proxyquire": "^2.1.3",
+    "sinon": "^12.0.1",
+    "sinon-chai": "^3.7.0",
+    "webpack": "^4.46.0",
+    "webpack-cli": "^3.3.12"
   }
 }

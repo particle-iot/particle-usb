@@ -1,5 +1,5 @@
 // Global configuration
-export let globalOptions = {
+const globalOptions = {
 	// Request timeout
 	requestTimeout: 60000,
 	// Logger instance
@@ -20,6 +20,11 @@ export let globalOptions = {
  *                 `trace(String)`, `info(String)`, `warn(String)`, `error(String)`.
  * @return {Object} Current options.
  */
-export function config(options) {
+function config(options) {
 	return Object.assign(globalOptions, options);
 }
+
+module.exports = {
+	globalOptions,
+	config
+};

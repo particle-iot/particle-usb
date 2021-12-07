@@ -1,8 +1,8 @@
-import deviceConstants from '@particle/device-constants';
-import * as proto from '../../src/usb-protocol';
-import { ProtocolError, UsbError } from '../../src/error';
-import * as dfu from '../../src/dfu';
-import { PLATFORMS } from '../../src/platforms';
+const deviceConstants = require('@particle/device-constants');
+const proto = require('../../src/usb-protocol');
+const { ProtocolError, UsbError } = require('../../src/error');
+const dfu = require('../../src/dfu');
+const { PLATFORMS } = require('../../src/platforms');
 
 const USB_DEVICES = PLATFORMS.reduce((arr, platform) => {
 	if (platform.usb) {
@@ -36,13 +36,13 @@ const VendorRequest = {
 const MAX_REQUEST_ID = 0xffff;
 
 // USB devices "attached" to the host
-let devices = new Map();
+const devices = new Map();
 
 // Last used internal device ID
 let lastDeviceId = 0;
 
 // Mockable protocol implementation
-export class Protocol {
+class Protocol {
 	constructor(options) {
 		this._opts = options; // Device options
 		this._reqs = new Map(); // All known requests
@@ -304,7 +304,7 @@ export class Protocol {
 }
 
 // Mockable minimal DFU implementation
-export class DfuClass {
+class DfuClass {
 	constructor(options, dev) {
 		this._opts = options;
 		this._dev = dev;
@@ -495,7 +495,7 @@ export class DfuClass {
 }
 
 // Class implementing a fake USB device
-export class Device {
+class Device {
 	constructor(id, options) {
 		this._objId = id; // Internal object ID
 		this._opts = options; // Device options
@@ -638,7 +638,7 @@ export class Device {
 	}
 }
 
-export async function getDevices(filters) {
+async function getUsbDevices(filters) {
 	// Validate the filtering options
 	filters = !filters ? [] : filters.map(f => {
 		if (f.productId && !f.vendorId) {
@@ -659,7 +659,7 @@ export async function getDevices(filters) {
 	return devs;
 }
 
-export function addDevice(options) {
+function addDevice(options) {
 	if (options.type) {
 		const devs = USB_DEVICES.filter(dev => (dev.type === options.type && dev.dfu === !!options.dfu));
 		if (devs.length === 0) {
@@ -679,78 +679,100 @@ export function addDevice(options) {
 	return dev;
 }
 
-export function addDevices(options) {
-	let devs = [];
-	for (let opts of options) {
+function addDevices(options) {
+	const devs = [];
+	for (const opts of options) {
 		devs.push(addDevice(opts));
 	}
 	return devs;
 }
 
-export function addPhoton(options) {
+function addPhoton(options) {
 	const opts = Object.assign({}, options, { type: deviceConstants.photon.name, buggyDfu: true });
 	return addDevice(opts);
 }
 
-export function addP1(options) {
+function addP1(options) {
 	const opts = Object.assign({}, options, { type: deviceConstants.p1.name, buggyDfu: true });
 	return addDevice(opts);
 }
 
-export function addElectron(options) {
+function addElectron(options) {
 	const opts = Object.assign({}, options, { type: deviceConstants.electron.name, buggyDfu: true });
 	return addDevice(opts);
 }
 
-export function addArgon(options) {
+function addArgon(options) {
 	const opts = Object.assign({}, options, { type: deviceConstants.argon.name });
 	return addDevice(opts);
 }
 
-export function addBoron(options) {
+function addBoron(options) {
 	const opts = Object.assign({}, options, { type: deviceConstants.boron.name });
 	return addDevice(opts);
 }
 
-export function addXenon(options) {
+function addXenon(options) {
 	const opts = Object.assign({}, options, { type: deviceConstants.xenon.name });
 	return addDevice(opts);
 }
 
-export function addArgonSom(options) {
+function addArgonSom(options) {
 	const opts = Object.assign({}, options, { type: deviceConstants.asom.name });
 	return addDevice(opts);
 }
 
-export function addBoronSom(options) {
+function addBoronSom(options) {
 	const opts = Object.assign({}, options, { type: deviceConstants.bsom.name });
 	return addDevice(opts);
 }
 
-export function addB5Som(options) {
+function addB5Som(options) {
 	const opts = Object.assign({}, options, { type: deviceConstants.b5som.name });
 	return addDevice(opts);
 }
 
-export function addXenonSom(options) {
+function addXenonSom(options) {
 	const opts = Object.assign({}, options, { type: deviceConstants.xsom.name });
 	return addDevice(opts);
 }
 
-export function addAssetTracker(options) {
+function addAssetTracker(options) {
 	const opts = Object.assign({}, options, { type: deviceConstants.tracker.name });
 	return addDevice(opts);
 }
 
-export function removeDevice(dev) {
+function removeDevice(dev) {
 	if (devices.delete(dev.objectId)) {
 		dev.detach();
 	}
 }
 
-export function clearDevices() {
-	for (let dev of devices.values()) {
+function clearDevices() {
+	for (const dev of devices.values()) {
 		dev.detach();
 	}
 	devices.clear();
 }
+
+module.exports = {
+	Protocol,
+	DfuClass,
+	Device,
+	getUsbDevices,
+	addDevice,
+	addDevices,
+	addPhoton,
+	addP1,
+	addElectron,
+	addArgon,
+	addBoron,
+	addXenon,
+	addArgonSom,
+	addBoronSom,
+	addB5Som,
+	addXenonSom,
+	addAssetTracker,
+	removeDevice,
+	clearDevices
+};
