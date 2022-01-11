@@ -680,7 +680,17 @@ class Device extends DeviceBase {
 		}));
 	}
 
-	// Sends a Protobuf-encoded request
+	/**
+	 * Sends a protobuf encoded request to Device and decodes response.
+	 * @param {Object} req Request description object from RequestType.
+	 * @param {Number} req.id The integer request ID from Device OS system_control.h
+	 * @param {Object} req.request Protobuf schema object for request payload
+	 * @param {Object} req.reply Protobuf schema object for reply payload
+	 * @param {Object} msg Request payload fields. Structure depends on schema defined by `req.request`
+	 * @param {Object} opts See sendControlRequest(), same options are here.
+	 * @returns {Object} Depends on schema defined by `req.reply`
+	 */
+	
 	sendRequest(req, msg, opts) {
 		let buf = null;
 		if (msg && req.request) {
