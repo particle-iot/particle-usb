@@ -8,6 +8,10 @@ const { globalOptions } = require('./config');
 
 const proto = require('./protocol');
 
+const deviceOSProtobuf = require('@particle/device-os-protobuf');
+const controlProto = deviceOSProtobuf.particle.ctrl;
+const _ = require('lodash');
+
 /**
  * Firmware module types.
  *
@@ -680,7 +684,58 @@ class Device extends DeviceBase {
 		}));
 	}
 
+	// SERIAL_NUMBER => controlProto.GetSerialNumberRequest
+	// https://lodash.com/docs/4.17.15#startCase
+	getProtobufRequestFunctionName(canonicalName) {
+		const fName = 'Get' + _.upperFirst(_.camelCase(canonicalName)) + 'Request';
+		if (!(fName in controlProto)) {
+			throw new Error(`There is no protobuf request function called "${fName}"`);
+		}
+		return controlProto[fName];
+	}
+	
+	// SERIAL_NUMBER => controlProto.GetSerialNumberReply
+	getProtobufReplyFunctionName(canonicalName) {
+		const fName = 'Get' + _.upperFirst(_.camelCase(canonicalName)) + 'Reply';
+		if (!(fName in controlProto)) {
+			throw new Error(`There is no protobuf request function called "${fName}"`);
+		}
+		return controlProto[fName];
+	}
+
 	/**
+	 * 
+	 * WIP/TODO: We don't want to hard-code the mapping from request id to it's corresponding
+	 * request + reply message definitions, that should live in device-os-protobuf
+	 * 	
+	 * Sends a protobuf encoded request to Device and decodes response. Use higher level methods like getSerialNumber() than this if possible.
+	 * @param {String} canonicalName An uppercase string representing CTRL_REQUEST_<canonicalName>, from Device OS system_control.h.
+	 * @param {*} requestData data that will be encoded into the protobuf request before sending to device
+	 * @param {*} opts See sendControlRequest(), same options are here. 
+	 * @returns {Object} Depends on schema defined by `req.reply`
+	 */
+	async sendProtobufRequest(canonicalName, requestData, opts) {
+		const RequestType = {
+			SERIAL_NUMBER: {
+				id: 21
+			}
+		}
+		if (!(canonicalName in RequestType)) {
+			throw new Error('There is no protobuf definition with that canonical name');
+		}
+		const protobufRequestFunction = this.getProtobufRequestFunctionName(canonicalName);
+		const protobufReplyFunction = this.getProtobufReplyFunctionName(canonicalName);
+
+		const sendRequest = {
+			id: RequestType[canonicalName].id,
+			request: protobufRequestFunction,
+			reply: protobufReplyFunction
+		}
+		return await this.sendRequest(sendRequest, requestData, opts);
+	}
+
+	/**
+	 * TODO (jgoggins): Nuke this?
 	 * Sends a protobuf encoded request to Device and decodes response.
 	 * @param {Object} req Request description object from RequestType.
 	 * @param {Number} req.id The integer request ID from Device OS system_control.h
@@ -690,7 +745,7 @@ class Device extends DeviceBase {
 	 * @param {Object} opts See sendControlRequest(), same options are here.
 	 * @returns {Object} Depends on schema defined by `req.reply`
 	 */
-	
+
 	sendRequest(req, msg, opts) {
 		let buf = null;
 		if (msg && req.request) {

@@ -7,6 +7,9 @@ const { getDevices } = proxyquire('../src/particle-usb', {
 	})
 });
 
+const proto = require('@particle/device-os-protobuf');
+const controlProto = proto.particle.ctrl;
+
 describe('device', () => {
 	afterEach(() => {
 		// "Detach" all USB devices
