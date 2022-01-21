@@ -118,7 +118,11 @@ class Device extends DeviceBase {
 	 * @return {Promise<String>}
 	 */
 	async getSerialNumber({ timeout = globalOptions.requestTimeout } = {}) {
-		const r = await this.sendRequest(Request.GET_SERIAL_NUMBER, null /* msg */, { timeout });
+		const r = await this.sendProtobufRequest(
+			'GetSerialNumberRequest',
+			null,
+			{ timeout }
+		);
 		return r.serial;
 	}
 
