@@ -38,6 +38,7 @@
     "reinstall": "npm run clean && rm -rf ./node_modules && npm i"
   },
   "dependencies": {
+    "@particle/device-os-protobuf": "^1.1.0",
     "protobufjs": "^6.11.2",
     "usb": "1.9.2"
   },
