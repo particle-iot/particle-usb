@@ -245,15 +245,24 @@ class Device extends DeviceBase {
 	 */
 	async enterListeningMode({ timeout = globalOptions.requestTimeout } = {}) {
 		return this.timeout(timeout, async (s) => {
-			await s.sendRequest(Request.START_LISTENING);
+			const startListeningModeReply = await this.sendProtobufRequest('StartListeningModeRequest', {}, { timeout });
 			// Wait until the device enters the listening mode
 			while (true) { // eslint-disable-line no-constant-condition
-				const r = await s.sendRequest(Request.GET_DEVICE_MODE, null, {
-					dontThrow: true // This request may not be supported by the device
-				});
-				if (r.result !== Result.OK || r.mode === proto.DeviceMode.LISTENING_MODE) {
-					break;
+				// GetDeviceModeRequest may not be supported by the device even if start listening mode does work, hence try/catch
+				try {
+					const getDeviceModeReply = await this.sendProtobufRequest('GetDeviceModeRequest', {}, { timeout });
+
+					const deviceModeEnum = DeviceOSProtobuf.getDefinition('DeviceMode').message;
+					// break if in listening mode
+					if (getDeviceModeReply.mode === deviceModeEnum.LISTENING_MODE) {
+						break
+					}
+				} catch (e) {
+					if (e instanceof RequestError) {
+						break;
+					}
 				}
+
 				await s.delay(500);
 			}
 		});
@@ -692,6 +701,7 @@ class Device extends DeviceBase {
 	 * @param {Object} protobufMessageData data that will be encoded into the protobuf request before sending to device
 	 * @param {*} opts See sendControlRequest(), same options are here.
 	 * @returns {Object} Depends on schema defined by `req.reply`
+	 * @throws {RequestError} thrown when message isn't supported by device or other USB related failures
 	 */
 	async sendProtobufRequest(protobufMessageName, protobufMessageData = {}, opts) {
 		const protobufDefinition = DeviceOSProtobuf.getDefinition(protobufMessageName);
@@ -701,24 +711,21 @@ class Device extends DeviceBase {
 			encodedProtobufBuffer,
 			opts
 		);
-		let r = undefined;
-		if (opts && opts.dontThrow) {
-			r = { result: rep.result };
-		} else if (rep.result !== Result.OK) {
+
+		if (rep.result !== Result.OK) {
 			throw new RequestError(rep.result, messageForResultCode(rep.result));
 		}
 
 		if (rep.data) {
 			// Parse the response message
-			r = DeviceOSProtobuf.decode(
+			return DeviceOSProtobuf.decode(
 				protobufDefinition.replyMessage,
 				rep.data
 			);
 		} else {
 			// Create a message with default-initialized properties
-			r = protobufDefinition.replyMessage.create();
+			return protobufDefinition.replyMessage.create();
 		}
-		return r;
 	}
 
 	sendRequest(req, msg, opts) {
@@ -729,6 +736,8 @@ class Device extends DeviceBase {
 		}
 		return this.sendControlRequest(req.id, buf, opts).then(rep => {
 			let r = undefined;
+
+			// Note: Nothing depends on opts.dontThrow anymore
 			if (opts && opts.dontThrow) {
 				r = { result: rep.result };
 			} else if (rep.result !== Result.OK) {
