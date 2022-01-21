@@ -233,7 +233,7 @@ class Device extends DeviceBase {
 	}
 
 	/**
-	 * Enter the listening mode.
+	 * Enter listening mode. 
 	 *
 	 * Supported platforms:
 	 * - Gen 3 (since Device OS 0.9.0)
@@ -241,7 +241,7 @@ class Device extends DeviceBase {
 	 *
 	 * @param {Object} [options] Options.
 	 * @param {Number} [options.timeout] Timeout (milliseconds).
-	 * @return {Promise}
+	 * @return {Promise} Resolves when either device is confirmed to be in listening mode, throws an error, or timeout exceeded.
 	 */
 	async enterListeningMode({ timeout = globalOptions.requestTimeout } = {}) {
 		return this.timeout(timeout, async (s) => {
