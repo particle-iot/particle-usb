@@ -8,6 +8,8 @@ const { globalOptions } = require('./config');
 
 const proto = require('./protocol');
 
+const DeviceOSProtobuf = require('@particle/device-os-protobuf');
+
 /**
  * Firmware module types.
  *
@@ -680,7 +682,41 @@ class Device extends DeviceBase {
 		}));
 	}
 
-	// Sends a Protobuf-encoded request
+	/**
+	 * Sends a protobuf encoded request to Device and decodes response. Use higher level methods like getSerialNumber() than this if possible.
+	 * @param {String} protobufMessageName - The protobuf message name, see DeviceOSProtobuf.getDefinitions() for valid values.
+	 * @param {Object} protobufMessageData data that will be encoded into the protobuf request before sending to device
+	 * @param {*} opts See sendControlRequest(), same options are here.
+	 * @returns {Object} Depends on schema defined by `req.reply`
+	 */
+	async sendProtobufRequest(protobufMessageName, protobufMessageData = {}, opts) {
+		const protobufDefinition = DeviceOSProtobuf.getDefinition(protobufMessageName);
+		const encodedProtobufBuffer = DeviceOSProtobuf.encode(protobufMessageName, protobufMessageData);
+		const rep = await this.sendControlRequest(
+			protobufDefinition.id,
+			encodedProtobufBuffer,
+			opts
+		);
+		let r = undefined;
+		if (opts && opts.dontThrow) {
+			r = { result: rep.result };
+		} else if (rep.result !== Result.OK) {
+			throw new RequestError(rep.result, messageForResultCode(rep.result));
+		}
+
+		if (rep.data) {
+			// Parse the response message
+			r = DeviceOSProtobuf.decode(
+				protobufDefinition.replyMessage,
+				rep.data
+			);
+		} else {
+			// Create a message with default-initialized properties
+			r = protobufDefinition.replyMessage.create();
+		}
+		return r;
+	}
+
 	sendRequest(req, msg, opts) {
 		let buf = null;
 		if (msg && req.request) {
