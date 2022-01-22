@@ -26,6 +26,7 @@
     "prepublish": "git submodule update --init && npm run build",
     "version": "npm run docs && git add docs",
     "test": "mocha test test/integration",
+    "test:ci": "npm run lint && npm test && npm run coverage",
     "test:silent": "PARTICLE_NOOP=$(npm run test)",
     "lint": "eslint . --ext .js --ignore-path .gitignore",
     "lint:fix": "npm run lint -- --fix",
