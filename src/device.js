@@ -233,7 +233,7 @@ class Device extends DeviceBase {
 	}
 
 	/**
-	 * Enter listening mode. 
+	 * Enter listening mode.
 	 *
 	 * Supported platforms:
 	 * - Gen 3 (since Device OS 0.9.0)
@@ -245,7 +245,8 @@ class Device extends DeviceBase {
 	 */
 	async enterListeningMode({ timeout = globalOptions.requestTimeout } = {}) {
 		return this.timeout(timeout, async (s) => {
-			const startListeningModeReply = await this.sendProtobufRequest('StartListeningModeRequest', {}, { timeout });
+			await this.sendProtobufRequest('StartListeningModeRequest', {}, { timeout });
+
 			// Wait until the device enters the listening mode
 			while (true) { // eslint-disable-line no-constant-condition
 				// GetDeviceModeRequest may not be supported by the device even if start listening mode does work, hence try/catch
@@ -255,7 +256,7 @@ class Device extends DeviceBase {
 					const deviceModeEnum = DeviceOSProtobuf.getDefinition('DeviceMode').message;
 					// break if in listening mode
 					if (getDeviceModeReply.mode === deviceModeEnum.LISTENING_MODE) {
-						break
+						break;
 					}
 				} catch (e) {
 					if (e instanceof RequestError) {
