@@ -30,7 +30,7 @@
     "test:silent": "PARTICLE_NOOP=$(npm run test)",
     "lint": "eslint . --ext .js --ignore-path .gitignore",
     "lint:fix": "npm run lint -- --fix",
-    "coverage": "nyc --reporter=text --include='src/**/*.js' --temp-dir=./tmp/ --check-coverage --lines 50 npm run test:silent",
+    "coverage": "nyc --include='src/**/*.js' --temp-dir=./tmp/ --check-coverage npm run test:silent",
     "build": "npm run build:proto && npm run build:web",
     "build:proto": "mkdirp lib && pbjs proto/control/*.proto -t static-module -o lib/pb-message.js --no-beautify --no-comments --no-delimited --no-convert --no-verify",
     "build:web": "webpack-cli",
