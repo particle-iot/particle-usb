@@ -742,6 +742,11 @@ function addAssetTracker(options) {
 	return addDevice(opts);
 }
 
+function addP2(options) {
+	const opts = Object.assign({}, options, { type: deviceConstants.p2.name });
+	return addDevice(opts);
+}
+
 function removeDevice(dev) {
 	if (devices.delete(dev.objectId)) {
 		dev.detach();
@@ -773,6 +778,7 @@ module.exports = {
 	addB5Som,
 	addXenonSom,
 	addAssetTracker,
+	addP2,
 	removeDevice,
 	clearDevices
 };

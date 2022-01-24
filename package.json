@@ -26,10 +26,11 @@
     "prepublish": "git submodule update --init && npm run build",
     "version": "npm run docs && git add docs",
     "test": "mocha test test/integration",
+    "test:ci": "npm run lint && npm test && npm run coverage",
     "test:silent": "PARTICLE_NOOP=$(npm run test)",
     "lint": "eslint . --ext .js --ignore-path .gitignore",
     "lint:fix": "npm run lint -- --fix",
-    "coverage": "nyc --reporter=text --include='src/**/*.js' --temp-dir=./tmp/ --check-coverage --lines 50 npm run test:silent",
+    "coverage": "nyc --include='src/**/*.js' --temp-dir=./tmp/ --check-coverage npm run test:silent",
     "build": "npm run build:proto && npm run build:web",
     "build:proto": "mkdirp lib && pbjs proto/control/*.proto -t static-module -o lib/pb-message.js --no-beautify --no-comments --no-delimited --no-convert --no-verify",
     "build:web": "webpack-cli",
@@ -38,6 +39,7 @@
     "reinstall": "npm run clean && rm -rf ./node_modules && npm i"
   },
   "dependencies": {
+    "@particle/device-os-protobuf": "^1.1.0",
     "protobufjs": "^6.11.2",
     "usb": "1.9.2"
   },

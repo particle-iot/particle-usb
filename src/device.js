@@ -8,6 +8,8 @@ const { globalOptions } = require('./config');
 
 const proto = require('./protocol');
 
+const DeviceOSProtobuf = require('@particle/device-os-protobuf');
+
 /**
  * Firmware module types.
  *
@@ -116,7 +118,11 @@ class Device extends DeviceBase {
 	 * @return {Promise<String>}
 	 */
 	async getSerialNumber({ timeout = globalOptions.requestTimeout } = {}) {
-		const r = await this.sendRequest(Request.GET_SERIAL_NUMBER, null /* msg */, { timeout });
+		const r = await this.sendProtobufRequest(
+			'GetSerialNumberRequest',
+			null,
+			{ timeout }
+		);
 		return r.serial;
 	}
 
@@ -227,7 +233,7 @@ class Device extends DeviceBase {
 	}
 
 	/**
-	 * Enter the listening mode.
+	 * Enter listening mode.
 	 *
 	 * Supported platforms:
 	 * - Gen 3 (since Device OS 0.9.0)
@@ -235,19 +241,29 @@ class Device extends DeviceBase {
 	 *
 	 * @param {Object} [options] Options.
 	 * @param {Number} [options.timeout] Timeout (milliseconds).
-	 * @return {Promise}
+	 * @return {Promise} Resolves when either device is confirmed to be in listening mode, throws an error, or timeout exceeded.
 	 */
 	async enterListeningMode({ timeout = globalOptions.requestTimeout } = {}) {
 		return this.timeout(timeout, async (s) => {
-			await s.sendRequest(Request.START_LISTENING);
+			await this.sendProtobufRequest('StartListeningModeRequest', {}, { timeout });
+
 			// Wait until the device enters the listening mode
 			while (true) { // eslint-disable-line no-constant-condition
-				const r = await s.sendRequest(Request.GET_DEVICE_MODE, null, {
-					dontThrow: true // This request may not be supported by the device
-				});
-				if (r.result !== Result.OK || r.mode === proto.DeviceMode.LISTENING_MODE) {
-					break;
+				// GetDeviceModeRequest may not be supported by the device even if start listening mode does work, hence try/catch
+				try {
+					const getDeviceModeReply = await this.sendProtobufRequest('GetDeviceModeRequest', {}, { timeout });
+
+					const deviceModeEnum = DeviceOSProtobuf.getDefinition('DeviceMode').message;
+					// break if in listening mode
+					if (getDeviceModeReply.mode === deviceModeEnum.LISTENING_MODE) {
+						break;
+					}
+				} catch (e) {
+					if (e instanceof RequestError) {
+						break;
+					}
 				}
+
 				await s.delay(500);
 			}
 		});
@@ -680,7 +696,39 @@ class Device extends DeviceBase {
 		}));
 	}
 
-	// Sends a Protobuf-encoded request
+	/**
+	 * Sends a protobuf encoded request to Device and decodes response. Use higher level methods like getSerialNumber() than this if possible.
+	 * @param {String} protobufMessageName - The protobuf message name, see DeviceOSProtobuf.getDefinitions() for valid values.
+	 * @param {Object} protobufMessageData data that will be encoded into the protobuf request before sending to device
+	 * @param {*} opts See sendControlRequest(), same options are here.
+	 * @returns {Object} Depends on schema defined by `req.reply`
+	 * @throws {RequestError} thrown when message isn't supported by device or other USB related failures
+	 */
+	async sendProtobufRequest(protobufMessageName, protobufMessageData = {}, opts) {
+		const protobufDefinition = DeviceOSProtobuf.getDefinition(protobufMessageName);
+		const encodedProtobufBuffer = DeviceOSProtobuf.encode(protobufMessageName, protobufMessageData);
+		const rep = await this.sendControlRequest(
+			protobufDefinition.id,
+			encodedProtobufBuffer,
+			opts
+		);
+
+		if (rep.result !== Result.OK) {
+			throw new RequestError(rep.result, messageForResultCode(rep.result));
+		}
+
+		if (rep.data) {
+			// Parse the response message
+			return DeviceOSProtobuf.decode(
+				protobufDefinition.replyMessage,
+				rep.data
+			);
+		} else {
+			// Create a message with default-initialized properties
+			return protobufDefinition.replyMessage.create();
+		}
+	}
+
 	sendRequest(req, msg, opts) {
 		let buf = null;
 		if (msg && req.request) {
@@ -689,6 +737,8 @@ class Device extends DeviceBase {
 		}
 		return this.sendControlRequest(req.id, buf, opts).then(rep => {
 			let r = undefined;
+
+			// Note: Nothing depends on opts.dontThrow anymore
 			if (opts && opts.dontThrow) {
 				r = { result: rep.result };
 			} else if (rep.result !== Result.OK) {

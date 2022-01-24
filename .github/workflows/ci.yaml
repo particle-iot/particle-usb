@@ -35,7 +35,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Run Tests
         run: |
-          npm test
+          npm run test:ci
           npm run build:web
   publish:
     name: Publish (maybe)
