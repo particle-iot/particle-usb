@@ -66,16 +66,16 @@ function nextTick() {
 
 
 /**
- * This helper is a substitute for how getDevices uses 
+ * This helper is a substitute for how getDevices uses
  * setDevicePrototype to set up the correct inheritance chain.
- * 
+ *
  * It would be nice if we could just do `new WifiDevice()`, but alas that is not possible now
  */
- function getFakeWifiDevice(usbDevice, platform) {
+function getFakeWifiDevice(usbDevice, platform) {
 	const device = new DeviceBase(usbDevice, platform);
 	let klass = class extends NetworkDevice(Device) {};
 	klass = class extends WifiDevice(klass) {};
-	wifiDevice = Object.setPrototypeOf(device, klass.prototype);
+	const wifiDevice = Object.setPrototypeOf(device, klass.prototype);
 	return wifiDevice;
 }
 

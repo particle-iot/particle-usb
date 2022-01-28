@@ -118,23 +118,25 @@ const WifiDevice = base => class extends base {
 	}
 
 	/**
-	 * Perform the WiFi scan.
-	 *
-	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
-	 *             be removed in future versions of this library.
+	 * Perform WiFi scan.
 	 *
 	 * Supported platforms:
 	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
-	 *
+	 * - Gen 4: Supported on P2 since Device OS 3.0.0.
 	 * @return {Promise<Array>}
 	 */
-	scanWifiNetworks() {
-		return this.sendRequest(Request.WIFI_SCAN).then(rep => {
-			if (!rep.list) {
-				return [];
-			}
-			return rep.list.aps.map(ap => accessPointFromProtobuf(ap));
+	async scanWifiNetworks() {
+		const replyObject = await this.sendProtobufRequest('wifi.ScanNetworksRequest');
+		const networks = replyObject.networks.map((network) => {
+			return {
+				ssid: network.ssid || null, // can be blank for hidden networks
+				bssid: network.bssid.toString('hex'), // convert buffer to hex string
+				security: network.security || null, // sometimes isn't set
+				channel: network.channel,
+				rssi: network.rssi
+			};
 		});
+		return networks;
 	}
 
 	/**
