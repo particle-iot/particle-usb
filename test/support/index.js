@@ -11,6 +11,12 @@ const { expect, assert } = chai;
 
 const PRINTABLE_CHARS = ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~';
 
+// to support getFakeWifiDevice
+const { DeviceBase } = require('../../src/device-base');
+const { Device } = require('../../src/device');
+const { NetworkDevice } = require('../../src/network-device');
+const { WifiDevice } = require('../../src/wifi-device');
+
 class Logger {
 	trace(/* ...args */) {
 		// console.log(...args);
@@ -58,6 +64,21 @@ function nextTick() {
 	});
 }
 
+
+/**
+ * This helper is a substitute for how getDevices uses 
+ * setDevicePrototype to set up the correct inheritance chain.
+ * 
+ * It would be nice if we could just do `new WifiDevice()`, but alas that is not possible now
+ */
+ function getFakeWifiDevice(usbDevice, platform) {
+	const device = new DeviceBase(usbDevice, platform);
+	let klass = class extends NetworkDevice(Device) {};
+	klass = class extends WifiDevice(klass) {};
+	wifiDevice = Object.setPrototypeOf(device, klass.prototype);
+	return wifiDevice;
+}
+
 chai.use(chaiAsPromised);
 chai.use(sinonChai);
 chai.use(chaiSubset);
@@ -73,5 +94,6 @@ module.exports = {
 	assert,
 	nextTick,
 	randomString,
-	integrationTest
+	integrationTest,
+	getFakeWifiDevice
 };
