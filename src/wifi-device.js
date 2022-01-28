@@ -118,12 +118,13 @@ const WifiDevice = base => class extends base {
 	}
 
 	/**
-	 * Perform WiFi scan.
+	 * Perform WiFi scan
 	 *
 	 * Supported platforms:
-	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
 	 * - Gen 4: Supported on P2 since Device OS 3.0.0.
-	 * @return {Promise<Array>}
+	 * - Gen 3: Not supported
+	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
+	 * @return {Promise[Object]} - Each object in array has these properties: ssid, bssid, security, channel, rssi. See Network protobuf message from https://github.com/particle-iot/device-os-protobuf for more details.
 	 */
 	async scanWifiNetworks() {
 		const replyObject = await this.sendProtobufRequest('wifi.ScanNetworksRequest');
