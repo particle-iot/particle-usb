@@ -144,10 +144,13 @@
 -   [EapMethod][140]
 -   [WifiDevice][141]
     -   [Parameters][142]
+-   [require][143]
+-   [getFakeWifiDevice][144]
+    -   [Parameters][145]
 
 ## CellularDevice
 
-[src/cellular-device.js:12-35][143]
+[src/cellular-device.js:12-35][146]
 
 Cellular device.
 
@@ -160,59 +163,59 @@ This class is not meant to be instantiated directly. Use [getDevices][130] and
 
 ## CloudConnectionStatus
 
-[src/cloud-device.js:13-22][144]
+[src/cloud-device.js:13-22][147]
 
 Cloud connection status.
 
-Type: [String][145]
+Type: [String][148]
 
 ### DISCONNECTED
 
-[src/cloud-device.js:15-15][146]
+[src/cloud-device.js:15-15][149]
 
 Disconnected.
 
 ### CONNECTING
 
-[src/cloud-device.js:17-17][147]
+[src/cloud-device.js:17-17][150]
 
 Connecting.
 
 ### CONNECTED
 
-[src/cloud-device.js:19-19][148]
+[src/cloud-device.js:19-19][151]
 
 Connected.
 
 ### DISCONNECTING
 
-[src/cloud-device.js:21-21][149]
+[src/cloud-device.js:21-21][152]
 
 Disconnecting.
 
 ## ServerProtocol
 
-[src/cloud-device.js:29-34][150]
+[src/cloud-device.js:29-34][153]
 
 Server protocol types.
 
-Type: [String][145]
+Type: [String][148]
 
 ### TCP
 
-[src/cloud-device.js:31-31][151]
+[src/cloud-device.js:31-31][154]
 
 TCP.
 
 ### UDP
 
-[src/cloud-device.js:33-33][152]
+[src/cloud-device.js:33-33][155]
 
 UDP.
 
 ## CloudDevice
 
-[src/cloud-device.js:44-380][153]
+[src/cloud-device.js:44-380][156]
 
 Cloud-enabled device.
 
@@ -225,30 +228,30 @@ This class is not meant to be instantiated directly. Use [getDevices][130] and
 
 ## config
 
-[src/config.js:23-25][154]
+[src/config.js:23-25][157]
 
 Set global options.
 
 ### Parameters
 
--   `options` **[Object][155]?** Options.
-    -   `options.requestTimeout` **[Number][156]** Default request timeout (milliseconds). (optional, default `60000`)
-    -   `options.log` **[Object][155]?** Logger instance. The logger is expected to have the following methods:
+-   `options` **[Object][158]?** Options.
+    -   `options.requestTimeout` **[Number][159]** Default request timeout (milliseconds). (optional, default `60000`)
+    -   `options.log` **[Object][158]?** Logger instance. The logger is expected to have the following methods:
                         `trace(String)`, `info(String)`, `warn(String)`, `error(String)`.
 
-Returns **[Object][155]** Current options.
+Returns **[Object][158]** Current options.
 
 ## PollingPolicy
 
-[src/device-base.js:57-60][157]
+[src/device-base.js:57-60][160]
 
 Predefined polling policies.
 
-Type: [Function][158]
+Type: [Function][161]
 
 ### DEFAULT
 
-[src/device-base.js:59-59][159]
+[src/device-base.js:59-59][162]
 
 Default polling policy.
 
@@ -258,7 +261,7 @@ Default polling policy.
 
 ## DeviceBase
 
-[src/device-base.js:85-725][160]
+[src/device-base.js:85-725][163]
 
 **Extends EventEmitter**
 
@@ -274,74 +277,74 @@ This class is not meant to be instantiated directly. Use [getDevices][130] and
 
 ### open
 
-[src/device-base.js:117-162][161]
+[src/device-base.js:117-162][164]
 
 Open the device.
 
 #### Parameters
 
--   `options` **[Object][155]?** Options.
-    -   `options.concurrentRequests` **[Number][156]?** Maximum number of requests that can be sent to the
+-   `options` **[Object][158]?** Options.
+    -   `options.concurrentRequests` **[Number][159]?** Maximum number of requests that can be sent to the
                device concurrently. Requests that exceed this limit are queued. By default, this parameter
                is set to the maximum number of concurrent requests supported by the device.
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 ### close
 
-[src/device-base.js:174-203][163]
+[src/device-base.js:174-203][166]
 
 Close the device.
 
 #### Parameters
 
--   `options` **[Object][155]?** Options.
-    -   `options.processPendingRequests` **[Boolean][164]** Whether to complete processing of the
+-   `options` **[Object][158]?** Options.
+    -   `options.processPendingRequests` **[Boolean][167]** Whether to complete processing of the
                pending requests before closing the device. (optional, default `true`)
-    -   `options.timeout` **[Number][156]?** Timeout for processing pending requests (milliseconds).
+    -   `options.timeout` **[Number][159]?** Timeout for processing pending requests (milliseconds).
                By default, the device is kept open until all requests are processed.
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 ### sendControlRequest
 
-[src/device-base.js:219-269][165]
+[src/device-base.js:219-269][168]
 
 Send a control request to the device.
 
 #### Parameters
 
--   `type` **[Number][156]** Request type.
--   `data` **([Buffer][166] \| [String][145])** Request data.
--   `options` **[Object][155]?** Request options.
-    -   `options.pollingPolicy` **([Function][158] \| [Number][156])** Request polling policy.
+-   `type` **[Number][159]** Request type.
+-   `data` **([Buffer][169] \| [String][148])** Request data.
+-   `options` **[Object][158]?** Request options.
+    -   `options.pollingPolicy` **([Function][161] \| [Number][159])** Request polling policy.
                This parameter specifies how frequently the device will be polled to determine the result
                of the request. The argument can either be a function that returns the number of milliseconds
                to wait before polling the device again or a number that specifies a fixed interval. (optional, default `PollingPolicy.DEFAULT`)
-    -   `options.timeout` **[Number][156]?** Request timeout. The default timeout can be configured via
+    -   `options.timeout` **[Number][159]?** Request timeout. The default timeout can be configured via
                [config][13].
 
-Returns **[Promise][162]&lt;[Object][155]>** Response object.
+Returns **[Promise][165]&lt;[Object][158]>** Response object.
 
 ### reset
 
-[src/device-base.js:278-283][167]
+[src/device-base.js:278-283][170]
 
 Perform the system reset.
 
 This method only works in DFU mode.
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 ### isOpen
 
-[src/device-base.js:288-290][168]
+[src/device-base.js:288-290][171]
 
 Set to `true` if the device is open.
 
 ### id
 
-[src/device-base.js:297-299][169]
+[src/device-base.js:297-299][172]
 
 Device ID.
 
@@ -349,7 +352,7 @@ This property is set to `null` if the device is closed.
 
 ### firmwareVersion
 
-[src/device-base.js:306-308][170]
+[src/device-base.js:306-308][173]
 
 Device OS system version.
 
@@ -357,145 +360,145 @@ This property is set to `null` if the device is closed or the version could not 
 
 ### type
 
-[src/device-base.js:313-315][171]
+[src/device-base.js:313-315][174]
 
 Device type (photon, boron, tracker, etc)
 
 ### platformId
 
-[src/device-base.js:320-322][172]
+[src/device-base.js:320-322][175]
 
 Platform ID
 
 ### vendorId
 
-[src/device-base.js:327-329][173]
+[src/device-base.js:327-329][176]
 
 USB vendor ID.
 
 ### productId
 
-[src/device-base.js:334-336][174]
+[src/device-base.js:334-336][177]
 
 USB product ID.
 
 ### isInDfuMode
 
-[src/device-base.js:341-343][175]
+[src/device-base.js:341-343][178]
 
 Set to `true` if this device is in the DFU mode.
 
 ### usbDevice
 
-[src/device-base.js:348-350][176]
+[src/device-base.js:348-350][179]
 
 Internal USB device handle.
 
 ### quirks
 
-[src/device-base.js:355-357][177]
+[src/device-base.js:355-357][180]
 
 Device USB quirks
 
 ## FirmwareModule
 
-[src/device.js:18-27][178]
+[src/device.js:18-27][181]
 
 Firmware module types.
 
-Type: [String][145]
+Type: [String][148]
 
 ### BOOTLOADER
 
-[src/device.js:20-20][179]
+[src/device.js:20-20][182]
 
 Bootloader module.
 
 ### SYSTEM_PART
 
-[src/device.js:22-22][180]
+[src/device.js:22-22][183]
 
 System part module.
 
 ### USER_PART
 
-[src/device.js:24-24][181]
+[src/device.js:24-24][184]
 
 User part module.
 
 ### MONO_FIRMWARE
 
-[src/device.js:26-26][182]
+[src/device.js:26-26][185]
 
 Monolithic firmware module.
 
 ## DeviceMode
 
-[src/device.js:34-39][183]
+[src/device.js:34-39][186]
 
 Device modes.
 
-Type: [String][145]
+Type: [String][148]
 
 ### NORMAL
 
-[src/device.js:36-36][184]
+[src/device.js:36-36][187]
 
 Device is in normal mode.
 
 ### LISTENING
 
-[src/device.js:38-38][185]
+[src/device.js:38-38][188]
 
 Device is in listening mode.
 
 ## LogLevel
 
-[src/device.js:46-59][186]
+[src/device.js:46-59][189]
 
 Logging levels.
 
-Type: [String][145]
+Type: [String][148]
 
 ### ALL
 
-[src/device.js:48-48][187]
+[src/device.js:48-48][190]
 
 Enables logging of all messages.
 
 ### TRACE
 
-[src/device.js:50-50][188]
+[src/device.js:50-50][191]
 
 Enables logging of trace messages.
 
 ### INFO
 
-[src/device.js:52-52][189]
+[src/device.js:52-52][192]
 
 Enables logging of info messages.
 
 ### WARN
 
-[src/device.js:54-54][190]
+[src/device.js:54-54][193]
 
 Enables logging of warning messages.
 
 ### ERROR
 
-[src/device.js:56-56][191]
+[src/device.js:56-56][194]
 
 Enables logging of error messages.
 
 ### NONE
 
-[src/device.js:58-58][192]
+[src/device.js:58-58][195]
 
 Disables logging of any messages.
 
 ## Device
 
-[src/device.js:108-905][193]
+[src/device.js:108-905][196]
 
 **Extends DeviceBase**
 
@@ -506,7 +509,7 @@ This class is not meant to be instantiated directly. Use [getDevices][130] and
 
 ### getSerialNumber
 
-[src/device.js:120-127][194]
+[src/device.js:120-127][197]
 
 Get the device's serial number.
 
@@ -517,19 +520,19 @@ Supported platforms:
 
 #### Parameters
 
--   `options` **[Object][155]?** Options. (optional, default `{}`)
-    -   `options.timeout` **[Number][156]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
+-   `options` **[Object][158]?** Options. (optional, default `{}`)
+    -   `options.timeout` **[Number][159]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
 
-Returns **[Promise][162]&lt;[String][145]>** 
+Returns **[Promise][165]&lt;[String][148]>** 
 
 ### reset
 
-[src/device.js:147-161][195]
+[src/device.js:147-161][198]
 
 Perform the system reset.
 
 Note: The only safe operation that can be performed on the device instance after the device
-resets is closing it via [DeviceBase#close][196].
+resets is closing it via [DeviceBase#close][199].
 
 Supported platforms:
 
@@ -540,21 +543,21 @@ The `force` option is supported since Device OS 2.0.0.
 
 #### Parameters
 
--   `options` **[Object][155]?** Options. (optional, default `{}`)
-    -   `options.force` **[Boolean][164]?** Reset the device immediately, even if it is busy performing
+-   `options` **[Object][158]?** Options. (optional, default `{}`)
+    -   `options.force` **[Boolean][167]?** Reset the device immediately, even if it is busy performing
                some blocking operation, such as writing to flash. (optional, default `false`)
-    -   `options.timeout` **[Number][156]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
+    -   `options.timeout` **[Number][159]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 ### factoryReset
 
-[src/device.js:177-179][197]
+[src/device.js:177-179][200]
 
 Perform the factory reset.
 
 Note: The only safe operation that can be performed on the device instance after the device
-resets is closing it via [DeviceBase#close][196].
+resets is closing it via [DeviceBase#close][199].
 
 Supported platforms:
 
@@ -563,19 +566,19 @@ Supported platforms:
 
 #### Parameters
 
--   `options` **[Object][155]?** Options. (optional, default `{}`)
-    -   `options.timeout` **[Number][156]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
+-   `options` **[Object][158]?** Options. (optional, default `{}`)
+    -   `options.timeout` **[Number][159]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 ### enterDfuMode
 
-[src/device.js:195-215][198]
+[src/device.js:195-215][201]
 
 Reset and enter the DFU mode.
 
 Note: The only safe operation that can be performed on the device instance after the device
-resets is closing it via [DeviceBase#close][196].
+resets is closing it via [DeviceBase#close][199].
 
 Supported platforms:
 
@@ -584,19 +587,19 @@ Supported platforms:
 
 #### Parameters
 
--   `options` **[Object][155]?** Options. (optional, default `{}`)
-    -   `options.timeout` **[Number][156]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
+-   `options` **[Object][158]?** Options. (optional, default `{}`)
+    -   `options.timeout` **[Number][159]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 ### enterSafeMode
 
-[src/device.js:231-233][199]
+[src/device.js:231-233][202]
 
 Reset and enter the safe mode.
 
 Note: The only safe operation that can be performed on the device instance after the device
-resets is closing it via [DeviceBase#close][196].
+resets is closing it via [DeviceBase#close][199].
 
 Supported platforms:
 
@@ -605,14 +608,14 @@ Supported platforms:
 
 #### Parameters
 
--   `options` **[Object][155]?** Options. (optional, default `{}`)
-    -   `options.timeout` **[Number][156]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
+-   `options` **[Object][158]?** Options. (optional, default `{}`)
+    -   `options.timeout` **[Number][159]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 ### enterListeningMode
 
-[src/device.js:246-270][200]
+[src/device.js:246-270][203]
 
 Enter listening mode.
 
@@ -623,14 +626,14 @@ Supported platforms:
 
 #### Parameters
 
--   `options` **[Object][155]?** Options. (optional, default `{}`)
-    -   `options.timeout` **[Number][156]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
+-   `options` **[Object][158]?** Options. (optional, default `{}`)
+    -   `options.timeout` **[Number][159]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
 
-Returns **[Promise][162]** Resolves when either device is confirmed to be in listening mode, throws an error, or timeout exceeded.
+Returns **[Promise][165]** Resolves when either device is confirmed to be in listening mode, throws an error, or timeout exceeded.
 
 ### leaveListeningMode
 
-[src/device.js:283-285][201]
+[src/device.js:283-285][204]
 
 Leave the listening mode.
 
@@ -641,14 +644,14 @@ Supported platforms:
 
 #### Parameters
 
--   `options` **[Object][155]?** Options. (optional, default `{}`)
-    -   `options.timeout` **[Number][156]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
+-   `options` **[Object][158]?** Options. (optional, default `{}`)
+    -   `options.timeout` **[Number][159]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 ### getDeviceMode
 
-[src/device.js:298-301][202]
+[src/device.js:298-301][205]
 
 Get the device mode.
 
@@ -659,14 +662,14 @@ Supported platforms:
 
 #### Parameters
 
--   `options` **[Object][155]?** Options. (optional, default `{}`)
-    -   `options.timeout` **[Number][156]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
+-   `options` **[Object][158]?** Options. (optional, default `{}`)
+    -   `options.timeout` **[Number][159]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
 
-Returns **[Promise][162]&lt;[DeviceMode][203]>** 
+Returns **[Promise][165]&lt;[DeviceMode][206]>** 
 
 ### startNyanSignal
 
-[src/device.js:314-316][204]
+[src/device.js:314-316][207]
 
 Start the Nyan LED indication.
 
@@ -677,14 +680,14 @@ Supported platforms:
 
 #### Parameters
 
--   `options` **[Object][155]?** Options. (optional, default `{}`)
-    -   `options.timeout` **[Number][156]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
+-   `options` **[Object][158]?** Options. (optional, default `{}`)
+    -   `options.timeout` **[Number][159]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 ### stopNyanSignal
 
-[src/device.js:329-331][205]
+[src/device.js:329-331][208]
 
 Stop the Nyan LED indication.
 
@@ -695,14 +698,14 @@ Supported platforms:
 
 #### Parameters
 
--   `options` **[Object][155]?** Options. (optional, default `{}`)
-    -   `options.timeout` **[Number][156]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
+-   `options` **[Object][158]?** Options. (optional, default `{}`)
+    -   `options.timeout` **[Number][159]?** Timeout (milliseconds). (optional, default `globalOptions.requestTimeout`)
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 ### updateFirmware
 
-[src/device.js:345-359][206]
+[src/device.js:345-359][209]
 
 Perform the firmware update.
 
@@ -713,24 +716,24 @@ Supported platforms:
 
 #### Parameters
 
--   `data` **[Buffer][166]** Firmware data.
--   `options` **[Object][155]?** Options. (optional, default `{}`)
-    -   `options.timeout` **[Number][156]?** Timeout (milliseconds). (optional, default `DEFAULT_FIRMWARE_UPDATE_TIMEOUT`)
+-   `data` **[Buffer][169]** Firmware data.
+-   `options` **[Object][158]?** Options. (optional, default `{}`)
+    -   `options.timeout` **[Number][159]?** Timeout (milliseconds). (optional, default `DEFAULT_FIRMWARE_UPDATE_TIMEOUT`)
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 ### getFirmwareModule
 
-[src/device.js:374-388][207]
+[src/device.js:374-388][210]
 
 Get firmware module data.
 
 #### Parameters
 
--   `module` **[String][145]** Module type.
--   `index` **[Number][156]?** Module index.
+-   `module` **[String][148]** Module type.
+-   `index` **[Number][159]?** Module index.
 
-Returns **[Promise][162]&lt;[Buffer][166]>** 
+Returns **[Promise][165]&lt;[Buffer][169]>** 
 
 **Meta**
 
@@ -744,11 +747,11 @@ Returns **[Promise][162]&lt;[Buffer][166]>**
 
 ### hasModularFirmware
 
-[src/device.js:401-403][208]
+[src/device.js:401-403][211]
 
 Check if the device runs a modular firmware.
 
-Returns **[Promise][162]&lt;[Boolean][164]>** 
+Returns **[Promise][165]&lt;[Boolean][167]>** 
 
 **Meta**
 
@@ -762,15 +765,15 @@ Returns **[Promise][162]&lt;[Boolean][164]>**
 
 ### setFactoryFirmware
 
-[src/device.js:417-424][209]
+[src/device.js:417-424][212]
 
 Set factory firmware.
 
 #### Parameters
 
--   `data` **[Buffer][166]** Firmware data.
+-   `data` **[Buffer][169]** Firmware data.
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 **Meta**
 
@@ -784,11 +787,11 @@ Returns **[Promise][162]**
 
 ### getFactoryFirmware
 
-[src/device.js:437-448][210]
+[src/device.js:437-448][213]
 
 Get factory firmware.
 
-Returns **[Promise][162]&lt;[Buffer][166]>** 
+Returns **[Promise][165]&lt;[Buffer][169]>** 
 
 **Meta**
 
@@ -802,16 +805,16 @@ Returns **[Promise][162]&lt;[Buffer][166]>**
 
 ### readConfigData
 
-[src/device.js:463-470][211]
+[src/device.js:463-470][214]
 
 Read configuration data.
 
 #### Parameters
 
--   `address` **[Number][156]** Address.
--   `size` **[Number][156]** Data size.
+-   `address` **[Number][159]** Address.
+-   `size` **[Number][159]** Data size.
 
-Returns **[Promise][162]&lt;[Buffer][166]>** 
+Returns **[Promise][165]&lt;[Buffer][169]>** 
 
 **Meta**
 
@@ -825,16 +828,16 @@ Returns **[Promise][162]&lt;[Buffer][166]>**
 
 ### writeConfigData
 
-[src/device.js:485-492][212]
+[src/device.js:485-492][215]
 
 Write configuration data.
 
 #### Parameters
 
--   `address` **[Number][156]** Address.
--   `data` **[Buffer][166]** Data.
+-   `address` **[Number][159]** Address.
+-   `data` **[Buffer][169]** Data.
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 **Meta**
 
@@ -848,11 +851,11 @@ Returns **[Promise][162]**
 
 ### getConfigDataSize
 
-[src/device.js:505-512][213]
+[src/device.js:505-512][216]
 
 Get size of the configuration data.
 
-Returns **[Promise][162]&lt;[Number][156]>** 
+Returns **[Promise][165]&lt;[Number][159]>** 
 
 **Meta**
 
@@ -866,16 +869,16 @@ Returns **[Promise][162]&lt;[Number][156]>**
 
 ### readEeprom
 
-[src/device.js:527-534][214]
+[src/device.js:527-534][217]
 
 Read from EEPROM.
 
 #### Parameters
 
--   `address` **[Number][156]** Address.
--   `size` **[Number][156]** Data size.
+-   `address` **[Number][159]** Address.
+-   `size` **[Number][159]** Data size.
 
-Returns **[Promise][162]&lt;[Buffer][166]>** 
+Returns **[Promise][165]&lt;[Buffer][169]>** 
 
 **Meta**
 
@@ -889,16 +892,16 @@ Returns **[Promise][162]&lt;[Buffer][166]>**
 
 ### writeEeprom
 
-[src/device.js:549-556][215]
+[src/device.js:549-556][218]
 
 Write to EEPROM.
 
 #### Parameters
 
--   `address` **[Number][156]** Address.
--   `data` **[Buffer][166]** Data.
+-   `address` **[Number][159]** Address.
+-   `data` **[Buffer][169]** Data.
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 **Meta**
 
@@ -912,11 +915,11 @@ Returns **[Promise][162]**
 
 ### clearEeprom
 
-[src/device.js:569-576][216]
+[src/device.js:569-576][219]
 
 Clear EEPROM.
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 **Meta**
 
@@ -930,11 +933,11 @@ Returns **[Promise][162]**
 
 ### getEepromSize
 
-[src/device.js:589-596][217]
+[src/device.js:589-596][220]
 
 Get size of the EEPROM.
 
-Returns **[Promise][162]&lt;[Number][156]>** 
+Returns **[Promise][165]&lt;[Number][159]>** 
 
 **Meta**
 
@@ -948,21 +951,21 @@ Returns **[Promise][162]&lt;[Number][156]>**
 
 ### addLogHandler
 
-[src/device.js:613-668][218]
+[src/device.js:613-668][221]
 
 Add a log handler.
 
 #### Parameters
 
--   `options` **[Object][155]** Options.
-    -   `options.id` **[String][145]** Handler ID.
-    -   `options.stream` **[String][145]** Output stream: `Serial`, `Serial1`, `USBSerial1`, etc.
-    -   `options.format` **[String][145]?** Message format: `default`, `json`.
-    -   `options.level` **[String][145]?** Default logging level: `trace`, `info`, `warn`, `error`, `none`, `all`.
-    -   `options.filters` **[Array][219]?** Category filters.
-    -   `options.baudRate` **[Number][156]?** Baud rate.
+-   `options` **[Object][158]** Options.
+    -   `options.id` **[String][148]** Handler ID.
+    -   `options.stream` **[String][148]** Output stream: `Serial`, `Serial1`, `USBSerial1`, etc.
+    -   `options.format` **[String][148]?** Message format: `default`, `json`.
+    -   `options.level` **[String][148]?** Default logging level: `trace`, `info`, `warn`, `error`, `none`, `all`.
+    -   `options.filters` **[Array][222]?** Category filters.
+    -   `options.baudRate` **[Number][159]?** Baud rate.
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 **Meta**
 
@@ -972,16 +975,16 @@ Returns **[Promise][162]**
 
 ### removeLogHandler
 
-[src/device.js:680-682][220]
+[src/device.js:680-682][223]
 
 Remove a log handler.
 
 #### Parameters
 
--   `options` **[Object][155]** Options.
-    -   `options.id` **[String][145]** Handler ID.
+-   `options` **[Object][158]** Options.
+    -   `options.id` **[String][148]** Handler ID.
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 **Meta**
 
@@ -991,11 +994,11 @@ Returns **[Promise][162]**
 
 ### getLogHandlers
 
-[src/device.js:692-697][221]
+[src/device.js:692-697][224]
 
 Get the list of active log handlers.
 
-Returns **[Promise][162]&lt;[Array][219]&lt;[Object][155]>>** 
+Returns **[Promise][165]&lt;[Array][222]&lt;[Object][158]>>** 
 
 **Meta**
 
@@ -1005,24 +1008,24 @@ Returns **[Promise][162]&lt;[Array][219]&lt;[Object][155]>>**
 
 ### sendProtobufRequest
 
-[src/device.js:707-730][222]
+[src/device.js:707-730][225]
 
 Sends a protobuf encoded request to Device and decodes response. Use higher level methods like getSerialNumber() than this if possible.
 
 #### Parameters
 
--   `protobufMessageName` **[String][145]** The protobuf message name, see DeviceOSProtobuf.getDefinitions() for valid values.
--   `protobufMessageData` **[Object][155]** data that will be encoded into the protobuf request before sending to device (optional, default `{}`)
+-   `protobufMessageName` **[String][148]** The protobuf message name, see DeviceOSProtobuf.getDefinitions() for valid values.
+-   `protobufMessageData` **[Object][158]** data that will be encoded into the protobuf request before sending to device (optional, default `{}`)
 -   `opts` **any** See sendControlRequest(), same options are here.
 
 
--   Throws **[RequestError][223]** thrown when message isn't supported by device or other USB related failures
+-   Throws **[RequestError][226]** thrown when message isn't supported by device or other USB related failures
 
-Returns **[Object][155]** Depends on schema defined by `req.reply`
+Returns **[Object][158]** Depends on schema defined by `req.reply`
 
 ## DfuError
 
-[src/dfu.js:6-11][224]
+[src/dfu.js:6-11][227]
 
 **Extends DeviceError**
 
@@ -1034,7 +1037,7 @@ A generic DFU error.
 
 ## DfuseCommand
 
-[src/dfu.js:110-116][225]
+[src/dfu.js:110-116][228]
 
 DFU with ST Microsystems extensions.
 
@@ -1042,31 +1045,31 @@ AN3156: USB DFU protocol used in the STM32 bootloader.
 
 ## open
 
-[src/dfu.js:142-146][226]
+[src/dfu.js:142-146][229]
 
 Open DFU interface.
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 ## close
 
-[src/dfu.js:153-157][227]
+[src/dfu.js:153-157][230]
 
 Close DFU interface.
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 ## leave
 
-[src/dfu.js:164-186][228]
+[src/dfu.js:164-186][231]
 
 Leave DFU mode.
 
-Returns **[Promise][162]** 
+Returns **[Promise][165]** 
 
 ## DeviceError
 
-[src/error.js:4-9][229]
+[src/error.js:4-9][232]
 
 **Extends Error**
 
@@ -1078,7 +1081,7 @@ Generic device error. This is a base class for all errors reported by the librar
 
 ## NotFoundError
 
-[src/error.js:14-19][230]
+[src/error.js:14-19][233]
 
 **Extends DeviceError**
 
@@ -1090,7 +1093,7 @@ An error reported when a requested resource cannot be found.
 
 ## NotAllowedError
 
-[src/error.js:24-29][231]
+[src/error.js:24-29][234]
 
 **Extends DeviceError**
 
@@ -1102,7 +1105,7 @@ An error reported when a requested operation is not permitted.
 
 ## StateError
 
-[src/error.js:34-39][232]
+[src/error.js:34-39][235]
 
 **Extends DeviceError**
 
@@ -1114,7 +1117,7 @@ An error reported when an object is not in an appropriate state to perform an op
 
 ## TimeoutError
 
-[src/error.js:44-49][233]
+[src/error.js:44-49][236]
 
 **Extends DeviceError**
 
@@ -1126,7 +1129,7 @@ Timeout error.
 
 ## MemoryError
 
-[src/error.js:54-59][234]
+[src/error.js:54-59][237]
 
 **Extends DeviceError**
 
@@ -1138,7 +1141,7 @@ An error reported when a device has no enough memory to perform an operation.
 
 ## ProtocolError
 
-[src/error.js:64-69][235]
+[src/error.js:64-69][238]
 
 **Extends DeviceError**
 
@@ -1150,7 +1153,7 @@ Protocol error.
 
 ## UsbError
 
-[src/error.js:74-79][236]
+[src/error.js:74-79][239]
 
 **Extends DeviceError**
 
@@ -1162,7 +1165,7 @@ USB error.
 
 ## InternalError
 
-[src/error.js:84-89][237]
+[src/error.js:84-89][240]
 
 **Extends DeviceError**
 
@@ -1174,7 +1177,7 @@ Internal error.
 
 ## RequestError
 
-[src/error.js:94-100][238]
+[src/error.js:94-100][241]
 
 **Extends DeviceError**
 
@@ -1187,7 +1190,7 @@ Request error.
 
 ## Gen3Device
 
-[src/gen3-device.js:11-31][239]
+[src/gen3-device.js:11-31][242]
 
 Gen 3 device.
 
@@ -1200,13 +1203,13 @@ This class is not meant to be instantiated directly. Use [getDevices][130] and
 
 ## NetworkStatus
 
-[src/network-device.js:11-14][240]
+[src/network-device.js:11-14][243]
 
 Network status.
 
 ## NetworkDevice
 
-[src/network-device.js:24-74][241]
+[src/network-device.js:24-74][244]
 
 Network device.
 
@@ -1219,79 +1222,79 @@ This class is not meant to be instantiated directly. Use [getDevices][130] and
 
 ## getDevices
 
-[src/particle-usb.js:54-56][242]
+[src/particle-usb.js:54-56][245]
 
 Enumerate Particle USB devices attached to the host.
 
 ### Parameters
 
--   `options` **[Object][155]** Options.
-    -   `options.types` **[Array][219]&lt;[String][145]>?** Device types (photon, boron, tracker, etc). By default, this
+-   `options` **[Object][158]** Options.
+    -   `options.types` **[Array][222]&lt;[String][148]>?** Device types (photon, boron, tracker, etc). By default, this
                function enumerates devices of all platforms supported by the library.
-    -   `options.includeDfu` **[Boolean][164]** Whether to include devices in DFU mode. (optional, default `true`)
+    -   `options.includeDfu` **[Boolean][167]** Whether to include devices in DFU mode. (optional, default `true`)
 
-Returns **[Promise][162]&lt;[Array][219]&lt;[Device][243]>>** 
+Returns **[Promise][165]&lt;[Array][222]&lt;[Device][246]>>** 
 
 ## openDeviceById
 
-[src/particle-usb.js:65-67][244]
+[src/particle-usb.js:65-67][247]
 
 Open a Particle USB device with the specified ID.
 
 ### Parameters
 
--   `id` **[String][145]** Device ID.
--   `options` **[Object][155]?** Options (see [DeviceBase#open][245]).
+-   `id` **[String][148]** Device ID.
+-   `options` **[Object][158]?** Options (see [DeviceBase#open][248]).
 
-Returns **[Promise][162]&lt;[Device][243]>** 
+Returns **[Promise][165]&lt;[Device][246]>** 
 
 ## Result
 
-[src/result.js:121-124][246]
+[src/result.js:121-124][249]
 
 Request result codes.
 
-Type: [Number][156]
+Type: [Number][159]
 
 ## messageForResultCode
 
-[src/result.js:132-134][247]
+[src/result.js:132-134][250]
 
 Return a message for the result code.
 
 ### Parameters
 
--   `result` **[Number][156]** Result code.
+-   `result` **[Number][159]** Result code.
 
-Returns **[String][145]** Error message.
+Returns **[String][148]** Error message.
 
 ## WifiAntenna
 
-[src/wifi-device.js:9-13][248]
+[src/wifi-device.js:9-13][251]
 
 WiFi antenna types.
 
 ## WifiSecurity
 
-[src/wifi-device.js:18-26][249]
+[src/wifi-device.js:18-26][252]
 
 WiFi security types.
 
 ## WifiCipher
 
-[src/wifi-device.js:31-35][250]
+[src/wifi-device.js:31-35][253]
 
 WiFi cipher types.
 
 ## EapMethod
 
-[src/wifi-device.js:40-43][251]
+[src/wifi-device.js:40-43][254]
 
 EAP methods.
 
 ## WifiDevice
 
-[src/wifi-device.js:84-192][252]
+[src/wifi-device.js:84-194][255]
 
 Wi-Fi device.
 
@@ -1301,6 +1304,26 @@ This class is not meant to be instantiated directly. Use [getDevices][130] and
 ### Parameters
 
 -   `base`  
+
+## require
+
+[src/wifi-device.test.js:4-4][256]
+
+We deliberately don't use fakeUSB here because it mocks out too much
+
+## getFakeWifiDevice
+
+[test/support/index.js:74-80][257]
+
+This helper is a substitute for how getDevices uses
+setDevicePrototype to set up the correct inheritance chain.
+
+It would be nice if we could just do `new WifiDevice()`, but alas that is not possible now
+
+### Parameters
+
+-   `usbDevice`  
+-   `platform`  
 
 [1]: #cellulardevice
 
@@ -1586,222 +1609,232 @@ This class is not meant to be instantiated directly. Use [getDevices][130] and
 
 [142]: #parameters-44
 
-[143]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/cellular-device.js#L12-L35 "Source code on GitHub"
+[143]: #require
 
-[144]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/cloud-device.js#L13-L22 "Source code on GitHub"
+[144]: #getfakewifidevice
 
-[145]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
+[145]: #parameters-45
 
-[146]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/cloud-device.js#L15-L15 "Source code on GitHub"
+[146]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/cellular-device.js#L12-L35 "Source code on GitHub"
 
-[147]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/cloud-device.js#L17-L17 "Source code on GitHub"
+[147]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/cloud-device.js#L13-L22 "Source code on GitHub"
 
-[148]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/cloud-device.js#L19-L19 "Source code on GitHub"
+[148]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
 
-[149]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/cloud-device.js#L21-L21 "Source code on GitHub"
+[149]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/cloud-device.js#L15-L15 "Source code on GitHub"
 
-[150]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/cloud-device.js#L29-L34 "Source code on GitHub"
+[150]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/cloud-device.js#L17-L17 "Source code on GitHub"
 
-[151]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/cloud-device.js#L31-L31 "Source code on GitHub"
+[151]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/cloud-device.js#L19-L19 "Source code on GitHub"
 
-[152]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/cloud-device.js#L33-L33 "Source code on GitHub"
+[152]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/cloud-device.js#L21-L21 "Source code on GitHub"
 
-[153]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/cloud-device.js#L44-L380 "Source code on GitHub"
+[153]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/cloud-device.js#L29-L34 "Source code on GitHub"
 
-[154]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/config.js#L23-L25 "Source code on GitHub"
+[154]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/cloud-device.js#L31-L31 "Source code on GitHub"
 
-[155]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
+[155]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/cloud-device.js#L33-L33 "Source code on GitHub"
 
-[156]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
+[156]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/cloud-device.js#L44-L380 "Source code on GitHub"
 
-[157]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device-base.js#L57-L60 "Source code on GitHub"
+[157]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/config.js#L23-L25 "Source code on GitHub"
 
-[158]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function
+[158]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
 
-[159]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device-base.js#L59-L59 "Source code on GitHub"
+[159]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
 
-[160]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device-base.js#L85-L725 "Source code on GitHub"
+[160]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device-base.js#L57-L60 "Source code on GitHub"
 
-[161]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device-base.js#L117-L162 "Source code on GitHub"
+[161]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function
 
-[162]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise
+[162]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device-base.js#L59-L59 "Source code on GitHub"
 
-[163]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device-base.js#L174-L203 "Source code on GitHub"
+[163]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device-base.js#L85-L725 "Source code on GitHub"
 
-[164]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
+[164]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device-base.js#L117-L162 "Source code on GitHub"
 
-[165]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device-base.js#L219-L269 "Source code on GitHub"
+[165]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise
 
-[166]: https://nodejs.org/api/buffer.html
+[166]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device-base.js#L174-L203 "Source code on GitHub"
 
-[167]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device-base.js#L278-L283 "Source code on GitHub"
+[167]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
 
-[168]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device-base.js#L288-L290 "Source code on GitHub"
+[168]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device-base.js#L219-L269 "Source code on GitHub"
 
-[169]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device-base.js#L297-L299 "Source code on GitHub"
+[169]: https://nodejs.org/api/buffer.html
 
-[170]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device-base.js#L306-L308 "Source code on GitHub"
+[170]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device-base.js#L278-L283 "Source code on GitHub"
 
-[171]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device-base.js#L313-L315 "Source code on GitHub"
+[171]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device-base.js#L288-L290 "Source code on GitHub"
 
-[172]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device-base.js#L320-L322 "Source code on GitHub"
+[172]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device-base.js#L297-L299 "Source code on GitHub"
 
-[173]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device-base.js#L327-L329 "Source code on GitHub"
+[173]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device-base.js#L306-L308 "Source code on GitHub"
 
-[174]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device-base.js#L334-L336 "Source code on GitHub"
+[174]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device-base.js#L313-L315 "Source code on GitHub"
 
-[175]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device-base.js#L341-L343 "Source code on GitHub"
+[175]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device-base.js#L320-L322 "Source code on GitHub"
 
-[176]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device-base.js#L348-L350 "Source code on GitHub"
+[176]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device-base.js#L327-L329 "Source code on GitHub"
 
-[177]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device-base.js#L355-L357 "Source code on GitHub"
+[177]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device-base.js#L334-L336 "Source code on GitHub"
 
-[178]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L18-L27 "Source code on GitHub"
+[178]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device-base.js#L341-L343 "Source code on GitHub"
 
-[179]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L20-L20 "Source code on GitHub"
+[179]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device-base.js#L348-L350 "Source code on GitHub"
 
-[180]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L22-L22 "Source code on GitHub"
+[180]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device-base.js#L355-L357 "Source code on GitHub"
 
-[181]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L24-L24 "Source code on GitHub"
+[181]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L18-L27 "Source code on GitHub"
 
-[182]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L26-L26 "Source code on GitHub"
+[182]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L20-L20 "Source code on GitHub"
 
-[183]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L34-L39 "Source code on GitHub"
+[183]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L22-L22 "Source code on GitHub"
 
-[184]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L36-L36 "Source code on GitHub"
+[184]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L24-L24 "Source code on GitHub"
 
-[185]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L38-L38 "Source code on GitHub"
+[185]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L26-L26 "Source code on GitHub"
 
-[186]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L46-L59 "Source code on GitHub"
+[186]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L34-L39 "Source code on GitHub"
 
-[187]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L48-L48 "Source code on GitHub"
+[187]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L36-L36 "Source code on GitHub"
 
-[188]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L50-L50 "Source code on GitHub"
+[188]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L38-L38 "Source code on GitHub"
 
-[189]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L52-L52 "Source code on GitHub"
+[189]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L46-L59 "Source code on GitHub"
 
-[190]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L54-L54 "Source code on GitHub"
+[190]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L48-L48 "Source code on GitHub"
 
-[191]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L56-L56 "Source code on GitHub"
+[191]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L50-L50 "Source code on GitHub"
 
-[192]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L58-L58 "Source code on GitHub"
+[192]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L52-L52 "Source code on GitHub"
 
-[193]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L108-L905 "Source code on GitHub"
+[193]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L54-L54 "Source code on GitHub"
 
-[194]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L120-L127 "Source code on GitHub"
+[194]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L56-L56 "Source code on GitHub"
 
-[195]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L147-L161 "Source code on GitHub"
+[195]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L58-L58 "Source code on GitHub"
 
-[196]: #devicebaseclose
+[196]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L108-L905 "Source code on GitHub"
 
-[197]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L177-L179 "Source code on GitHub"
+[197]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L120-L127 "Source code on GitHub"
 
-[198]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L195-L215 "Source code on GitHub"
+[198]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L147-L161 "Source code on GitHub"
 
-[199]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L231-L233 "Source code on GitHub"
+[199]: #devicebaseclose
 
-[200]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L246-L270 "Source code on GitHub"
+[200]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L177-L179 "Source code on GitHub"
 
-[201]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L283-L285 "Source code on GitHub"
+[201]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L195-L215 "Source code on GitHub"
 
-[202]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L298-L301 "Source code on GitHub"
+[202]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L231-L233 "Source code on GitHub"
 
-[203]: #devicemode
+[203]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L246-L270 "Source code on GitHub"
 
-[204]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L314-L316 "Source code on GitHub"
+[204]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L283-L285 "Source code on GitHub"
 
-[205]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L329-L331 "Source code on GitHub"
+[205]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L298-L301 "Source code on GitHub"
 
-[206]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L345-L359 "Source code on GitHub"
+[206]: #devicemode
 
-[207]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L374-L388 "Source code on GitHub"
+[207]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L314-L316 "Source code on GitHub"
 
-[208]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L401-L403 "Source code on GitHub"
+[208]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L329-L331 "Source code on GitHub"
 
-[209]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L417-L424 "Source code on GitHub"
+[209]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L345-L359 "Source code on GitHub"
 
-[210]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L437-L448 "Source code on GitHub"
+[210]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L374-L388 "Source code on GitHub"
 
-[211]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L463-L470 "Source code on GitHub"
+[211]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L401-L403 "Source code on GitHub"
 
-[212]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L485-L492 "Source code on GitHub"
+[212]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L417-L424 "Source code on GitHub"
 
-[213]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L505-L512 "Source code on GitHub"
+[213]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L437-L448 "Source code on GitHub"
 
-[214]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L527-L534 "Source code on GitHub"
+[214]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L463-L470 "Source code on GitHub"
 
-[215]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L549-L556 "Source code on GitHub"
+[215]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L485-L492 "Source code on GitHub"
 
-[216]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L569-L576 "Source code on GitHub"
+[216]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L505-L512 "Source code on GitHub"
 
-[217]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L589-L596 "Source code on GitHub"
+[217]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L527-L534 "Source code on GitHub"
 
-[218]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L613-L668 "Source code on GitHub"
+[218]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L549-L556 "Source code on GitHub"
 
-[219]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
+[219]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L569-L576 "Source code on GitHub"
 
-[220]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L680-L682 "Source code on GitHub"
+[220]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L589-L596 "Source code on GitHub"
 
-[221]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L692-L697 "Source code on GitHub"
+[221]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L613-L668 "Source code on GitHub"
 
-[222]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/device.js#L707-L730 "Source code on GitHub"
+[222]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
 
-[223]: #requesterror
+[223]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L680-L682 "Source code on GitHub"
 
-[224]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/dfu.js#L6-L11 "Source code on GitHub"
+[224]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L692-L697 "Source code on GitHub"
 
-[225]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/dfu.js#L110-L116 "Source code on GitHub"
+[225]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/device.js#L707-L730 "Source code on GitHub"
 
-[226]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/dfu.js#L142-L146 "Source code on GitHub"
+[226]: #requesterror
 
-[227]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/dfu.js#L153-L157 "Source code on GitHub"
+[227]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/dfu.js#L6-L11 "Source code on GitHub"
 
-[228]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/dfu.js#L164-L186 "Source code on GitHub"
+[228]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/dfu.js#L110-L116 "Source code on GitHub"
 
-[229]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/error.js#L4-L9 "Source code on GitHub"
+[229]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/dfu.js#L142-L146 "Source code on GitHub"
 
-[230]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/error.js#L14-L19 "Source code on GitHub"
+[230]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/dfu.js#L153-L157 "Source code on GitHub"
 
-[231]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/error.js#L24-L29 "Source code on GitHub"
+[231]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/dfu.js#L164-L186 "Source code on GitHub"
 
-[232]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/error.js#L34-L39 "Source code on GitHub"
+[232]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/error.js#L4-L9 "Source code on GitHub"
 
-[233]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/error.js#L44-L49 "Source code on GitHub"
+[233]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/error.js#L14-L19 "Source code on GitHub"
 
-[234]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/error.js#L54-L59 "Source code on GitHub"
+[234]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/error.js#L24-L29 "Source code on GitHub"
 
-[235]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/error.js#L64-L69 "Source code on GitHub"
+[235]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/error.js#L34-L39 "Source code on GitHub"
 
-[236]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/error.js#L74-L79 "Source code on GitHub"
+[236]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/error.js#L44-L49 "Source code on GitHub"
 
-[237]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/error.js#L84-L89 "Source code on GitHub"
+[237]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/error.js#L54-L59 "Source code on GitHub"
 
-[238]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/error.js#L94-L100 "Source code on GitHub"
+[238]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/error.js#L64-L69 "Source code on GitHub"
 
-[239]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/gen3-device.js#L11-L31 "Source code on GitHub"
+[239]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/error.js#L74-L79 "Source code on GitHub"
 
-[240]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/network-device.js#L11-L14 "Source code on GitHub"
+[240]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/error.js#L84-L89 "Source code on GitHub"
 
-[241]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/network-device.js#L24-L74 "Source code on GitHub"
+[241]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/error.js#L94-L100 "Source code on GitHub"
 
-[242]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/particle-usb.js#L54-L56 "Source code on GitHub"
+[242]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/gen3-device.js#L11-L31 "Source code on GitHub"
 
-[243]: #device
+[243]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/network-device.js#L11-L14 "Source code on GitHub"
 
-[244]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/particle-usb.js#L65-L67 "Source code on GitHub"
+[244]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/network-device.js#L24-L74 "Source code on GitHub"
 
-[245]: #devicebaseopen
+[245]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/particle-usb.js#L54-L56 "Source code on GitHub"
 
-[246]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/result.js#L121-L124 "Source code on GitHub"
+[246]: #device
 
-[247]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/result.js#L132-L134 "Source code on GitHub"
+[247]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/particle-usb.js#L65-L67 "Source code on GitHub"
 
-[248]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/wifi-device.js#L9-L13 "Source code on GitHub"
+[248]: #devicebaseopen
 
-[249]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/wifi-device.js#L18-L26 "Source code on GitHub"
+[249]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/result.js#L121-L124 "Source code on GitHub"
 
-[250]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/wifi-device.js#L31-L35 "Source code on GitHub"
+[250]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/result.js#L132-L134 "Source code on GitHub"
 
-[251]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/wifi-device.js#L40-L43 "Source code on GitHub"
+[251]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/wifi-device.js#L9-L13 "Source code on GitHub"
 
-[252]: https://github.com/particle-iot/particle-usb/blob/cdc367e8b104751a824ae8d6e2bea1b90e2fbfc5/src/wifi-device.js#L84-L192 "Source code on GitHub"
+[252]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/wifi-device.js#L18-L26 "Source code on GitHub"
+
+[253]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/wifi-device.js#L31-L35 "Source code on GitHub"
+
+[254]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/wifi-device.js#L40-L43 "Source code on GitHub"
+
+[255]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/wifi-device.js#L84-L194 "Source code on GitHub"
+
+[256]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/src/wifi-device.test.js#L4-L4 "Source code on GitHub"
+
+[257]: https://github.com/particle-iot/particle-usb/blob/4f3252f5a3ea7c5101941a196477be0045f12869/test/support/index.js#L74-L80 "Source code on GitHub"
