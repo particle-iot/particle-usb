@@ -1,7 +1,7 @@
 const { Request } = require('./request');
 const { fromProtobufEnum, fromProtobufMessage, toProtobufMessage } = require('./protobuf-util');
-
 const proto = require('./protocol');
+const { TimeoutError } = require('./error');
 
 /**
  * WiFi antenna types.
@@ -121,7 +121,7 @@ const WifiDevice = base => class extends base {
 	 * Perform WiFi scan
 	 *
 	 * Supported platforms:
-	 * - Gen 4: Supported on P2 since Device OS 3.0.0.
+	 * - Gen 4: Supported on P2 since Device OS 3.x
 	 * - Gen 3: Not supported
 	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
 	 * @return {Promise[Object]} - Each object in array has these properties: ssid, bssid, security, channel, rssi. See Network protobuf message from https://github.com/particle-iot/device-os-protobuf for more details.
@@ -138,6 +138,52 @@ const WifiDevice = base => class extends base {
 			};
 		});
 		return networks;
+	}
+
+	/**
+	 * Join a new WiFi network. Note, there is a bug in Device OS (sc-96270)
+	 * where P2's don't do anything with bssid or security fields, when this bug is fixed the fields will become available on this method
+	 *
+	 * Supported platforms:
+	 * - Gen 4: Supported on P2 since Device OS 3.x
+	 * @param {string} ssid - SSID of Wifi Network
+	 * @param {string} password - Password of Wifi network, pass null to no password
+	 * @param {string} timeout - how long to wait before calling the network attempt a failure
+	 * @returns {Promise<Object>} - {pass: true} on success, otherwise {pass: false, error: msg}
+	 */
+	async joinNewWifiNetwork({ ssid, password, timeout = 20000 }) {
+		const returnThis = {};
+		let replyObject;
+
+		try {
+			replyObject = await this.sendProtobufRequest('wifi.JoinNewNetworkRequest', {
+				ssid: ssid,
+				// Bug: P2s ignore these right now, so we don't pass them
+				bssid: null,
+				security: null,
+				credentials: {
+					type: 1,
+					password: password
+				},
+			},
+			{ timeout }
+			);
+		} catch (error) {
+			if (error instanceof TimeoutError) {
+				returnThis.pass = false;
+				returnThis.error = `Request timed out, exceeded ${timeout}ms`;
+				return returnThis;
+			}
+			throw error;
+		}
+
+		if (replyObject && replyObject.constructor && replyObject.constructor.name === 'JoinNewNetworkReply') {
+			returnThis.pass = true;
+		} else {
+			returnThis.pass = false;
+			returnThis.error = `Device did not return a valid reply. expected=JoinNewNetworkReply actual=${JSON.stringify(replyObject)}`;
+		}
+		return returnThis;
 	}
 
 	/**

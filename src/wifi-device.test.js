@@ -4,6 +4,7 @@
 const { sinon, expect, getFakeWifiDevice } = require('../test/support');
 const { UsbDevice } = require('./usb-device-node');
 const { PLATFORMS } = require('./platforms');
+const { TimeoutError } = require('./error');
 
 describe('WifiDevice', () => {
 	let usbDevice, p2Platform, wifiDevice;
@@ -63,31 +64,88 @@ describe('WifiDevice', () => {
 		sinon.restore();
 	});
 
-	it('Provides scanWifiNetworks(); when no networks are returned', async () => {
-		sinon.stub(wifiDevice, 'sendProtobufRequest').resolves({ networks: [] });
-		const result = await wifiDevice.scanWifiNetworks();
-		expect(result).to.eql([]);
+	describe('scanWifiNetworks()', () => {
+		it('returns empty when no networks are returned', async () => {
+			sinon.stub(wifiDevice, 'sendProtobufRequest').resolves({ networks: [] });
+			const result = await wifiDevice.scanWifiNetworks();
+			expect(result).to.eql([]);
+		});
+
+		it('returns valid networks', async () => {
+			sinon.stub(wifiDevice, 'sendProtobufRequest').resolves(fakeScanNetworksReply);
+			const networks = await wifiDevice.scanWifiNetworks();
+			expect(networks).to.have.lengthOf(fakeScanNetworksReply.networks.length);
+		});
+
+		it('sets ssid to null if Device OS returns with undefined', async () => {
+			sinon.stub(wifiDevice, 'sendProtobufRequest').resolves(fakeScanNetworksReply);
+			const networks = await wifiDevice.scanWifiNetworks();
+			expect(networks[2].bssid).to.eql(fakeNetworkWithoutSSID.bssid, 'targeting correct fixture');
+			expect(fakeNetworkWithoutSSID).to.not.have.haveOwnProperty('ssid');
+			expect(networks[2].ssid).to.eql(null);
+		});
+
+		it('sets security to null if Device OS returns with undefined', async () => {
+			sinon.stub(wifiDevice, 'sendProtobufRequest').resolves(fakeScanNetworksReply);
+			const networks = await wifiDevice.scanWifiNetworks();
+			expect(networks[3].bssid).to.eql(fakeNetworkWithoutSecurity.bssid, 'targeting correct fixture');
+			expect(fakeNetworkWithoutSecurity).to.not.have.haveOwnProperty('security');
+			expect(networks[3].security).to.eql(null);
+		});
 	});
 
-	it('Provides scanWifiNetworks(); when valid networks are returned', async () => {
-		sinon.stub(wifiDevice, 'sendProtobufRequest').resolves(fakeScanNetworksReply);
-		const networks = await wifiDevice.scanWifiNetworks();
-		expect(networks).to.have.lengthOf(fakeScanNetworksReply.networks.length);
-	});
+	describe('joinNewWifiNetwork()', () => {
+		let ssid, password;
+		beforeEach(() => {
+			ssid = 'ssid';
+			password = 'password';
+		});
 
-	it('implements scanWifiNetworks() in a way that sets ssid to null if reply is undefined', async () => {
-		sinon.stub(wifiDevice, 'sendProtobufRequest').resolves(fakeScanNetworksReply);
-		const networks = await wifiDevice.scanWifiNetworks();
-		expect(networks[2].bssid).to.eql(fakeNetworkWithoutSSID.bssid, 'targeting correct fixture');
-		expect(fakeNetworkWithoutSSID).to.not.have.haveOwnProperty('ssid');
-		expect(networks[2].ssid).to.eql(null);
-	});
+		it('Connects to network with valid SSID and password', async () => {
+			sinon.stub(wifiDevice, 'sendProtobufRequest').resolves({
+				constructor: {
+					name: 'JoinNewNetworkReply'
+				}
+			});
+			const result = await wifiDevice.joinNewWifiNetwork({
+				ssid, password
+			});
+			expect(result).to.be.an('object');
+			expect(result.pass).to.eql(true);
+		});
 
-	it('implements scanWifiNetworks() in a way that sets security to null if reply is undefined', async () => {
-		sinon.stub(wifiDevice, 'sendProtobufRequest').resolves(fakeScanNetworksReply);
-		const networks = await wifiDevice.scanWifiNetworks();
-		expect(networks[3].bssid).to.eql(fakeNetworkWithoutSecurity.bssid, 'targeting correct fixture');
-		expect(fakeNetworkWithoutSecurity).to.not.have.haveOwnProperty('security');
-		expect(networks[3].security).to.eql(null);
+		it('Does not connect to network when sendProtobufRequest returns undefined', async () => {
+			sinon.stub(wifiDevice, 'sendProtobufRequest').resolves(undefined); // This is one way that Device OS can reply
+			const result = await wifiDevice.joinNewWifiNetwork({
+				ssid, password
+			});
+			expect(result).to.be.an('object');
+			expect(result.pass).to.eql(false);
+			expect(result.error).to.eql('Device did not return a valid reply. expected=JoinNewNetworkReply actual=undefined');
+		});
+
+		it('Does not connect to network when sendProtobufRequest throws TimeourError', async () => {
+			sinon.stub(wifiDevice, 'sendProtobufRequest').throws(new TimeoutError());
+			const result = await wifiDevice.joinNewWifiNetwork({
+				ssid, password
+			});
+			expect(result).to.be.an('object');
+			expect(result.pass).to.eql(false);
+			expect(result.error).to.eql('Request timed out, exceeded 20000ms');
+		});
+
+		it('Throws errors other than TimeoutError', async () => {
+			sinon.stub(wifiDevice, 'sendProtobufRequest').throws(new Error('hihihi'));
+
+			let error;
+			try {
+				await wifiDevice.joinNewWifiNetwork({
+					ssid, password
+				});
+			} catch (e) {
+				error = e;
+			}
+			expect(error.message).to.eql('hihihi');
+		});
 	});
 });
