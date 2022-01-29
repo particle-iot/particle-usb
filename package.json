@@ -1,6 +1,6 @@
 {
   "name": "particle-usb",
-  "version": "2.1.0-1",
+  "version": "2.1.0-2",
   "description": "A library for accessing Particle USB devices",
   "main": "src/particle-usb.js",
   "keywords": [
