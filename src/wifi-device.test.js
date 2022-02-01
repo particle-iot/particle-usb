@@ -71,10 +71,22 @@ describe('WifiDevice', () => {
 			expect(result).to.eql([]);
 		});
 
-		it('returns valid networks', async () => {
+		it('returns valid networks with strings for security fields rather than integers', async () => {
 			sinon.stub(wifiDevice, 'sendProtobufRequest').resolves(fakeScanNetworksReply);
 			const networks = await wifiDevice.scanWifiNetworks();
 			expect(networks).to.have.lengthOf(fakeScanNetworksReply.networks.length);
+			const firstNetwork = networks[0];
+			expect(firstNetwork.security).to.eql('WPA2_PSK');
+		});
+
+		it('converts security integer values to meaningful values based on existing protobuf enum', async () => {
+			expect(wifiDevice._mapSecurityValueToString(undefined)).to.eql('UNKNOWN');
+			expect(wifiDevice._mapSecurityValueToString(0)).to.eql('NO_SECURITY');
+			expect(wifiDevice._mapSecurityValueToString(1)).to.eql('WEP');
+			expect(wifiDevice._mapSecurityValueToString(2)).to.eql('WPA_PSK');
+			expect(wifiDevice._mapSecurityValueToString(3)).to.eql('WPA2_PSK');
+			expect(wifiDevice._mapSecurityValueToString(4)).to.eql('WPA_WPA2_PSK');
+			expect(wifiDevice._mapSecurityValueToString(444)).to.eql('UNKNOWN');
 		});
 
 		it('sets ssid to null if Device OS returns with undefined', async () => {
@@ -90,7 +102,7 @@ describe('WifiDevice', () => {
 			const networks = await wifiDevice.scanWifiNetworks();
 			expect(networks[3].bssid).to.eql(fakeNetworkWithoutSecurity.bssid, 'targeting correct fixture');
 			expect(fakeNetworkWithoutSecurity).to.not.have.haveOwnProperty('security');
-			expect(networks[3].security).to.eql(null);
+			expect(networks[3].security).to.eql('UNKNOWN');
 		});
 	});
 

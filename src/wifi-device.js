@@ -2,6 +2,7 @@ const { Request } = require('./request');
 const { fromProtobufEnum, fromProtobufMessage, toProtobufMessage } = require('./protobuf-util');
 const proto = require('./protocol');
 const { TimeoutError } = require('./error');
+const DeviceOSProtobuf = require('@particle/device-os-protobuf');
 
 /**
  * WiFi antenna types.
@@ -123,7 +124,7 @@ const WifiDevice = base => class extends base {
 	 * Supported platforms:
 	 * - Gen 4: On P2 since Device OS 3.x
 	 * - Gen 3: On Argon
-	 * 
+	 *
 	 * @return {Promise[Object]} - Each object in array has these properties: ssid, bssid, security, channel, rssi. See Network protobuf message from https://github.com/particle-iot/device-os-protobuf for more details.
 	 */
 	async scanWifiNetworks() {
@@ -132,12 +133,27 @@ const WifiDevice = base => class extends base {
 			return {
 				ssid: network.ssid || null, // can be blank for hidden networks
 				bssid: network.bssid.toString('hex'), // convert buffer to hex string
-				security: network.security || null, // sometimes isn't set
+				security: this._mapSecurityValueToString(network.security),
 				channel: network.channel,
 				rssi: network.rssi
 			};
 		});
 		return networks;
+	}
+
+	// Internal helper that transforms int or undefined into a string
+	// for security field from scanWifiNetworks
+	_mapSecurityValueToString(value) {
+		if (value === undefined) {
+			return 'UNKNOWN';
+		}
+		const wifiSecurityEnum = DeviceOSProtobuf.getDefinition('wifi.Security').message;
+		const firstMatchingKey = Object.keys(wifiSecurityEnum).find(key => wifiSecurityEnum[key] === value);
+		if (firstMatchingKey === undefined) {
+			return 'UNKNOWN';
+		} else {
+			return firstMatchingKey;
+		}
 	}
 
 	/**
