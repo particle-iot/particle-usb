@@ -15,10 +15,7 @@
     "url": "https://github.com/spark/particle-usb"
   },
   "license": "Apache-2.0",
-  "contributors": [
-    "Sergey Polyakov <sergeuz@gmail.com>",
-    "Andrey Tolstoy <avtolstoy@gmail.com>"
-  ],
+  "author": "Particle Industries, inc",
   "engines": {
     "node": ">=12"
   },
