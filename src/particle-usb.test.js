@@ -1,7 +1,7 @@
 const { /*sinon*/ expect } = require('../test/support');
 const particleUSB = require('./particle-usb');
 describe('Public interface of npm module', () => {
-	it('exports expected stuff', () => {
+	it('exports expected objects and functions', () => {
 		expect(particleUSB.getDevices).to.be.a('Function');
 		expect(particleUSB.openDeviceById).to.be.a('Function');
 		expect(particleUSB.PollingPolicy).to.be.an('object');

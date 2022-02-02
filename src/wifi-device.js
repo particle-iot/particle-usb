@@ -1,77 +1,5 @@
-const { Request } = require('./request');
-const { fromProtobufEnum, fromProtobufMessage, toProtobufMessage } = require('./protobuf-util');
-
-const proto = require('./protocol');
-
-/**
- * WiFi antenna types.
- */
-const WifiAntenna = fromProtobufEnum(proto.WiFiAntenna, {
-	INTERNAL: 'INTERNAL',
-	EXTERNAL: 'EXTERNAL',
-	AUTO: 'AUTO'
-});
-
-/**
- * WiFi security types.
- */
-const WifiSecurity = fromProtobufEnum(proto.WiFiSecurityType, {
-	NONE: 'UNSEC',
-	WEP: 'WEP',
-	WPA: 'WPA',
-	WPA2: 'WPA2',
-	WPA_ENTERPRISE: 'WPA_ENTERPRISE',
-	WPA2_ENTERPRISE: 'WPA2_ENTERPRISE',
-	UNKNOWN: 'UNKNOWN'
-});
-
-/**
- * WiFi cipher types.
- */
-const WifiCipher = fromProtobufEnum(proto.WiFiSecurityCipher, {
-	AES: 'AES',
-	TKIP: 'TKIP',
-	AES_TKIP: 'AES_TKIP'
-});
-
-/**
- * EAP methods.
- */
-const EapMethod = fromProtobufEnum(proto.EapType, {
-	TLS: 'TLS',
-	PEAP: 'PEAP'
-});
-
-function bssidFromProtobuf(bssid) {
-	return [...bssid].map(b => b.toString(16).padStart(2, '0')).join(':');
-}
-
-function bssidToProtobuf(bssid) {
-	return Buffer.from(bssid.replace(/:/g, ''), 'hex');
-}
-
-const accessPointCommonProperties = ['ssid', 'channel', 'maxDataRate', 'rssi', 'password', 'innerIdentity',
-	'outerIdentity', 'privateKey', 'clientCertificate', 'caCertificate'];
-
-const accessPointFromProtobuf = fromProtobufMessage(proto.WiFiAccessPoint, accessPointCommonProperties, {
-	bssid: bssidFromProtobuf,
-	security: WifiSecurity.fromProtobuf,
-	cipher: WifiCipher.fromProtobuf,
-	eapType: {
-		name: 'eapMethod',
-		value: EapMethod.fromProtobuf
-	}
-});
-
-const accessPointToProtobuf = toProtobufMessage(proto.WiFiAccessPoint, accessPointCommonProperties, {
-	bssid: bssidToProtobuf,
-	security: WifiSecurity.toProtobuf,
-	cipher: WifiCipher.toProtobuf,
-	eapMethod: {
-		name: 'eapType',
-		value: EapMethod.toProtobuf
-	}
-});
+const DeviceOSProtobuf = require('@particle/device-os-protobuf');
+const { TimeoutError } = require('./error');
 
 /**
  * Wi-Fi device.
@@ -83,118 +11,99 @@ const accessPointToProtobuf = toProtobufMessage(proto.WiFiAccessPoint, accessPoi
  */
 const WifiDevice = base => class extends base {
 	/**
-	 * Set the WiFi antenna to use.
-	 *
-	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
-	 *             be removed in future versions of this library.
+	 * Perform WiFi scan
 	 *
 	 * Supported platforms:
-	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
+	 * - Gen 4: On P2 since Device OS 3.x
+	 * - Gen 3: On Argon
 	 *
-	 * @param {String} antenna Antenna type.
-	 * @return {Promise}
+	 * @return {Promise[Object]} - Each object in array has these properties: ssid, bssid, security, channel, rssi. See Network protobuf message from https://github.com/particle-iot/device-os-protobuf for more details.
 	 */
-	setWifiAntenna(antenna) {
-		return this.sendRequest(Request.WIFI_SET_ANTENNA, {
-			antenna: WifiAntenna.toProtobuf(antenna)
+	async scanWifiNetworks() {
+		const replyObject = await this.sendProtobufRequest('wifi.ScanNetworksRequest');
+		const networks = replyObject.networks.map((network) => {
+			return {
+				ssid: network.ssid || null, // can be blank for hidden networks
+				bssid: network.bssid.toString('hex'), // convert buffer to hex string
+				security: this._mapSecurityValueToString(network.security),
+				channel: network.channel,
+				rssi: network.rssi
+			};
 		});
+		return networks;
+	}
+
+	// Internal helper that transforms int or undefined into a string
+	// for security field from scanWifiNetworks
+	_mapSecurityValueToString(value) {
+		if (value === undefined) {
+			return 'UNKNOWN';
+		}
+		const wifiSecurityEnum = DeviceOSProtobuf.getDefinition('wifi.Security').message;
+		const firstMatchingKey = Object.keys(wifiSecurityEnum).find(key => wifiSecurityEnum[key] === value);
+		if (firstMatchingKey === undefined) {
+			return 'UNKNOWN';
+		} else {
+			return firstMatchingKey;
+		}
 	}
 
 	/**
-	 * Get the currently used WiFi antenna.
-	 *
-	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
-	 *             be removed in future versions of this library.
+	 * Join a new WiFi network. Note, there is a bug in Device OS (sc-96270)
+	 * where P2's don't do anything with bssid or security fields, when this bug is fixed the fields will become available on this method
 	 *
 	 * Supported platforms:
-	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
-	 *
-	 * @return {Promise<String>}
+	 * - Gen 4: Supported on P2 since Device OS 3.x
+	 * @param {string} ssid - SSID of Wifi Network
+	 * @param {string} password - Password of Wifi network, pass null to no password
+	 * @param {string} timeout - how long to wait before calling the network attempt a failure
+	 * @returns {Promise<Object>} - {pass: true} on success, otherwise {pass: false, error: msg}
 	 */
-	getWifiAntenna(/* antenna */) {
-		return this.sendRequest(Request.WIFI_GET_ANTENNA).then(rep => {
-			return WifiAntenna.fromProtobuf(rep.antenna);
-		});
-	}
+	async joinNewWifiNetwork({ ssid, password, timeout = 20000 }) {
+		const returnThis = {};
+		let replyObject;
 
-	/**
-	 * Perform the WiFi scan.
-	 *
-	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
-	 *             be removed in future versions of this library.
-	 *
-	 * Supported platforms:
-	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
-	 *
-	 * @return {Promise<Array>}
-	 */
-	scanWifiNetworks() {
-		return this.sendRequest(Request.WIFI_SCAN).then(rep => {
-			if (!rep.list) {
-				return [];
+		try {
+			replyObject = await this.sendProtobufRequest('wifi.JoinNewNetworkRequest', {
+				ssid: ssid,
+				// Bug: P2s ignore these right now, so we don't pass them
+				bssid: null,
+				security: null,
+				credentials: {
+					type: 1,
+					password: password
+				},
+			},
+			{ timeout }
+			);
+		} catch (error) {
+			if (error instanceof TimeoutError) {
+				returnThis.pass = false;
+				returnThis.error = `Request timed out, exceeded ${timeout}ms`;
+				return returnThis;
 			}
-			return rep.list.aps.map(ap => accessPointFromProtobuf(ap));
-		});
+			throw error;
+		}
+
+		if (replyObject && replyObject.constructor && replyObject.constructor.name === 'JoinNewNetworkReply') {
+			returnThis.pass = true;
+		} else {
+			returnThis.pass = false;
+			returnThis.error = `Device did not return a valid reply. expected=JoinNewNetworkReply actual=${JSON.stringify(replyObject)}`;
+		}
+		return returnThis;
 	}
 
 	/**
-	 * Set the WiFi credentials.
+	 * Clear Wifi networks
 	 *
-	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
-	 *             be removed in future versions of this library.
-	 *
-	 * Supported platforms:
-	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
-	 *
-	 * @param {Object} credentials Credentials.
-	 * @return {Promise}
+	 * @return {Boolean} - TODO
 	 */
-	setWifiCredentials(credentials) {
-		return this.sendRequest(Request.WIFI_SET_CREDENTIALS, {
-			ap: accessPointToProtobuf(credentials)
-		});
-	}
-
-	/**
-	 * Get the WiFi credentials.
-	 *
-	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
-	 *             be removed in future versions of this library.
-	 *
-	 * Supported platforms:
-	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
-	 *
-	 * @return {Promise<Array>}
-	 */
-	getWifiCredentials() {
-		return this.sendRequest(Request.WIFI_GET_CREDENTIALS).then(rep => {
-			if (!rep.list) {
-				return [];
-			}
-			return rep.list.aps.map(ap => accessPointFromProtobuf(ap));
-		});
-	}
-
-	/**
-	 * Clear the WiFi credentials.
-	 *
-	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
-	 *             be removed in future versions of this library.
-	 *
-	 * Supported platforms:
-	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
-	 *
-	 * @return {Promise}
-	 */
-	clearWifiCredentials() {
-		return this.sendRequest(Request.WIFI_CLEAR_CREDENTIALS);
+	async clearWifiNetworks() {
+		return 'TODO';
 	}
 };
 
 module.exports = {
-	WifiAntenna,
-	WifiSecurity,
-	WifiCipher,
-	EapMethod,
 	WifiDevice
 };

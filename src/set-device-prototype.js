@@ -1,26 +1,18 @@
-/**
- * A function that determines the the class and inheritance hierarchy
- * of a Particle USB device based on it's platform characteristics
- */
 const { PLATFORMS } = require('./platforms');
 const { Device } = require('./device');
 const { WifiDevice } = require('./wifi-device');
+const { WifiDeviceLegacy } = require('./wifi-device-legacy');
 const { CellularDevice } = require('./cellular-device');
 const { CloudDevice } = require('./cloud-device');
 const { Gen3Device } = require('./gen3-device');
 const { NetworkDevice } = require('./network-device');
 
 /**
- * returns a structure like this:
-//   core: klass {},
-//   gcc: klass {},
+ * This constant has a structure like this:
 //   photon: klass {},
-//   p1: klass {},
 //   electron: klass {},
-//   argon: klass {},
-//   boron: klass {},
 //   p2: klass {},
-//  ...
+//   ...
 // }
  */
 const DEVICE_PROTOTYPES = PLATFORMS.reduce((prototypes, platform) => {
@@ -32,7 +24,11 @@ const DEVICE_PROTOTYPES = PLATFORMS.reduce((prototypes, platform) => {
 		klass = class extends CellularDevice(klass) {};
 	}
 	if (platform.features.includes('wifi')) {
-		klass = class extends WifiDevice(klass) {};
+		if (platform.generation === 2 || platform.generation === 1) {
+			klass = class extends WifiDeviceLegacy(klass) {};
+		} else {
+			klass = class extends WifiDevice(klass) {};
+		}
 	}
 	klass = class extends CloudDevice(klass) {};
 
@@ -42,7 +38,8 @@ const DEVICE_PROTOTYPES = PLATFORMS.reduce((prototypes, platform) => {
 }, {});
 
 /**
- *
+ * Determines the the class and inheritance hierarchy
+ * of a Particle USB device based on it's platform characteristics *
  * @param {*} usbDevice - An object with a .type field that is a string like "p1", "argon", "p2", etc
  * 						  representing the short name of the device platform.
  * @returns {*} an instance of a class like WifiDevice, CellularDevice with the correct inheritance hierachy
