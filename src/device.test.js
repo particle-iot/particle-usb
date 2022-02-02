@@ -3,15 +3,15 @@
  * which is the object under test in this file. Instead, we take a different mocking
  * strategy that also mocks out USB hardware, but doesn't mock src/device.js.
  */
-const { sinon, expect } = require('./support');
-const { UsbDevice } = require('../src/usb-device-node');
-const { PLATFORMS } = require('../src/platforms');
-const { Device } = require('../src/device');
+const { sinon, expect } = require('../test/support');
+const { UsbDevice } = require('./usb-device-node');
+const { PLATFORMS } = require('./platforms');
+const { Device } = require('./device');
 const DeviceOSProtobuf = require('@particle/device-os-protobuf');
-const { Result } = require('../src/result');
-const { RequestError } = require('../src/error');
+const { Result } = require('./result');
+const { RequestError } = require('./error');
 
-describe('Control Requests', () => {
+describe('Device', () => {
 	const exampleSerialNumber = 'P046AF1450000FC';
 	let usbDevice, p2Platform, device;
 	beforeEach(async () => {

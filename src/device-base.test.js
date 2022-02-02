@@ -1,12 +1,12 @@
-const { fakeUsb, sinon, expect, assert, nextTick } = require('./support');
+const { fakeUsb, sinon, expect, assert, nextTick } = require('../test/support');
 const proxyquire = require('proxyquire');
 
 const { getDevices, openDeviceById, PollingPolicy } = proxyquire('../src/device-base', {
 	'./usb-device-node': fakeUsb
 });
-const usbImpl = require('../src/usb-device-node');
-const proto = require('../src/usb-protocol');
-const error = require('../src/error');
+const usbImpl = require('./usb-device-node');
+const proto = require('./usb-protocol');
+const error = require('./error');
 
 // Application-specific request types
 const REQUEST_1 = 1;
