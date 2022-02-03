@@ -175,6 +175,33 @@ describe('WifiDevice', () => {
 				);
 				expect(wifiDevice._sendAndHandleProtobufRequest.firstCall.args[2]).to.eql(undefined);
 			});
+
+			// sc-96826: Once sc-TODO is fixed, this test should start working with some mods
+			xit('Can Join open Wifi network without security/password', async () => {
+				const fakeReply = {
+					pass: true,
+					replyObject: {
+						constructor: {
+							name: 'JoinNewNetworkReply'
+						}
+					}
+				};
+				sinon.stub(wifiDevice, '_sendAndHandleProtobufRequest').resolves(fakeReply);
+
+				const result = await wifiDevice.joinNewWifiNetwork({ ssid, password: null });
+				expect(result).to.eql(fakeReply);
+				expect(wifiDevice._sendAndHandleProtobufRequest).to.have.property('callCount', 1);
+				expect(wifiDevice._sendAndHandleProtobufRequest.firstCall.args).to.have.lengthOf(3);
+				expect(wifiDevice._sendAndHandleProtobufRequest.firstCall.args[0]).to.eql('wifi.JoinNewNetworkRequest');
+				expect(wifiDevice._sendAndHandleProtobufRequest.firstCall.args[1]).to.eql(
+					{
+						ssid,
+						bssid: null,
+						security: 0
+					}
+				);
+				expect(wifiDevice._sendAndHandleProtobufRequest.firstCall.args[2]).to.eql(undefined);
+			});
 		});
 
 		describe('clearWifiNetworks()', () => {

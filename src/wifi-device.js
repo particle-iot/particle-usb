@@ -57,29 +57,40 @@ const WifiDevice = base => class extends base {
 	/**
 	 * Join a new WiFi network for Gen 3+ devices.
 	 *
-	 * Note, there is a bug in Device OS (sc-96270) where P2's don't do anything with bssid or security fields
-	 * when this bug is fixed the fields will become available on this method
+	 * Note, there are known bugs with this method/Device OS:
+	 *   - sc-96270: where P2's don't do anything with bssid or security fields; so cannot connect to hidden networks
+	 *   - sc-96826: Connecting to open network without passsword does not work
 	 *
 	 * Supported platforms:
 	 * - Gen 4: Supported on P2 since Device OS 3.x
 	 * @param {string} ssid - SSID of Wifi Network
-	 * @param {string} password - Password of Wifi network, pass null to no password
+	 * @param {string} password - Password of Wifi network, if not set will not use security
 	 * @param {Object} options See sendControlRequest(), same options are here.
 	 * @return {ProtobufInteraction} -
 	 */
-	async joinNewWifiNetwork({ ssid, password }, options) {
-		return await this._sendAndHandleProtobufRequest(
-			'wifi.JoinNewNetworkRequest',
-			{
+	async joinNewWifiNetwork({ ssid, password = null }, options) {
+		let dataPayload;
+		if (password === null) {
+			dataPayload = {
 				ssid,
-				// Bug: P2s ignore these right now, so we don't pass them
+				bssid: null,
+				security: 0 // Security.NO_SECURITY
+			};
+			throw new Error('joinNewWifiNetwork() does not currently support connecting to networks without a password/security, sc-TODO');
+		} else {
+			dataPayload = {
+				ssid,
 				bssid: null,
 				security: null,
 				credentials: {
-					type: 1,
+					type: 1, // CredentialsType.PASSWORD
 					password
 				},
-			},
+			};
+		}
+		return await this._sendAndHandleProtobufRequest(
+			'wifi.JoinNewNetworkRequest',
+			dataPayload,
 			options
 		);
 	}
