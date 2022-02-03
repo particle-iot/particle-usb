@@ -11,28 +11,32 @@ const { TimeoutError } = require('./error');
  */
 const WifiDevice = base => class extends base {
 	/**
-	 * Perform WiFi scan
-	 *
-	 * Supported platforms:
-	 * - Gen 4: On P2 since Device OS 3.x
-	 * - Gen 3: On Argon
-	 *
+	 * Perform WiFi scan for Gen 3+ devices
+	 * @param {Object} options See sendControlRequest(), same options are here.
 	 * @return {Promise[Object]} - Each object in array has these properties: ssid, bssid, security, channel, rssi. See Network protobuf message from https://github.com/particle-iot/device-os-protobuf for more details.
 	 */
-	async scanWifiNetworks() {
-		// TODO: Use _sendAndHandleProtobufRequest
+	async scanWifiNetworks(options) {
+		const result = await this._sendAndHandleProtobufRequest(
+			'wifi.ScanNetworksRequest',
+			{},
+			options
+		);
 
-		const replyObject = await this.sendProtobufRequest('wifi.ScanNetworksRequest');
-		const networks = replyObject.networks.map((network) => {
-			return {
-				ssid: network.ssid || null, // can be blank for hidden networks
-				bssid: network.bssid.toString('hex'), // convert buffer to hex string
-				security: this._mapSecurityValueToString(network.security),
-				channel: network.channel,
-				rssi: network.rssi
-			};
-		});
-		return networks;
+		let returnThis;
+		if (result.pass) {
+			returnThis = result.replyObject.networks.map((network) => {
+				return {
+					ssid: network.ssid || null, // can be blank for hidden networks
+					bssid: network.bssid.toString('hex'), // convert buffer to hex string
+					security: this._mapSecurityValueToString(network.security),
+					channel: network.channel,
+					rssi: network.rssi
+				};
+			});
+		} else {
+			returnThis = [];
+		}
+		return returnThis;
 	}
 
 	// Internal helper that transforms int or undefined into a string
@@ -51,15 +55,17 @@ const WifiDevice = base => class extends base {
 	}
 
 	/**
-	 * Join a new WiFi network. Note, there is a bug in Device OS (sc-96270)
-	 * where P2's don't do anything with bssid or security fields, when this bug is fixed the fields will become available on this method
+	 * Join a new WiFi network for Gen 3+ devices.
+	 *
+	 * Note, there is a bug in Device OS (sc-96270) where P2's don't do anything with bssid or security fields
+	 * when this bug is fixed the fields will become available on this method
 	 *
 	 * Supported platforms:
 	 * - Gen 4: Supported on P2 since Device OS 3.x
 	 * @param {string} ssid - SSID of Wifi Network
 	 * @param {string} password - Password of Wifi network, pass null to no password
-	 * @param {string} timeout - how long to wait before calling the network attempt a failure
-	 * @returns {Promise<Object>} - {pass: true} on success, otherwise {pass: false, error: msg}
+	 * @param {Object} options See sendControlRequest(), same options are here.
+	 * @return {ProtobufInteraction} -
 	 */
 	async joinNewWifiNetwork({ ssid, password }, options) {
 		return await this._sendAndHandleProtobufRequest(
@@ -79,10 +85,10 @@ const WifiDevice = base => class extends base {
 	}
 
 	/**
-	 * Clear Wifi networks
+	 * Clear Wifi networks for Gen 3+ devices
 	 *
-	 * @param {*} options See sendControlRequest(), same options are here.
-	 * @return {Boolean} - TODO
+	 * @param {Object} options See sendControlRequest(), same options are here.
+	 * @return {ProtobufInteraction} -
 	 */
 
 	async clearWifiNetworks(options) {
@@ -95,7 +101,7 @@ const WifiDevice = base => class extends base {
 
 	/**
 	 * Returned by _sendAndHandleProtobufRequest
-	 * @typedef {Object} DatalessReply
+	 * @typedef {Object} ProtobufInteraction
 	 * @property {boolean} pass - Indicates whether the request/reply succeeded
 	 * @property {undefined|*} replyObject - An instance created via the protobuf replyMessage constructor
 	 * @property {undefined|string} error - If pass is false, will be a string explaining failure reason
@@ -107,8 +113,10 @@ const WifiDevice = base => class extends base {
 	 *
 	 * @private could conceivably be added to public api in device.js later.
 	 *
-	 * @param {*} protobufMessageName
-	 * @return {DatalessReply} - Summary of request/reply object
+	 * @param {String} protobufMessageName - name of protobuf message see DeviceOSProtobuf.getDefinitions() to possible values
+	 * @param {Object} protobufMessageData - An object of key/values to encode into the protobuf message
+	 * @param {Object} options See sendControlRequest(), same options are here.
+	 * @return {ProtobufInteraction} - Summary of request/reply object
 	 * @throws {*} - Throws errors considered abnormal, catches TimeoutError which is considered normal type of
 	 *               failure/did-not-suceed for many Device OS requests
 	 */

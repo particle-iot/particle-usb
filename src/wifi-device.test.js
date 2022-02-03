@@ -34,51 +34,6 @@ describe('WifiDevice', () => {
 		const fakeUSBDevice = { type: 'p2' };
 		let wifiDevice;
 
-		// this is a hidden network associated with a
-		// TP-Link N300 Wireless Portable Nano Travel Router
-		// note it does not have an ssid
-		const fakeNetworkWithoutSSID = {
-			'bssid': 'c0c9e376992f',
-			'security': 3,
-			'channel': 1,
-			'rssi': -20
-		};
-
-		// This is the actual 2.4 GHz network in Joe's House
-		const fakeValidNetwork1 = {
-			'ssid': 'how24ghz',
-			'bssid': '382c4a6a9040',
-			'security': 3,
-			'channel': 1,
-			'rssi': -58
-		};
-
-		// This is the actual 5 GHz network in Joe's House
-		const fakeValidNetwork2 = {
-			'ssid': 'how5ghz',
-			'bssid': '382c4a6a9044',
-			'security': 3,
-			'channel': 157,
-			'rssi': -66
-		};
-
-		// Note; no security field set for Comcast's WiFI
-		const fakeNetworkWithoutSecurity = {
-			'ssid': 'xfinitywifi',
-			'bssid': '1e9ecc0bed24',
-			'channel': 157,
-			'rssi': -88
-		};
-
-		const fakeScanNetworksReply = {
-			networks: [
-				fakeValidNetwork1,
-				fakeValidNetwork2,
-				fakeNetworkWithoutSSID,
-				fakeNetworkWithoutSecurity
-			]
-		};
-
 		beforeEach(async () => {
 			wifiDevice = setDevicePrototype(fakeUSBDevice);
 		});
@@ -88,16 +43,80 @@ describe('WifiDevice', () => {
 		});
 
 		describe('scanWifiNetworks()', () => {
+			// this is a hidden network associated with a
+			// TP-Link N300 Wireless Portable Nano Travel Router
+			// note it does not have an ssid
+			const fakeNetworkWithoutSSID = {
+				'bssid': 'c0c9e376992f',
+				'security': 3,
+				'channel': 1,
+				'rssi': -20
+			};
+
+			// This is the actual 2.4 GHz network in Joe's House
+			const fakeValidNetwork1 = {
+				'ssid': 'how24ghz',
+				'bssid': '382c4a6a9040',
+				'security': 3,
+				'channel': 1,
+				'rssi': -58
+			};
+
+			// This is the actual 5 GHz network in Joe's House
+			const fakeValidNetwork2 = {
+				'ssid': 'how5ghz',
+				'bssid': '382c4a6a9044',
+				'security': 3,
+				'channel': 157,
+				'rssi': -66
+			};
+
+			// Note; no security field set for Comcast's WiFI
+			const fakeNetworkWithoutSecurity = {
+				'ssid': 'xfinitywifi',
+				'bssid': '1e9ecc0bed24',
+				'channel': 157,
+				'rssi': -88
+			};
+
+			let fakeReply;
+			beforeEach(() => {
+				fakeReply = {
+					pass: true,
+					replyObject: {
+						constructor: {
+							name: 'wifi.ScanNetworksReply'
+						},
+						networks: [
+							fakeValidNetwork1,
+							fakeValidNetwork2,
+							fakeNetworkWithoutSSID,
+							fakeNetworkWithoutSecurity
+						]
+					}
+				};
+			});
+
 			it('returns empty when no networks are returned', async () => {
-				sinon.stub(wifiDevice, 'sendProtobufRequest').resolves({ networks: [] });
-				const result = await wifiDevice.scanWifiNetworks();
-				expect(result).to.eql([]);
+				const fakeNetworks = [];
+				fakeReply.replyObject.networks = fakeNetworks;
+				sinon.stub(wifiDevice, '_sendAndHandleProtobufRequest').resolves(fakeReply);
+				const networks = await wifiDevice.scanWifiNetworks();
+				expect(networks).to.eql(fakeNetworks);
+			});
+
+			it('returns empty when pass:false (failure for known/normal reasons like TimeoutError or wrong reply message)', async () => {
+				fakeReply.pass = false;
+				sinon.stub(wifiDevice, '_sendAndHandleProtobufRequest').resolves(fakeReply);
+				const networks = await wifiDevice.scanWifiNetworks();
+				expect(networks).to.eql([]);
 			});
 
 			it('returns valid networks with strings for security fields rather than integers', async () => {
-				sinon.stub(wifiDevice, 'sendProtobufRequest').resolves(fakeScanNetworksReply);
+				sinon.stub(wifiDevice, '_sendAndHandleProtobufRequest').resolves(fakeReply);
 				const networks = await wifiDevice.scanWifiNetworks();
-				expect(networks).to.have.lengthOf(fakeScanNetworksReply.networks.length);
+				expect(networks).to.not.eql(fakeReply.replyObject.networks);
+				expect(networks).to.have.lengthOf(fakeReply.replyObject.networks.length);
 				const firstNetwork = networks[0];
 				expect(firstNetwork.security).to.eql('WPA2_PSK');
 			});
@@ -113,7 +132,7 @@ describe('WifiDevice', () => {
 			});
 
 			it('sets ssid to null if Device OS returns with undefined', async () => {
-				sinon.stub(wifiDevice, 'sendProtobufRequest').resolves(fakeScanNetworksReply);
+				sinon.stub(wifiDevice, '_sendAndHandleProtobufRequest').resolves(fakeReply);
 				const networks = await wifiDevice.scanWifiNetworks();
 				expect(networks[2].bssid).to.eql(fakeNetworkWithoutSSID.bssid, 'targeting correct fixture');
 				expect(fakeNetworkWithoutSSID).to.not.have.haveOwnProperty('ssid');
@@ -244,6 +263,7 @@ describe('WifiDevice', () => {
 				expect(result).to.be.an('object');
 				expect(result.pass).to.eql(false);
 				expect(result.error).to.eql('Request timed out, exceeded 20000ms');
+				expect(wifiDevice.sendProtobufRequest.firstCall.args[2]).to.eql({ timeout: 20000 });
 			});
 
 			it('Throws errors other than TimeoutError', async () => {
