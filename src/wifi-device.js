@@ -20,6 +20,8 @@ const WifiDevice = base => class extends base {
 	 * @return {Promise[Object]} - Each object in array has these properties: ssid, bssid, security, channel, rssi. See Network protobuf message from https://github.com/particle-iot/device-os-protobuf for more details.
 	 */
 	async scanWifiNetworks() {
+		// TODO: Use _sendAndHandleProtobufRequest
+
 		const replyObject = await this.sendProtobufRequest('wifi.ScanNetworksRequest');
 		const networks = replyObject.networks.map((network) => {
 			return {
@@ -59,48 +61,93 @@ const WifiDevice = base => class extends base {
 	 * @param {string} timeout - how long to wait before calling the network attempt a failure
 	 * @returns {Promise<Object>} - {pass: true} on success, otherwise {pass: false, error: msg}
 	 */
-	async joinNewWifiNetwork({ ssid, password, timeout = 20000 }) {
-		const returnThis = {};
-		let replyObject;
-
-		try {
-			replyObject = await this.sendProtobufRequest('wifi.JoinNewNetworkRequest', {
-				ssid: ssid,
+	async joinNewWifiNetwork({ ssid, password }, options) {
+		return await this._sendAndHandleProtobufRequest(
+			'wifi.JoinNewNetworkRequest',
+			{
+				ssid,
 				// Bug: P2s ignore these right now, so we don't pass them
 				bssid: null,
 				security: null,
 				credentials: {
 					type: 1,
-					password: password
+					password
 				},
 			},
-			{ timeout }
-			);
-		} catch (error) {
-			if (error instanceof TimeoutError) {
-				returnThis.pass = false;
-				returnThis.error = `Request timed out, exceeded ${timeout}ms`;
-				return returnThis;
-			}
-			throw error;
-		}
-
-		if (replyObject && replyObject.constructor && replyObject.constructor.name === 'JoinNewNetworkReply') {
-			returnThis.pass = true;
-		} else {
-			returnThis.pass = false;
-			returnThis.error = `Device did not return a valid reply. expected=JoinNewNetworkReply actual=${JSON.stringify(replyObject)}`;
-		}
-		return returnThis;
+			options
+		);
 	}
 
 	/**
 	 * Clear Wifi networks
 	 *
+	 * @param {*} options See sendControlRequest(), same options are here.
 	 * @return {Boolean} - TODO
 	 */
-	async clearWifiNetworks() {
-		return 'TODO';
+
+	async clearWifiNetworks(options) {
+		return await this._sendAndHandleProtobufRequest(
+			'wifi.ClearKnownNetworksRequest',
+			{},
+			options
+		);
+	}
+
+	/**
+	 * Returned by _sendAndHandleProtobufRequest
+	 * @typedef {Object} DatalessReply
+	 * @property {boolean} pass - Indicates whether the request/reply succeeded
+	 * @property {undefined|*} replyObject - An instance created via the protobuf replyMessage constructor
+	 * @property {undefined|string} error - If pass is false, will be a string explaining failure reason
+	 */
+
+	/**
+	 * Wraps .sendProtobufRequest, handles validation and error handling in opinionated way
+	 * to DRY up code in higher level methods
+	 *
+	 * @private could conceivably be added to public api in device.js later.
+	 *
+	 * @param {*} protobufMessageName
+	 * @return {DatalessReply} - Summary of request/reply object
+	 * @throws {*} - Throws errors considered abnormal, catches TimeoutError which is considered normal type of
+	 *               failure/did-not-suceed for many Device OS requests
+	 */
+	async _sendAndHandleProtobufRequest(protobufMessageName, protobufMessageData = {}, options) {
+		const protobufDefinition = DeviceOSProtobuf.getDefinition(protobufMessageName);
+		const returnThis = {};
+
+		let replyObject;
+		try {
+			replyObject = await this.sendProtobufRequest(
+				protobufMessageName,
+				protobufMessageData,
+				options
+			);
+		} catch (error) {
+			if (error instanceof TimeoutError) {
+				returnThis.pass = false;
+				if (options && options.timeout) {
+					returnThis.error = `Request timed out, exceeded ${options.timeout}ms`;
+				} else {
+					returnThis.error = `Request timed out, exceeded default timeout`;
+				}
+				return returnThis;
+			}
+			throw error;
+		}
+
+		// Example:
+		//   replyObject.constructor.name might be 'JoinNewNetworkReply'
+		//   for a protobufMessageName to 'wifi.JoinNewNetworkRequest'
+		if (replyObject && replyObject.constructor &&
+			replyObject.constructor.name === protobufDefinition.replyMessage.name) {
+			returnThis.pass = true;
+			returnThis.replyObject = replyObject;
+		} else {
+			returnThis.pass = false;
+			returnThis.error = `Device did not return a valid reply. expected=${protobufDefinition.replyMessage.name} actual=${JSON.stringify(replyObject)}`;
+		}
+		return returnThis;
 	}
 };
 

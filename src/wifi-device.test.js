@@ -128,34 +128,119 @@ describe('WifiDevice', () => {
 				password = 'password';
 			});
 
-			it('Connects to network with valid SSID and password', async () => {
+			it('Sends wifi.JoinNewNetworkRequest protobuf message with correct data', async () => {
+				const fakeReply = {
+					pass: true,
+					replyObject: {
+						constructor: {
+							name: 'JoinNewNetworkReply'
+						}
+					}
+				};
+				sinon.stub(wifiDevice, '_sendAndHandleProtobufRequest').resolves(fakeReply);
+				const result = await wifiDevice.joinNewWifiNetwork({ ssid, password });
+				expect(result).to.eql(fakeReply);
+				expect(wifiDevice._sendAndHandleProtobufRequest).to.have.property('callCount', 1);
+				expect(wifiDevice._sendAndHandleProtobufRequest.firstCall.args).to.have.lengthOf(3);
+				expect(wifiDevice._sendAndHandleProtobufRequest.firstCall.args[0]).to.eql('wifi.JoinNewNetworkRequest');
+				expect(wifiDevice._sendAndHandleProtobufRequest.firstCall.args[1]).to.eql(
+					{
+						ssid,
+						bssid: null,
+						security: null,
+						credentials: {
+							type: 1,
+							password
+						},
+					}
+				);
+				expect(wifiDevice._sendAndHandleProtobufRequest.firstCall.args[2]).to.eql(undefined);
+			});
+		});
+
+		describe('clearWifiNetworks()', () => {
+			it('Sends wifi.ClearKnownNetworksRequest protobuf message', async () => {
+				const fakeReply = {
+					pass: true,
+					replyObject: {
+						constructor: {
+							name: 'ClearKnownNetworksReply'
+						}
+					}
+				};
+				sinon.stub(wifiDevice, '_sendAndHandleProtobufRequest').resolves(fakeReply);
+				const result = await wifiDevice.clearWifiNetworks();
+				expect(result).to.eql(fakeReply);
+				expect(wifiDevice._sendAndHandleProtobufRequest).to.have.property('callCount', 1);
+				expect(wifiDevice._sendAndHandleProtobufRequest.firstCall.args).to.have.lengthOf(3);
+				expect(wifiDevice._sendAndHandleProtobufRequest.firstCall.args[0]).to.eql('wifi.ClearKnownNetworksRequest');
+				expect(wifiDevice._sendAndHandleProtobufRequest.firstCall.args[1]).to.eql({});
+				expect(wifiDevice._sendAndHandleProtobufRequest.firstCall.args[2]).to.eql(undefined);
+			});
+		});
+
+		describe('_sendAndHandleProtobufRequest', () => {
+			// We use the wifi.ClearKnownNetworksRequest as the example here
+			// it could be any protobuf message though
+			const protobufMessageName = 'wifi.ClearKnownNetworksRequest';
+			const protobufMessageReplyConstructorName = 'ClearKnownNetworksReply';
+			const protobufMessageData = {};
+			const options = undefined;
+
+			beforeEach(() => {
+
+			});
+			it('Calls sendProtobufRequest with correct arguments', async () => {
 				sinon.stub(wifiDevice, 'sendProtobufRequest').resolves({
 					constructor: {
-						name: 'JoinNewNetworkReply'
+						name: protobufMessageReplyConstructorName
 					}
 				});
-				const result = await wifiDevice.joinNewWifiNetwork({
-					ssid, password
-				});
+				const result = await wifiDevice._sendAndHandleProtobufRequest(
+					protobufMessageName,
+					protobufMessageData,
+					options
+				);
+				expect(wifiDevice.sendProtobufRequest).to.have.property('callCount', 1);
+				expect(wifiDevice.sendProtobufRequest.firstCall.args).to.have.lengthOf(3);
+				expect(wifiDevice.sendProtobufRequest.firstCall.args[0]).to.eql(protobufMessageName);
+				expect(wifiDevice.sendProtobufRequest.firstCall.args[1]).to.eql(protobufMessageData);
+				expect(wifiDevice.sendProtobufRequest.firstCall.args[2]).to.eql(options);
 				expect(result).to.be.an('object');
 				expect(result.pass).to.eql(true);
 			});
 
-			it('Does not connect to network when sendProtobufRequest returns undefined', async () => {
+			it('Does not pass when sendProtobufRequest returns undefined', async () => {
 				sinon.stub(wifiDevice, 'sendProtobufRequest').resolves(undefined); // This is one way that Device OS can reply
-				const result = await wifiDevice.joinNewWifiNetwork({
-					ssid, password
-				});
+				const result = await wifiDevice._sendAndHandleProtobufRequest(
+					protobufMessageName,
+					protobufMessageData,
+					options
+				);
 				expect(result).to.be.an('object');
 				expect(result.pass).to.eql(false);
-				expect(result.error).to.eql('Device did not return a valid reply. expected=JoinNewNetworkReply actual=undefined');
+				expect(result.error).to.eql(`Device did not return a valid reply. expected=${protobufMessageReplyConstructorName} actual=undefined`);
 			});
 
-			it('Does not connect to network when sendProtobufRequest throws TimeourError', async () => {
+			it('Does not pass when sendProtobufRequest throws TimeoutError with the default timeout', async () => {
 				sinon.stub(wifiDevice, 'sendProtobufRequest').throws(new TimeoutError());
-				const result = await wifiDevice.joinNewWifiNetwork({
-					ssid, password
-				});
+				const result = await wifiDevice._sendAndHandleProtobufRequest(
+					protobufMessageName,
+					protobufMessageData,
+					options
+				);
+				expect(result).to.be.an('object');
+				expect(result.pass).to.eql(false);
+				expect(result.error).to.eql('Request timed out, exceeded default timeout');
+			});
+
+			it('Does not pass when sendProtobufRequest throws TimeoutError with an override timeout message', async () => {
+				sinon.stub(wifiDevice, 'sendProtobufRequest').throws(new TimeoutError());
+				const result = await wifiDevice._sendAndHandleProtobufRequest(
+					protobufMessageName,
+					protobufMessageData,
+					{ timeout: 20000 }
+				);
 				expect(result).to.be.an('object');
 				expect(result.pass).to.eql(false);
 				expect(result.error).to.eql('Request timed out, exceeded 20000ms');
@@ -166,18 +251,16 @@ describe('WifiDevice', () => {
 
 				let error;
 				try {
-					await wifiDevice.joinNewWifiNetwork({
-						ssid, password
-					});
+					await wifiDevice._sendAndHandleProtobufRequest(
+						protobufMessageName,
+						protobufMessageData,
+						{ timeout: 20000 }
+					);
 				} catch (e) {
 					error = e;
 				}
 				expect(error.message).to.eql('hihihi');
 			});
-		});
-
-		describe('clearWifiNetworks()', () => {
-			it('TODO (jgoggins): continue here');
 		});
 	});
 });
