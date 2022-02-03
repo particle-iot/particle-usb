@@ -1,77 +1,5 @@
-const { Request } = require('./request');
-const { fromProtobufEnum, fromProtobufMessage, toProtobufMessage } = require('./protobuf-util');
-
-const proto = require('./protocol');
-
-/**
- * WiFi antenna types.
- */
-const WifiAntenna = fromProtobufEnum(proto.WiFiAntenna, {
-	INTERNAL: 'INTERNAL',
-	EXTERNAL: 'EXTERNAL',
-	AUTO: 'AUTO'
-});
-
-/**
- * WiFi security types.
- */
-const WifiSecurity = fromProtobufEnum(proto.WiFiSecurityType, {
-	NONE: 'UNSEC',
-	WEP: 'WEP',
-	WPA: 'WPA',
-	WPA2: 'WPA2',
-	WPA_ENTERPRISE: 'WPA_ENTERPRISE',
-	WPA2_ENTERPRISE: 'WPA2_ENTERPRISE',
-	UNKNOWN: 'UNKNOWN'
-});
-
-/**
- * WiFi cipher types.
- */
-const WifiCipher = fromProtobufEnum(proto.WiFiSecurityCipher, {
-	AES: 'AES',
-	TKIP: 'TKIP',
-	AES_TKIP: 'AES_TKIP'
-});
-
-/**
- * EAP methods.
- */
-const EapMethod = fromProtobufEnum(proto.EapType, {
-	TLS: 'TLS',
-	PEAP: 'PEAP'
-});
-
-function bssidFromProtobuf(bssid) {
-	return [...bssid].map(b => b.toString(16).padStart(2, '0')).join(':');
-}
-
-function bssidToProtobuf(bssid) {
-	return Buffer.from(bssid.replace(/:/g, ''), 'hex');
-}
-
-const accessPointCommonProperties = ['ssid', 'channel', 'maxDataRate', 'rssi', 'password', 'innerIdentity',
-	'outerIdentity', 'privateKey', 'clientCertificate', 'caCertificate'];
-
-const accessPointFromProtobuf = fromProtobufMessage(proto.WiFiAccessPoint, accessPointCommonProperties, {
-	bssid: bssidFromProtobuf,
-	security: WifiSecurity.fromProtobuf,
-	cipher: WifiCipher.fromProtobuf,
-	eapType: {
-		name: 'eapMethod',
-		value: EapMethod.fromProtobuf
-	}
-});
-
-const accessPointToProtobuf = toProtobufMessage(proto.WiFiAccessPoint, accessPointCommonProperties, {
-	bssid: bssidToProtobuf,
-	security: WifiSecurity.toProtobuf,
-	cipher: WifiCipher.toProtobuf,
-	eapMethod: {
-		name: 'eapType',
-		value: EapMethod.toProtobuf
-	}
-});
+const DeviceOSProtobuf = require('@particle/device-os-protobuf');
+const { TimeoutError } = require('./error');
 
 /**
  * Wi-Fi device.
@@ -83,118 +11,165 @@ const accessPointToProtobuf = toProtobufMessage(proto.WiFiAccessPoint, accessPoi
  */
 const WifiDevice = base => class extends base {
 	/**
-	 * Set the WiFi antenna to use.
-	 *
-	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
-	 *             be removed in future versions of this library.
-	 *
-	 * Supported platforms:
-	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
-	 *
-	 * @param {String} antenna Antenna type.
-	 * @return {Promise}
+	 * Perform WiFi scan for Gen 3+ devices
+	 * @param {Object} options See sendControlRequest(), same options are here.
+	 * @return {Promise[Object]} - Each object in array has these properties: ssid, bssid, security, channel, rssi. See Network protobuf message from https://github.com/particle-iot/device-os-protobuf for more details.
 	 */
-	setWifiAntenna(antenna) {
-		return this.sendRequest(Request.WIFI_SET_ANTENNA, {
-			antenna: WifiAntenna.toProtobuf(antenna)
-		});
+	async scanWifiNetworks(options) {
+		const result = await this._sendAndHandleProtobufRequest(
+			'wifi.ScanNetworksRequest',
+			{},
+			options
+		);
+
+		let returnThis;
+		if (result.pass) {
+			returnThis = result.replyObject.networks.map((network) => {
+				return {
+					ssid: network.ssid || null, // can be blank for hidden networks
+					bssid: network.bssid.toString('hex'), // convert buffer to hex string
+					security: this._mapSecurityValueToString(network.security),
+					channel: network.channel,
+					rssi: network.rssi
+				};
+			});
+		} else {
+			returnThis = [];
+		}
+		return returnThis;
+	}
+
+	// Internal helper that transforms int or undefined into a string
+	// for security field from scanWifiNetworks
+	_mapSecurityValueToString(value) {
+		if (value === undefined) {
+			return 'UNKNOWN';
+		}
+		const wifiSecurityEnum = DeviceOSProtobuf.getDefinition('wifi.Security').message;
+		const firstMatchingKey = Object.keys(wifiSecurityEnum).find(key => wifiSecurityEnum[key] === value);
+		if (firstMatchingKey === undefined) {
+			return 'UNKNOWN';
+		} else {
+			return firstMatchingKey;
+		}
 	}
 
 	/**
-	 * Get the currently used WiFi antenna.
+	 * Join a new WiFi network for Gen 3+ devices.
 	 *
-	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
-	 *             be removed in future versions of this library.
+	 * Note, there are known bugs with this method/Device OS:
+	 *   - sc-96270: where P2's don't do anything with bssid or security fields; so cannot connect to hidden networks
+	 *   - sc-96826: Connecting to open network without passsword does not work
 	 *
 	 * Supported platforms:
-	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
-	 *
-	 * @return {Promise<String>}
+	 * - Gen 4: Supported on P2 since Device OS 3.x
+	 * @param {string} ssid - SSID of Wifi Network
+	 * @param {string} password - Password of Wifi network, if not set will not use security
+	 * @param {Object} options See sendControlRequest(), same options are here.
+	 * @return {ProtobufInteraction} -
 	 */
-	getWifiAntenna(/* antenna */) {
-		return this.sendRequest(Request.WIFI_GET_ANTENNA).then(rep => {
-			return WifiAntenna.fromProtobuf(rep.antenna);
-		});
+	async joinNewWifiNetwork({ ssid, password = null }, options) {
+		let dataPayload;
+		if (password === null) {
+			dataPayload = {
+				ssid,
+				bssid: null,
+				security: 0 // Security.NO_SECURITY
+			};
+			throw new Error('joinNewWifiNetwork() does not currently support connecting to networks without a password/security, sc-TODO');
+		} else {
+			dataPayload = {
+				ssid,
+				bssid: null,
+				security: null,
+				credentials: {
+					type: 1, // CredentialsType.PASSWORD
+					password
+				},
+			};
+		}
+		return await this._sendAndHandleProtobufRequest(
+			'wifi.JoinNewNetworkRequest',
+			dataPayload,
+			options
+		);
 	}
 
 	/**
-	 * Perform the WiFi scan.
+	 * Clear Wifi networks for Gen 3+ devices
 	 *
-	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
-	 *             be removed in future versions of this library.
-	 *
-	 * Supported platforms:
-	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
-	 *
-	 * @return {Promise<Array>}
+	 * @param {Object} options See sendControlRequest(), same options are here.
+	 * @return {ProtobufInteraction} -
 	 */
-	scanWifiNetworks() {
-		return this.sendRequest(Request.WIFI_SCAN).then(rep => {
-			if (!rep.list) {
-				return [];
+
+	async clearWifiNetworks(options) {
+		return await this._sendAndHandleProtobufRequest(
+			'wifi.ClearKnownNetworksRequest',
+			{},
+			options
+		);
+	}
+
+	/**
+	 * Returned by _sendAndHandleProtobufRequest
+	 * @typedef {Object} ProtobufInteraction
+	 * @property {boolean} pass - Indicates whether the request/reply succeeded
+	 * @property {undefined|*} replyObject - An instance created via the protobuf replyMessage constructor
+	 * @property {undefined|string} error - If pass is false, will be a string explaining failure reason
+	 */
+
+	/**
+	 * Wraps .sendProtobufRequest, handles validation and error handling in opinionated way
+	 * to DRY up code in higher level methods
+	 *
+	 * @private could conceivably be added to public api in device.js later.
+	 *
+	 * @param {String} protobufMessageName - name of protobuf message see DeviceOSProtobuf.getDefinitions() to possible values
+	 * @param {Object} protobufMessageData - An object of key/values to encode into the protobuf message
+	 * @param {Object} options See sendControlRequest(), same options are here.
+	 * @return {ProtobufInteraction} - Summary of request/reply object
+	 * @throws {*} - Throws errors considered abnormal, catches TimeoutError which is considered normal type of
+	 *               failure/did-not-suceed for many Device OS requests
+	 */
+	async _sendAndHandleProtobufRequest(protobufMessageName, protobufMessageData = {}, options) {
+		const protobufDefinition = DeviceOSProtobuf.getDefinition(protobufMessageName);
+		const returnThis = {};
+
+		let replyObject;
+		try {
+			replyObject = await this.sendProtobufRequest(
+				protobufMessageName,
+				protobufMessageData,
+				options
+			);
+		} catch (error) {
+			if (error instanceof TimeoutError) {
+				returnThis.pass = false;
+				if (options && options.timeout) {
+					returnThis.error = `Request timed out, exceeded ${options.timeout}ms`;
+				} else {
+					returnThis.error = `Request timed out, exceeded default timeout`;
+				}
+				return returnThis;
 			}
-			return rep.list.aps.map(ap => accessPointFromProtobuf(ap));
-		});
-	}
+			throw error;
+		}
 
-	/**
-	 * Set the WiFi credentials.
-	 *
-	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
-	 *             be removed in future versions of this library.
-	 *
-	 * Supported platforms:
-	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
-	 *
-	 * @param {Object} credentials Credentials.
-	 * @return {Promise}
-	 */
-	setWifiCredentials(credentials) {
-		return this.sendRequest(Request.WIFI_SET_CREDENTIALS, {
-			ap: accessPointToProtobuf(credentials)
-		});
-	}
-
-	/**
-	 * Get the WiFi credentials.
-	 *
-	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
-	 *             be removed in future versions of this library.
-	 *
-	 * Supported platforms:
-	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
-	 *
-	 * @return {Promise<Array>}
-	 */
-	getWifiCredentials() {
-		return this.sendRequest(Request.WIFI_GET_CREDENTIALS).then(rep => {
-			if (!rep.list) {
-				return [];
-			}
-			return rep.list.aps.map(ap => accessPointFromProtobuf(ap));
-		});
-	}
-
-	/**
-	 * Clear the WiFi credentials.
-	 *
-	 * @deprecated This method is not guaranteed to work with recent versions of Device OS and it will
-	 *             be removed in future versions of this library.
-	 *
-	 * Supported platforms:
-	 * - Gen 2 (since Device OS 0.8.0, deprecated in 2.0.0)
-	 *
-	 * @return {Promise}
-	 */
-	clearWifiCredentials() {
-		return this.sendRequest(Request.WIFI_CLEAR_CREDENTIALS);
+		// Example:
+		//   replyObject.constructor.name might be 'JoinNewNetworkReply'
+		//   for a protobufMessageName to 'wifi.JoinNewNetworkRequest'
+		if (replyObject && replyObject.constructor &&
+			replyObject.constructor.name === protobufDefinition.replyMessage.name) {
+			returnThis.pass = true;
+			returnThis.replyObject = replyObject;
+		} else {
+			returnThis.pass = false;
+			returnThis.error = `Device did not return a valid reply. expected=${protobufDefinition.replyMessage.name} actual=${JSON.stringify(replyObject)}`;
+		}
+		return returnThis;
 	}
 };
 
 module.exports = {
-	WifiAntenna,
-	WifiSecurity,
-	WifiCipher,
-	EapMethod,
 	WifiDevice
 };
