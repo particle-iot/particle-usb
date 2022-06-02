@@ -72,7 +72,7 @@ For more information, read the [API reference on GitHub](docs/reference.md).
 
 ### Installing
 
-1. Install Node.js [`node@12.x` and `npm@6.x` are required]
+1. Install Node.js [`node@12.x` and `npm@8.x` are required]
 1. Clone this repository `$ git clone git@github.com:particle-iot/particle-usb.git && cd ./particle-usb`
 1. Install dependencies `$ npm install`
 1. View available commands `$ npm run`

@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/spark/particle-usb"
+    "url": "https://github.com/particle-iot/particle-usb"
   },
   "license": "Apache-2.0",
   "contributors": [
@@ -20,7 +20,8 @@
     "Andrey Tolstoy <avtolstoy@gmail.com>"
   ],
   "engines": {
-    "node": ">=12"
+    "node": ">=12",
+    "npm": "8.x"
   },
   "scripts": {
     "prepublish": "git submodule update --init && npm run build",
