@@ -1,6 +1,6 @@
 # particle-usb
 
-[![CircleCI](https://circleci.com/gh/particle-iot/particle-usb/tree/main.svg?style=svg)](https://circleci.com/gh/particle-iot/particle-usb/tree/main)
+![CI](https://github.com/particle-iot/particle-usb/workflows/CICD/badge.svg?branch=main)
 
 A library for accessing Particle USB devices.
 
