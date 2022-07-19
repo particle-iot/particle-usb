@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/spark/particle-usb"
+    "url": "https://github.com/particle-iot/particle-usb"
   },
   "license": "Apache-2.0",
   "contributors": [
@@ -20,14 +20,15 @@
     "Andrey Tolstoy <avtolstoy@gmail.com>"
   ],
   "engines": {
-    "node": ">=12"
+    "node": ">=12",
+    "npm": "8.x"
   },
   "scripts": {
     "prepublish": "git submodule update --init && npm run build",
     "version": "npm run docs && git add docs",
     "test": "mocha test test/integration './src/**/*.test.js'",
     "test:ci": "npm run lint && npm test && npm run coverage",
-    "test:silent": "PARTICLE_NOOP=$(npm run test)",
+    "test:silent": "npm run test > tmp/test-unit-log.txt 2>&1",
     "lint": "eslint . --ext .js --ignore-path .gitignore",
     "lint:fix": "npm run lint -- --fix",
     "coverage": "nyc --include='src/**/*.js' --temp-dir=./tmp/ --check-coverage npm run test:silent",
@@ -52,7 +53,7 @@
     "chai-as-promised": "^7.1.1",
     "chai-subset": "^1.6.0",
     "documentation": "^12.3.0",
-    "eslint": "^6.8.0",
+    "eslint": "^8.18.0",
     "eslint-config-particle": "^2.5.0",
     "fs-extra": "^9.1.0",
     "mkdirp": "^1.0.4",

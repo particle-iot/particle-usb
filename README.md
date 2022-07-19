@@ -6,7 +6,7 @@ A library for accessing Particle USB devices.
 
 **Note:** This library requires [Particle firmware](https://github.com/particle-iot/firmware) 0.8.0 or later.
 
-[Installation](#installation) | [Usage](#usage) | [API Reference](docs/reference.md) | [Development](#development) | [Testing](#testing) | [License](#license)
+[Installation](#installation) | [Usage](#usage) | [API Reference](docs/reference.md) | [Development](#development) | [Testing](#testing) | [Releasing](./RELEASE.md) | [License](#license)
 
 
 ## Installation
@@ -72,7 +72,7 @@ For more information, read the [API reference on GitHub](docs/reference.md).
 
 ### Installing
 
-1. Install Node.js [`node@12.x` and `npm@6.x` are required]
+1. Install Node.js [`node@12.x` and `npm@8.x` are required]
 1. Clone this repository `$ git clone git@github.com:particle-iot/particle-usb.git && cd ./particle-usb`
 1. Install dependencies `$ npm install`
 1. View available commands `$ npm run`
@@ -91,6 +91,11 @@ Particle USB has a number of automated test suites and related commands. The mos
 All tests use [mocha](https://mochajs.org), [chai](https://www.chaijs.com), and [sinon](https://sinonjs.org/) with coverage handled by [nyc](https://github.com/istanbuljs/nyc).
 
 We recommend running locally if you can as it greatly shortens your feedback loop. However, CI also runs against every PR and [error reporting is publicly available](https://travis-ci.org/particle-iot/particle-usb).
+
+
+## Releasing
+
+For release instructions, see [RELEASE.md](./RELEASE.md)
 
 
 ## License
