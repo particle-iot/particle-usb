@@ -28,7 +28,7 @@
     "version": "npm run docs && git add docs",
     "test": "mocha test test/integration './src/**/*.test.js'",
     "test:ci": "npm run lint && npm test && npm run coverage",
-    "test:silent": "PARTICLE_NOOP=$(npm run test)",
+    "test:silent": "npm run test > tmp/test-unit-log.txt 2>&1",
     "lint": "eslint . --ext .js --ignore-path .gitignore",
     "lint:fix": "npm run lint -- --fix",
     "coverage": "nyc --include='src/**/*.js' --temp-dir=./tmp/ --check-coverage npm run test:silent",
