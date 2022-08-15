@@ -40,7 +40,6 @@
     "reinstall": "npm run clean && rm -rf ./node_modules && npm i"
   },
   "dependencies": {
-    "@particle/device-os-protobuf": "^1.1.0",
     "usb": "1.9.2"
   },
   "peerDependencies": {
@@ -48,6 +47,7 @@
   },
   "devDependencies": {
     "@particle/device-constants": "^1.2.0",
+    "@particle/device-os-protobuf": "^1.2.1",
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
     "chai-subset": "^1.6.0",
