@@ -43,10 +43,10 @@
     "usb": "1.9.2"
   },
   "peerDependencies": {
-    "@particle/device-constants": "^1.2.0"
+    "@particle/device-constants": "^3.0.0"
   },
   "devDependencies": {
-    "@particle/device-constants": "^1.2.0",
+    "@particle/device-constants": "^3.0.0",
     "@particle/device-os-protobuf": "^1.2.1",
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
