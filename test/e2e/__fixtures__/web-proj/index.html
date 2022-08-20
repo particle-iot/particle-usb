@@ -1,5 +1,5 @@
 <!doctype html>
-<html class="no-js" lang="">
+<html lang="en-US">
 
 <head>
   <meta charset="utf-8">
@@ -10,17 +10,33 @@
 </head>
 
 <body>
-	<div id="test-usb-main">
-		<button id="test-usb-selectdevice">Select Device</button>
+	<div id="main">
+		<button id="btn-selectdevice">Select Device</button>
+		<button id="btn-reset">Reset</button>
+		<ul id="device-list"></ul>
 	</div>
 	<script>
-		const btn = document.getElementById('test-usb-selectdevice');
-		btn.addEventListener('click', async (even) => {
-			const device = await navigator.usb.requestDevice({
-				filters: [{ vendorId: 0x2b04 }]
-			});
+		const selectBtn = document.getElementById('btn-selectdevice');
+		selectBtn.addEventListener('click', async (even) => {
+			const deviceList = document.getElementById('device-list');
+			const li = document.createElement('li');
 
-			window.alert(`Got: ${device.productName} from ${device.manufacturerName}`);
+			try {
+				const device = await ParticleUsb.openDeviceById(window.__PRTCL_DEVICE_ID__, {});
+				li.id = 'test-device-ok';
+				li.innerText = `opened: ${device.id} | ${device.type}`;
+			} catch (error){
+				li.id = 'test-device-error';
+				li.innerText = 'failed to open device';
+			}
+
+			deviceList.appendChild(li);
+		});
+
+		const resetBtn = document.getElementById('btn-reset');
+		resetBtn.addEventListener('click', async (even) => {
+			const deviceList = document.getElementById('device-list');
+			deviceList.innerHTML = '';
 		});
 	</script>
 </body>

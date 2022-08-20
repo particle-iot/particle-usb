@@ -3,9 +3,11 @@ const http = require('http');
 const fs = require('fs-extra');
 const puppeteer = require('puppeteer');
 const { expect } = require('../support');
+const pusb = require('../../');
 
 const repoPath = path.join(__dirname, '..', '..');
 const projPath = path.join(__dirname, '__fixtures__', 'web-proj');
+const BROWSER_DEBUG = false; // set this to `true` to debug browser-side automation
 const webpageURL = 'http://localhost:4433'; // 'chrome://usb-internals/';
 const webpagePort = 4433;
 
@@ -21,10 +23,12 @@ describe('Browser Usage', () => {
 	});
 
 	after(async () => {
-		server && server.close();
-
 		if (browser){
 			await browser.close();
+		}
+
+		if (server){
+			server.close();
 		}
 	});
 
@@ -38,6 +42,54 @@ describe('Browser Usage', () => {
 			});
 
 			expect(hasParticleUSB).to.equal(true);
+		});
+	});
+
+	// TODO (mirande): it doesn't look like we can programmatically access
+	// devices yet :( - track these issues:
+	// https://github.com/puppeteer/puppeteer/issues/8813
+	// https://github.com/microsoft/playwright/issues/16626
+	describe('Listing Devices [@device]', () => {
+		let devices, device, deviceId;
+		const selectors = {
+			ok: '#test-device-ok',
+			error: '#test-device-error',
+			selectDevice: '#btn-selectdevice',
+			reset: 'btn-reset'
+		};
+
+		before(async () => {
+			devices = await pusb.getDevices();
+
+			if (!devices.length){
+				throw new Error('Unable to find devices - please connect your device via USB');
+			}
+
+			device = devices[0];
+			await device.open();
+			deviceId = device.id;
+			await device.close();
+			await page.evaluate((id) => window.__PRTCL_DEVICE_ID__ = id, deviceId);
+		});
+
+		afterEach(async () => {
+			await page.click('#btn-reset');
+		});
+
+		it('Authorizes and opens device', async () => {
+			await page.click(selectors.selectDevice);
+			await page.keyboard.press('Tab');
+			await page.keyboard.press('Tab');
+			await page.keyboard.press('Tab');
+			await page.keyboard.press('ArrowDown');
+			await page.keyboard.press('Enter');
+			await page.waitForSelector(selectors.ok, { timeout: 2 * 1000 });
+		});
+
+		it('Throws when device connect prompt is cancelled', async () => {
+			await page.click(selectors.selectDevice);
+			await page.keyboard.press('Escape');
+			await page.waitForSelector(selectors.error, { timeout: 2 * 1000 });
 		});
 	});
 
@@ -65,14 +117,36 @@ describe('Browser Usage', () => {
 	}
 
 	async function launchBrowser(url){
-		// to debug, use options like: `{ headless: false, slowMo: 1000 }`
-		const browser = await puppeteer.launch();
+		const options = getBrowserOptions();
+		const browser = await puppeteer.launch(options);
 		const page = await browser.newPage();
-		await await Promise.all([
+
+		page.on('console', msg => {
+			console.log('BROWSER LOG:', msg.text());
+		});
+
+		await Promise.all([
 			page.waitForNavigation({ waitUntil: 'load' }),
 			page.goto(url)
 		]);
+
 		return { browser, page };
+	}
+
+	function getBrowserOptions(){
+		const height = 768;
+		const width = 1024;
+		const options = {
+			args: [`--window-size=${width},${height}`],
+			defaultViewport: { width, height }
+		};
+
+		if (BROWSER_DEBUG){
+			options.headless = false;
+			options.slowMo = 500;
+		}
+
+		return options;
 	}
 
 	async function loadWebPageAssets(rootPath, projPath){
