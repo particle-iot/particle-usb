@@ -1,25 +1,23 @@
 const path = require('path');
 const http = require('http');
+const { URL } = require('url');
 const fs = require('fs-extra');
 const puppeteer = require('puppeteer');
 const { expect } = require('../support');
+const { ROOT_DIR, PROJ_WEB_DIR } = require('./lib/constants');
 const pusb = require('../../');
-
-const repoPath = path.join(__dirname, '..', '..');
-const projPath = path.join(__dirname, '__fixtures__', 'web-proj');
-const BROWSER_DEBUG = false; // set this to `true` to debug browser-side automation
-const webpageURL = 'http://localhost:4433'; // 'chrome://usb-internals/';
-const webpagePort = 4433;
 
 
 describe('Browser Usage', () => {
+	const BROWSER_DEBUG = false; // set this to `true` to debug browser-side automation
+	const siteURL = new URL('http://localhost:4433');
 	let assets, server, browser, page;
 
 	before(async () => {
-		assets = await loadWebPageAssets(repoPath, projPath);
+		assets = await loadWebPageAssets(ROOT_DIR, PROJ_WEB_DIR);
 		server = await createServer(assets);
-		server.listen(webpagePort);
-		({ browser, page } = await launchBrowser(webpageURL));
+		server.listen(siteURL.port);
+		({ browser, page } = await launchBrowser(siteURL.href));
 	});
 
 	after(async () => {
@@ -55,7 +53,7 @@ describe('Browser Usage', () => {
 			ok: '#test-device-ok',
 			error: '#test-device-error',
 			selectDevice: '#btn-selectdevice',
-			reset: 'btn-reset'
+			reset: '#btn-reset'
 		};
 
 		before(async () => {
@@ -73,7 +71,7 @@ describe('Browser Usage', () => {
 		});
 
 		afterEach(async () => {
-			await page.click('#btn-reset');
+			await page.click(selectors.reset);
 		});
 
 		it('Authorizes and opens device', async () => {
@@ -110,6 +108,7 @@ describe('Browser Usage', () => {
 				res.writeHead(200, { 'Content-Type': requestedAsset.type });
 				res.end(requestedAsset.data);
 			} else {
+				console.log(`:::: Unable to serve: ${req.url} - file not found`);
 				res.writeHead(404, { 'Content-Type': 'text/html' });
 				res.end('404: File not found');
 			}
@@ -122,7 +121,7 @@ describe('Browser Usage', () => {
 		const page = await browser.newPage();
 
 		page.on('console', msg => {
-			console.log('BROWSER LOG:', msg.text());
+			console.log(':::: BROWSER LOG:', msg.text());
 		});
 
 		await Promise.all([

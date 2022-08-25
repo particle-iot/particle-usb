@@ -29,7 +29,7 @@
     "test": "mocha test test/integration './src/**/*.test.js'",
     "test:ci": "npm run lint && npm test && npm run coverage && npm run test:e2e:ci",
     "test:silent": "npm run test > tmp/test-unit-log.txt 2>&1",
-    "test:e2e": "mocha 'test/**/*.e2e.js' --timeout 30000",
+    "test:e2e": "mocha 'test/**/*.e2e.js' --require './test/e2e/lib/setup.js' --timeout 30000 --node-option unhandled-rejections=strict",
     "test:e2e:ci": "npm run test:e2e:no-device -- --forbid-only",
     "test:e2e:no-device": "npm run test:e2e -- --grep @device --invert",
     "lint": "eslint . --ext .js --ignore-path .gitignore",
