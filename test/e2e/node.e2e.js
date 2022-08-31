@@ -69,5 +69,32 @@ describe('Node.js Usage', () => {
 			expect(usb).to.have.property('getDevices').that.is.a('function');
 		});
 	});
+
+	describe('Basic Device Interactions [@device]', () => {
+		let device, devices;
+
+		beforeEach(async () => {
+			const usb = require(PROJ_NODE_DIR);
+			devices = await usb.getDevices();
+			device = devices[0];
+			await device.open();
+		});
+
+		afterEach(async () => {
+			if (device){
+				await device.close();
+			}
+		});
+
+		it('Gets device cloud connection status', async () => {
+			const status = await device.getCloudConnectionStatus();
+			expect(status).to.not.be.oneOf([
+				'disconnected',
+				'connecting',
+				'connected',
+				'disconnecting'
+			]);
+		});
+	});
 });
 
