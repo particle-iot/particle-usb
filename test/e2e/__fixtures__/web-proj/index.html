@@ -1,0 +1,29 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <title>Particle USB Browser Test Harness</title>
+  <meta name="description" content="Webpage used to test Particle USB's browser implementation">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="/particle-usb.js"></script>
+</head>
+
+<body>
+	<div id="test-usb-main">
+		<button id="test-usb-selectdevice">Select Device</button>
+	</div>
+	<script>
+		const btn = document.getElementById('test-usb-selectdevice');
+		btn.addEventListener('click', async (even) => {
+			const device = await navigator.usb.requestDevice({
+				filters: [{ vendorId: 0x2b04 }]
+			});
+
+			window.alert(`Got: ${device.productName} from ${device.manufacturerName}`);
+		});
+	</script>
+</body>
+
+</html>
+
