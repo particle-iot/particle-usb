@@ -58,11 +58,6 @@ describe('Browser Usage', () => {
 
 		before(async () => {
 			devices = await pusb.getDevices();
-
-			if (!devices.length){
-				throw new Error('Unable to find devices - please connect your device via USB');
-			}
-
 			device = devices[0];
 			await device.open();
 			deviceId = device.id;

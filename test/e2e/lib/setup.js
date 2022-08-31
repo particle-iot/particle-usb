@@ -27,6 +27,15 @@ exports.mochaGlobalSetup = async () => {
 	await execa('npm', ['pack'], { cwd: ROOT_DIR });
 	await execa('npm', ['install'], { cwd: PROJ_NODE_DIR });
 	await execa('npm', ['install', NPM_PACKAGE_PATH], { cwd: PROJ_NODE_DIR });
+
+	if (needsParticleDevices(process.argv)){
+		const usb = require(PROJ_NODE_DIR);
+		const devices = await usb.getDevices();
+
+		if (devices.length === 0){
+			throw new Error('Unable to find Particle devices - please connect your device(s) via USB');
+		}
+	}
 };
 
 exports.mochaGlobalTeardown = async () => {
@@ -34,3 +43,14 @@ exports.mochaGlobalTeardown = async () => {
 	await fs.remove(NPM_PACKAGE_PATH);
 };
 
+function needsParticleDevices(argv){
+	if (!Array.isArray(argv)){
+		return false;
+	}
+
+	if (argv.includes('--grep') && argv.includes('@device') && argv.includes('--invert')){
+		return false;
+	}
+
+	return true;
+}
