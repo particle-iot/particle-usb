@@ -85,6 +85,8 @@ For more information, read the [API reference on GitHub](docs/reference.md).
 Particle USB has a number of automated test suites and related commands. The most important are:
 
 * `npm test` - run all tests
+* `npm run test:e2e` - run all end-to-end tests _NOTE: [Requires additional setup](test/e2e/README.md)_
+* `npm run test:ci` - run all tests excluding device-dependent end-to-end tests as CI does
 * `npm run lint` - run the linter and print any errors to your terminal
 * `npm run coverage` - report code coverage stats
 
