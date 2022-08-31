@@ -43,10 +43,6 @@ describe('Browser Usage', () => {
 		});
 	});
 
-	// TODO (mirande): it doesn't look like we can programmatically access
-	// devices yet :( - track these issues:
-	// https://github.com/puppeteer/puppeteer/issues/8813
-	// https://github.com/microsoft/playwright/issues/16626
 	describe('Listing Devices [@device]', () => {
 		let devices, device, deviceId;
 		const selectors = {
@@ -69,7 +65,11 @@ describe('Browser Usage', () => {
 			await page.click(selectors.reset);
 		});
 
-		it('Authorizes and opens device', async () => {
+		// TODO (mirande): we can't programmatically access devices yet :(
+		// track these issues:
+		// https://bugs.chromium.org/p/chromium/issues/detail?id=831982
+		// https://github.com/puppeteer/puppeteer/issues/8813
+		it.skip('Authorizes and opens device', async () => {
 			await page.click(selectors.selectDevice);
 			await page.keyboard.press('Tab');
 			await page.keyboard.press('Tab');
