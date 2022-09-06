@@ -88,11 +88,11 @@ describe('Node.js Usage', () => {
 
 		it('Gets device cloud connection status', async () => {
 			const status = await device.getCloudConnectionStatus();
-			expect(status).to.not.be.oneOf([
-				'disconnected',
-				'connecting',
-				'connected',
-				'disconnecting'
+			expect(status).to.be.oneOf([
+				'DISCONNECTING',
+				'DISCONNECTED',
+				'CONNECTING',
+				'CONNECTED'
 			]);
 		});
 	});
