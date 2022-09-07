@@ -36,9 +36,7 @@ test/e2e
 │   └── ...
 │
 ├── lib  <-- supporting libraries
-│   ├── cli.js
-│   ├── env.js
-│   ├── fs.js
+│   ├── constants.js
 │   └── ...
 │
 ├── browser.e2e.js <-- e2e tests for browser (Chromium) usage
