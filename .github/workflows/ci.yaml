@@ -36,7 +36,6 @@ jobs:
       - name: Run Tests
         run: |
           npm run test:ci
-          npm run build:web
   publish:
     name: Publish (maybe)
     runs-on: ubuntu-latest
