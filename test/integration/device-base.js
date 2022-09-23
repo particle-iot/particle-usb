@@ -1,4 +1,4 @@
-const { getDevices, openDeviceById } = require('../../src/particle-usb');
+const { getDevices, openDeviceById, openNativeUsbDevice } = require('../../src/particle-usb');
 const { MAX_CONTROL_TRANSFER_DATA_SIZE } = require('../../src/usb-device-node');
 
 const { expect, randomString, integrationTest } = require('../support');
@@ -79,4 +79,27 @@ describe('device-base', function desc() {
 			});
 		});
 	});
+
+
+	describe('openNativeUsbDevice()', () => {
+		it('it can open a native USB device handle', async () => {
+			if (devs.length < 1) {
+				throw new Error('This test requires a device');
+			}
+			const dev1 = devs[0];
+			dev1.open();
+			const id1 = dev1.id;
+			dev1.close();
+
+			const nativeUsbDevice = dev1._dev;
+
+			const dev2 = openNativeUsbDevice(nativeUsbDevice);
+			dev2.open();
+			const id2 = dev2.id;
+			dev2.close();
+
+			expect(id1).to.equal(id2);
+		});
+	});
+
 });

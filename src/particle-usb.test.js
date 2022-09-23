@@ -4,6 +4,7 @@ describe('Public interface of npm module', () => {
 	it('exports expected objects and functions', () => {
 		expect(particleUSB.getDevices).to.be.a('Function');
 		expect(particleUSB.openDeviceById).to.be.a('Function');
+		expect(particleUSB.openNativeUsbDevice).to.be.a('Function');
 		expect(particleUSB.PollingPolicy).to.be.an('object');
 		expect(particleUSB.PollingPolicy.DEFAULT).to.be.a('Function');
 

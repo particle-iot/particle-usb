@@ -1,4 +1,4 @@
-const { getDevices: getUsbDevices, openDeviceById: openUsbDeviceById } = require('./device-base');
+const { getDevices: getUsbDevices, openDeviceById: openUsbDeviceById, openNativeUsbDevice: openUsbNativeUsbDevice } = require('./device-base');
 const { PollingPolicy } = require('./device-base');
 const { FirmwareModule } = require('./device');
 const { NetworkStatus } = require('./network-device');
@@ -33,6 +33,17 @@ function openDeviceById(id, options) {
 	return openUsbDeviceById(id, options).then(dev => setDevicePrototype(dev));
 }
 
+/**
+ * Open a Particle USB device from a native browser or node USB device handle
+ *
+ * @param {Object} nativeUsbDevice A WebUSB (browser) or node-usb USB device
+ * @param {Object} [options] Options (see {@link DeviceBase#open}).
+ * @return {Promise<Device>}
+ */
+function openNativeUsbDevice(nativeUsbDevice, options) {
+	return openUsbNativeUsbDevice(nativeUsbDevice, options).then(dev => setDevicePrototype(dev));
+}
+
 module.exports = {
 	PollingPolicy,
 	FirmwareModule,
@@ -56,5 +67,6 @@ module.exports = {
 	RequestError,
 	getDevices,
 	openDeviceById,
+	openNativeUsbDevice,
 	config
 };

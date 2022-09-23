@@ -1,4 +1,4 @@
-const { getUsbDevices, MAX_CONTROL_TRANSFER_DATA_SIZE } = require('./usb-device-node');
+const { getUsbDevices, UsbDevice, MAX_CONTROL_TRANSFER_DATA_SIZE } = require('./usb-device-node');
 const proto = require('./usb-protocol');
 const { PLATFORMS } = require('./platforms');
 const { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, assert } = require('./error');
@@ -774,9 +774,26 @@ async function openDeviceById(id, options = null) {
 	return dev;
 }
 
+async function openNativeUsbDevice(nativeUsbDevice, options = null) {
+	console.log('openNativeUsbDevice nativeUsbDevice', nativeUsbDevice);
+
+	const usbDevice = new UsbDevice(nativeUsbDevice);
+	console.log('openNativeUsbDevice usbDevice', usbDevice);
+
+	const platform = platformForUsbIds(usbDevice.vendorId, usbDevice.productId);
+	assert(platform);
+	console.log('openNativeUsbDevice platform', platform);
+	const dev = new DeviceBase(usbDevice, platform);
+	console.log('openNativeUsbDevice dev', dev);
+	await dev.open(options);
+	console.log('open complete isOpen=' + dev.isOpen);
+	return dev;
+}
+
 module.exports = {
 	PollingPolicy,
 	DeviceBase,
 	getDevices,
-	openDeviceById
+	openDeviceById,
+	openNativeUsbDevice
 };
