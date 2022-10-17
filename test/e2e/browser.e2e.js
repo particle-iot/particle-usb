@@ -1,3 +1,5 @@
+/* global ParticleUsb */
+
 const path = require('path');
 const http = require('http');
 const { URL } = require('url');
@@ -12,6 +14,12 @@ describe('Browser Usage', () => {
 	const BROWSER_DEBUG = false; // set this to `true` to debug browser-side automation
 	const siteURL = new URL('http://localhost:4433');
 	let assets, server, browser, page;
+	const selectors = {
+		ok: '#test-device-ok',
+		error: '#test-device-error',
+		selectDevice: '#btn-selectdevice',
+		reset: '#btn-reset'
+	};
 
 	before(async () => {
 		assets = await loadWebPageAssets(ROOT_DIR, PROJ_WEB_DIR);
@@ -44,21 +52,8 @@ describe('Browser Usage', () => {
 	});
 
 	describe('Listing Devices [@device]', () => {
-		let devices, device, deviceId;
-		const selectors = {
-			ok: '#test-device-ok',
-			error: '#test-device-error',
-			selectDevice: '#btn-selectdevice',
-			reset: '#btn-reset'
-		};
-
 		before(async () => {
-			devices = await pusb.getDevices();
-			device = devices[0];
-			await device.open();
-			deviceId = device.id;
-			await device.close();
-			await page.evaluate((id) => window.__PRTCL_DEVICE_ID__ = id, deviceId);
+			await setupDevices(page);
 		});
 
 		afterEach(async () => {
@@ -85,6 +80,51 @@ describe('Browser Usage', () => {
 			await page.waitForSelector(selectors.error, { timeout: 2 * 1000 });
 		});
 	});
+
+	// TODO (mirande): blocked on missing browser support - see above
+	// these can be run by:
+	// 1. set `BROWSER_DEBUG` to `true` above
+	// 2. replace the `describe.skip` call below w/ `describe.only`
+	// 3. run `npm run test:e2e`
+	// 4. when prompted to approve a device in the browser that launches,
+	//    select your device and click "connect"
+	describe.skip('Changing Device Modes [@device]', () => {
+		let deviceId;
+
+		before(async () => {
+			({ deviceId } = await setupDevices(page));
+		});
+
+		afterEach(async () => {
+			await page.click(selectors.reset);
+			await page.evaluate(async (id) => {
+				const webDevice = await ParticleUsb.openDeviceById(id);
+				await webDevice.reset();
+			}, deviceId);
+		});
+
+		it('Enters listening mode', async () => {
+			const mode = await page.evaluate(async () => {
+				const webDevices = await ParticleUsb.getDevices();
+				const webDevice = webDevices[0];
+				await webDevice.open();
+				await webDevice.enterListeningMode();
+				return await webDevice.getDeviceMode();
+			});
+
+			expect(mode).to.equal('LISTENING');
+		});
+	});
+
+	async function setupDevices(page){
+		const devices = await pusb.getDevices();
+		const device = devices[0];
+		await device.open();
+		const deviceId = device.id;
+		await device.close();
+		await page.evaluate((id) => window.__PRTCL_DEVICE_ID__ = id, deviceId);
+		return { deviceId, device, devices };
+	}
 
 	function createServer(assets){
 		return http.createServer((req, res) => {
