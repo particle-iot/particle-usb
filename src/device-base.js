@@ -775,18 +775,15 @@ async function openDeviceById(id, options = null) {
 }
 
 async function openNativeUsbDevice(nativeUsbDevice, options = null) {
-	console.log('openNativeUsbDevice nativeUsbDevice', nativeUsbDevice);
 
 	const usbDevice = new UsbDevice(nativeUsbDevice);
-	console.log('openNativeUsbDevice usbDevice', usbDevice);
 
 	const platform = platformForUsbIds(usbDevice.vendorId, usbDevice.productId);
 	assert(platform);
-	console.log('openNativeUsbDevice platform', platform);
 	const dev = new DeviceBase(usbDevice, platform);
-	console.log('openNativeUsbDevice dev', dev);
+
 	await dev.open(options);
-	console.log('open complete isOpen=' + dev.isOpen);
+
 	return dev;
 }
 
