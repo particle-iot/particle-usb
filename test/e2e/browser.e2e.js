@@ -18,6 +18,7 @@ describe('Browser Usage', () => {
 		ok: '#test-device-ok',
 		error: '#test-device-error',
 		selectDevice: '#btn-selectdevice',
+		nativeListenButton: '#btn-native-listen',
 		reset: '#btn-reset'
 	};
 
@@ -125,6 +126,51 @@ describe('Browser Usage', () => {
 		await page.evaluate((id) => window.__PRTCL_DEVICE_ID__ = id, deviceId);
 		return { deviceId, device, devices };
 	}
+
+	// This is disabled by default because you need to manually select and authorize the device
+	// to use WebUSB
+	describe.skip('Changing Device Modes openNativeUsbDevice [@device]', () => {
+		let deviceId;
+
+		before(async () => {
+		});
+
+		afterEach(async () => {
+			await page.click(selectors.reset);
+			
+			await page.evaluate(async (id) => {
+				const webDevice = await ParticleUsb.openDeviceById(id);
+				await webDevice.reset();
+			}, deviceId);
+			
+		});
+
+		it('Enters listening mode', async () => {
+			await page.click(selectors.nativeListenButton);
+			
+			let result;
+
+			for(let tries = 1; tries < 20; tries++) {
+				result = await page.evaluate(async () => {
+					return {deviceId: window.__PRTCL_DEVICE_ID__, deviceMode:window.__PRTCL_DEVICE_MODE__};
+				});
+				if (result.deviceId) {
+					break;
+				}
+	
+				await new Promise(function(resolve) {
+                    setTimeout(function() {
+                        resolve();
+                    }, 1000);
+                });    
+			}
+			deviceId = result.deviceId;
+			console.log('opened ' + deviceId);
+
+			expect(result.deviceMode).to.equal('LISTENING');
+			
+		});
+	});
 
 	function createServer(assets){
 		return http.createServer((req, res) => {

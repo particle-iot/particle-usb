@@ -13,6 +13,7 @@
 	<div id="main">
 		<button id="btn-selectdevice">Select Device</button>
 		<button id="btn-reset">Reset</button>
+		<button id="btn-native-listen">Native Listening Mode</button>
 		<ul id="device-list"></ul>
 	</div>
 	<script>
@@ -38,6 +39,36 @@
 			const deviceList = document.getElementById('device-list');
 			deviceList.innerHTML = '';
 		});
+
+		const nativeListenBtn = document.getElementById('btn-native-listen');
+		nativeListenBtn.addEventListener('click', async (even) => {
+			let filters = [
+				{vendorId: 0x2b04}
+			];
+            const nativeUsbDevice = await navigator.usb.requestDevice({ filters: filters })
+			if (nativeUsbDevice) {
+				const deviceList = document.getElementById('device-list');
+				const li = document.createElement('li');
+
+				try {
+					const device = await ParticleUsb.openNativeUsbDevice(nativeUsbDevice, {});
+					li.id = 'test-device-ok';
+					li.innerText = `opened: ${device.id} | ${device.type}`;
+					window.__PRTCL_DEVICE_ID__ = device.id;
+
+					await device.enterListeningMode();
+					window.__PRTCL_DEVICE_MODE__ = await device.getDeviceMode();
+
+					await device.close();
+				} catch (error){
+					console.log('error', error);
+					li.id = 'test-device-error';
+					li.innerText = 'failed to open device';
+				}
+
+				deviceList.appendChild(li);
+			}
+		})
 	</script>
 </body>
 
