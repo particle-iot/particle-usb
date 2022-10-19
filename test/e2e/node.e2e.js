@@ -71,13 +71,14 @@ describe('Node.js Usage', () => {
 	});
 
 	describe('Basic Device Interactions [@device]', () => {
-		let device, devices;
+		let device, devices, deviceId;
 
 		beforeEach(async () => {
 			const usb = require(PROJ_NODE_DIR);
 			devices = await usb.getDevices();
 			device = devices[0];
 			await device.open();
+			deviceId = device.id;
 		});
 
 		afterEach(async () => {
@@ -94,6 +95,14 @@ describe('Node.js Usage', () => {
 				'CONNECTING',
 				'CONNECTED'
 			]);
+		});
+
+		it('Opens device using a native usb device reference', async () => {
+			const { openNativeUsbDevice } = require(PROJ_NODE_DIR);
+			await device.close();
+			const nativeUsbDevice = device._dev._dev; // using `device._dev._dev` instead causes the test to pass
+			device = await openNativeUsbDevice(nativeUsbDevice);
+			expect(deviceId).to.equal(device.id);
 		});
 	});
 });
