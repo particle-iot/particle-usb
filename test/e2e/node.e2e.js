@@ -100,7 +100,7 @@ describe('Node.js Usage', () => {
 		it('Opens device using a native usb device reference', async () => {
 			const { openNativeUsbDevice } = require(PROJ_NODE_DIR);
 			await device.close();
-			const nativeUsbDevice = device._dev._dev; // using `device._dev._dev` instead causes the test to pass
+			const nativeUsbDevice = device._dev._dev;
 			device = await openNativeUsbDevice(nativeUsbDevice);
 			expect(deviceId).to.equal(device.id);
 		});
