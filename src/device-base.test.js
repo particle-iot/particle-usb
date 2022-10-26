@@ -1,7 +1,7 @@
 const { fakeUsb, sinon, expect, assert, nextTick } = require('../test/support');
 const proxyquire = require('proxyquire');
 
-const { getDevices, openDeviceById, PollingPolicy } = proxyquire('../src/device-base', {
+const { getDevices, openDeviceById, openNativeUsbDevice, PollingPolicy } = proxyquire('../src/device-base', {
 	'./usb-device-node': fakeUsb
 });
 const usbImpl = require('./usb-device-node');
@@ -192,6 +192,47 @@ describe('device-base', () => {
 			fakeUsb.addElectron({ id: 'cdefcdefcdefcdefcdefcdef' });
 			await openDeviceById('abcdabcdabcdabcdabcdabcd');
 			await openDeviceById('CDEFCDEFCDEFCDEFCDEFCDEF');
+		});
+	});
+
+	describe('openNativeUsbDevice()', () => {
+		it('opens a native usb device', async () => {
+			const fakeNativeDevice = {
+				open: function() {
+				},
+				close: function() {
+				},
+				deviceDescriptor: {
+					iSerialNumber: '111111111111111111111111',
+					idVendor: 0x2b04,
+					idProduct: 0xc00a,
+				},
+				getStringDescriptor: function(s, fn) {
+					fn(null, s);
+				}
+			};
+			const dev = await openNativeUsbDevice(fakeNativeDevice);
+			expect(dev.isOpen).to.be.true;
+			expect(dev.id).to.equal('111111111111111111111111');
+		});
+
+		it('opens throws an exception on invalid device', async () => {
+			const fakeNativeDevice = {
+				open: function() {
+				},
+				close: function() {
+				},
+				deviceDescriptor: {
+					iSerialNumber: '111111111111111111111111',
+					idVendor: 0x2b04,
+					idProduct: 0xcfff,
+				},
+				getStringDescriptor: function(s, fn) {
+					fn(null, s);
+				}
+			};
+			const dev = openNativeUsbDevice(fakeNativeDevice);
+			await expect(dev).to.be.rejectedWith(error.NotFoundError);
 		});
 	});
 

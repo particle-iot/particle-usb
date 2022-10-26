@@ -189,10 +189,13 @@ class Device extends DeviceBase {
 	 * - Gen 2 (since Device OS 0.8.0)
 	 *
 	 * @param {Object} [options] Options.
+	 * @param {Boolean} [options.noReconnectWait] After entering DFU mode, do not attempt to connect to the device to make sure it's in DFU mode.
+	 *     This can be useful in a web browser because connecting to the device in DFU mode may prompt the user to authorize
+	 *     access to the device.
 	 * @param {Number} [options.timeout] Timeout (milliseconds).
 	 * @return {Promise}
 	 */
-	enterDfuMode({ timeout = globalOptions.requestTimeout } = {}) {
+	enterDfuMode({ noReconnectWait = false, timeout = globalOptions.requestTimeout } = {}) {
 		if (this.isInDfuMode) {
 			return;
 		}
@@ -201,18 +204,21 @@ class Device extends DeviceBase {
 			await s.close();
 			let isInDfuMode;
 
-			while (!isInDfuMode) {
-				try {
-					await s.open({ includeDfu: true });
-					isInDfuMode = s.device.isInDfuMode;
-				} catch (error) {
-					// device is reconnecting, ignore
+			if (!noReconnectWait) {
+				while (!isInDfuMode) {
+					try {
+						await s.open({ includeDfu: true });
+						isInDfuMode = s.device.isInDfuMode;
+					} catch (error) {
+						// device is reconnecting, ignore
+					}
+					await s.close();
+					await s.delay(500);
 				}
-				await s.close();
-				await s.delay(500);
 			}
 		});
 	}
+
 
 	/**
 	 * Reset and enter the safe mode.

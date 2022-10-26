@@ -100,6 +100,7 @@ describe('Browser Usage', () => {
 			await page.evaluate(async (id) => {
 				const webDevice = await ParticleUsb.openDeviceById(id);
 				await webDevice.reset();
+				await webDevice.close();
 			}, deviceId);
 		});
 
@@ -108,6 +109,25 @@ describe('Browser Usage', () => {
 				const webDevices = await ParticleUsb.getDevices();
 				const webDevice = webDevices[0];
 				await webDevice.open();
+				await webDevice.enterListeningMode();
+				return await webDevice.getDeviceMode();
+			});
+
+			expect(mode).to.equal('LISTENING');
+		});
+
+		it('Enters listening mode using a native webusb device reference', async () => {
+			const mode = await page.evaluate(async () => {
+				const filters = [
+					{ vendorId: 0x2b04 }
+				];
+
+				const nativeUsbDevice = await navigator.usb.requestDevice({
+					filters
+				});
+
+				const webDevice = await ParticleUsb.openNativeUsbDevice(nativeUsbDevice);
+
 				await webDevice.enterListeningMode();
 				return await webDevice.getDeviceMode();
 			});
