@@ -779,7 +779,9 @@ async function openNativeUsbDevice(nativeUsbDevice, options = null) {
 	const usbDevice = new UsbDevice(nativeUsbDevice);
 
 	const platform = platformForUsbIds(usbDevice.vendorId, usbDevice.productId);
-	assert(platform);
+	if (!platform) {
+		throw new NotFoundError('Unsupported device type');
+	}
 	const dev = new DeviceBase(usbDevice, platform);
 
 	await dev.open(options);

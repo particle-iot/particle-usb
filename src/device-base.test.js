@@ -216,6 +216,24 @@ describe('device-base', () => {
 			expect(dev.id).to.equal('111111111111111111111111');
 		});
 
+		it('opens throws an exception on invalid device', async () => {
+			const fakeNativeDevice = {
+				open: function() {
+				},
+				close: function() {
+				},
+				deviceDescriptor: {
+					iSerialNumber: '111111111111111111111111',
+					idVendor: 0x2b04,
+					idProduct: 0xcfff,
+				},
+				getStringDescriptor: function(s, fn) {
+					fn(null, s);
+				}
+			};
+			const dev = openNativeUsbDevice(fakeNativeDevice);
+			await expect(dev).to.be.rejectedWith(error.NotFoundError);
+		});
 	});
 
 	describe('DeviceBase', () => {
