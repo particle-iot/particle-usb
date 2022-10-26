@@ -87,17 +87,13 @@ describe('device-base', function desc() {
 				throw new Error('This test requires a device');
 			}
 			const dev1 = devs[0];
-			dev1.open();
+			await dev1.open();
 			const id1 = dev1.id;
-			dev1.close();
-
-			const nativeUsbDevice = dev1._dev;
-
-			const dev2 = openNativeUsbDevice(nativeUsbDevice);
-			dev2.open();
+			await dev1.close();
+			const nativeUsbDevice = dev1.usbDevice.internalObject;
+			const dev2 = await openNativeUsbDevice(nativeUsbDevice);
 			const id2 = dev2.id;
-			dev2.close();
-
+			await dev2.close();
 			expect(id1).to.equal(id2);
 		});
 	});
