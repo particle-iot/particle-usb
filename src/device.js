@@ -15,7 +15,7 @@ const DeviceOSProtobuf = require('@particle/device-os-protobuf');
  *
  * @enum {String}
  */
-const FirmwareModule = fromProtobufEnum(proto.FirmwareModuleType, {
+const FirmwareModule = fromProtobufEnum(DeviceOSProtobuf.definitions.FirmwareModuleType, {
 	/** Bootloader module. */
 	BOOTLOADER: 'BOOTLOADER',
 	/** System part module. */
@@ -23,7 +23,11 @@ const FirmwareModule = fromProtobufEnum(proto.FirmwareModuleType, {
 	/** User part module. */
 	USER_PART: 'USER_PART',
 	/** Monolithic firmware module. */
-	MONO_FIRMWARE: 'MONO_FIRMWARE'
+	MONO_FIRMWARE: 'MONO_FIRMWARE',
+	/** NCP_FIRMWARE */
+	NCP_FIRMWARE: 'NCP_FIRMWARE',
+	/** RADIO_STACK */
+	RADIO_STACK: 'RADIO_STACK'
 });
 
 /**
