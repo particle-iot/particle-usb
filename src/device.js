@@ -3,7 +3,7 @@ const { Request } = require('./request');
 const { Result, messageForResultCode } = require('./result');
 const { fromProtobufEnum } = require('./protobuf-util');
 const usbProto = require('./usb-protocol');
-const { RequestError, NotFoundError, TimeoutError } = require('./error');
+const { RequestError, NotFoundError, TimeoutError, StateError } = require('./error');
 const { globalOptions } = require('./config');
 
 const proto = require('./protocol');
@@ -408,6 +408,43 @@ class Device extends DeviceBase {
 				// Read firmware data
 				return this._readSectionData(section, 0, size);
 			});
+		});
+	}
+
+	/**
+	 * Get firmware module info.
+	 *
+	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 0.8.0)
+	 *
+	 * @return {Promise<Array>} List of modules installed into the device and their dependencies
+	 */
+	async getFirmwareModuleInfo() {
+		if (this.isInDfuMode) {
+			throw new StateError('Cannot get information when the device is in DFU mode');
+		}
+
+		const moduleInfoResponse = await this.sendProtobufRequest('GetModuleInfoRequest', null);
+		const { modules } = moduleInfoResponse;
+
+		return modules.map(module => {
+			const { index, type, dependencies, size, version } = module;
+
+			return {
+				type: FirmwareModule.fromProtobuf(type),
+				index,
+				version,
+				size,
+				dependencies: dependencies.map(dependency => {
+					return {
+						index: dependency.index,
+						version: dependency.version,
+						type: FirmwareModule.fromProtobuf(dependency.type)
+					};
+				}),
+			};
 		});
 	}
 

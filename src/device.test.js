@@ -9,7 +9,7 @@ const { PLATFORMS } = require('./platforms');
 const { Device } = require('./device');
 const DeviceOSProtobuf = require('@particle/device-os-protobuf');
 const { Result } = require('./result');
-const { RequestError } = require('./error');
+const { RequestError, StateError } = require('./error');
 
 describe('Device', () => {
 	const exampleSerialNumber = 'P046AF1450000FC';
@@ -73,5 +73,50 @@ describe('Device', () => {
 		expect(replyObject).to.be.an('object');
 		expect(replyObject.serial).to.be.a('string');
 		expect(replyObject.serial).to.eql('');
+	});
+
+	it('implements getFirmwareModuleInfo() returning all kind of module types and dependencies', async () => {
+		const moduleInfo = [
+			{ dependencies:[
+				{ type:1,index:1,version:2 },
+				{ type:1,index:2,version:3 },
+			], index: 0, type:1, version:2001, size:52568 },
+			{ dependencies:[], type:1, index:1, version:2, size:3996 },
+			{ dependencies:[], type:1, index:2, version:3, size:19592 },
+			{ dependencies:[{ type:1, version:2001, index: 2 }], type:2, index:1, version:5003, size:971242 },
+			{ dependencies:[],type:4, index:0, version:6, size:28668 },
+			{ dependencies:[],type:5, index:0, version:6, size:28668 },
+			{ dependencies:[],type:6, index:0, version:6, size:28668 },
+			{ dependencies:[{ type:2, index:1, version:5003 }],type:3, index:1, version:6, size:28668 },
+		];
+		const expectedModuleInfo = [
+			{ type: 'BOOTLOADER', index: 0, version: 2001, size: 52568, dependencies: [{ type: 'BOOTLOADER', index: 1, version: 2 }, { type: 'BOOTLOADER', index: 2, version: 3 }] },
+			{ type: 'BOOTLOADER', index: 1, version: 2, size: 3996, dependencies: [] },
+			{ type: 'BOOTLOADER', index: 2, version: 3, size: 19592, dependencies: [] },
+			{ type: 'SYSTEM_PART', index: 1, version: 5003, size: 971242, dependencies: [{ type: 'BOOTLOADER', version: 2001, index: 2 }] },
+			{ type: 'MONO_FIRMWARE', index: 0, version: 6, size: 28668, dependencies: [] },
+			{ type: 'NCP_FIRMWARE', index: 0, version: 6, size: 28668, dependencies: [] },
+			{ type: 'RADIO_STACK', index: 0, version: 6, size: 28668, dependencies: [] },
+			{ type: 'USER_PART', index: 1, version: 6, size: 28668, dependencies: [{ type: 'SYSTEM_PART', index: 1, version: 5003 }] },
+		];
+
+		sinon.stub(device, 'sendProtobufRequest').resolves({ modules: moduleInfo });
+		sinon.stub(device, 'isInDfuMode').value(false);
+		const result = await device.getFirmwareModuleInfo();
+		expect(device.sendProtobufRequest).to.have.property('callCount', 1);
+		expect(result).to.eql(expectedModuleInfo);
+	});
+
+	it('implements getFirmwareModuleInfo() and throws an error when the device is in dfu', async () => {
+		const moduleInfo = [
+			{ dependencies:[{ type:1,index:2,version:3 }], type:1, version:2001, size:52568 },
+			{ dependencies:[], type:1, index:1, version:2, size:3996 },
+			{ dependencies:[], type:1, index:2, version:3, size:19592 },
+			{ dependencies:[{ type:1, version:2001 }], type:2, index:1, version:5003, size:971242 },
+			{ dependencies:[{ type:2, index:1, version:5003 }],type:3, index:1, version:6, size:28668 }
+		];
+
+		sinon.stub(device, 'sendProtobufRequest').resolves({ modules: moduleInfo });
+		await expect(device.getFirmwareModuleInfo()).to.be.eventually.rejectedWith(StateError, 'Cannot get information when the device is in DFU mode');
 	});
 });
