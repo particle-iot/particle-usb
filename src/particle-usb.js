@@ -1,6 +1,6 @@
 const { getDevices: getUsbDevices, openDeviceById: openUsbDeviceById, openNativeUsbDevice: openUsbNativeUsbDevice } = require('./device-base');
 const { PollingPolicy } = require('./device-base');
-const { FirmwareModule } = require('./device');
+const { FirmwareModule, FirmwareModuleDisplayNames } = require('./device');
 const { NetworkStatus } = require('./network-device');
 const { WifiAntenna, WifiSecurity, WifiCipher, EapMethod } = require('./wifi-device');
 const { CloudConnectionStatus, ServerProtocol } = require('./cloud-device');
@@ -47,6 +47,7 @@ function openNativeUsbDevice(nativeUsbDevice, options) {
 module.exports = {
 	PollingPolicy,
 	FirmwareModule,
+	FirmwareModuleDisplayNames,
 	NetworkStatus,
 	WifiAntenna,
 	WifiSecurity,

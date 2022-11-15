@@ -24,11 +24,25 @@ const FirmwareModule = fromProtobufEnum(DeviceOSProtobuf.definitions.FirmwareMod
 	USER_PART: 'USER_PART',
 	/** Monolithic firmware module. */
 	MONO_FIRMWARE: 'MONO_FIRMWARE',
-	/** NCP_FIRMWARE */
+	/** Network co-processor firmware module */
 	NCP_FIRMWARE: 'NCP_FIRMWARE',
-	/** RADIO_STACK */
+	/** Radio stack module */
 	RADIO_STACK: 'RADIO_STACK'
 });
+
+/**
+ * Firmware module readable names
+ *
+ * @enum {String}
+ */
+const FirmwareModuleDisplayNames = {
+	[FirmwareModule.BOOTLOADER]: 'Bootloader',
+	[FirmwareModule.SYSTEM_PART]: 'System Part',
+	[FirmwareModule.USER_PART]: 'User Part',
+	[FirmwareModule.MONO_FIRMWARE]: 'Monolithic Firmware',
+	[FirmwareModule.NCP_FIRMWARE]: 'Network Co-processor Firmware',
+	[FirmwareModule.RADIO_STACK]: 'Radio Stack Module'
+};
 
 /**
  * Device modes.
@@ -916,6 +930,7 @@ class Device extends DeviceBase {
 
 module.exports = {
 	FirmwareModule,
+	FirmwareModuleDisplayNames,
 	DeviceMode,
 	LogLevel,
 	Device
