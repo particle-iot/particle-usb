@@ -3,7 +3,7 @@ const { Request } = require('./request');
 const { Result, messageForResultCode } = require('./result');
 const { fromProtobufEnum } = require('./protobuf-util');
 const usbProto = require('./usb-protocol');
-const { RequestError, NotFoundError, TimeoutError } = require('./error');
+const { RequestError, NotFoundError, TimeoutError, StateError } = require('./error');
 const { globalOptions } = require('./config');
 
 const proto = require('./protocol');
@@ -15,7 +15,7 @@ const DeviceOSProtobuf = require('@particle/device-os-protobuf');
  *
  * @enum {String}
  */
-const FirmwareModule = fromProtobufEnum(proto.FirmwareModuleType, {
+const FirmwareModule = fromProtobufEnum(DeviceOSProtobuf.definitions.FirmwareModuleType, {
 	/** Bootloader module. */
 	BOOTLOADER: 'BOOTLOADER',
 	/** System part module. */
@@ -23,8 +23,26 @@ const FirmwareModule = fromProtobufEnum(proto.FirmwareModuleType, {
 	/** User part module. */
 	USER_PART: 'USER_PART',
 	/** Monolithic firmware module. */
-	MONO_FIRMWARE: 'MONO_FIRMWARE'
+	MONO_FIRMWARE: 'MONO_FIRMWARE',
+	/** Network co-processor firmware module */
+	NCP_FIRMWARE: 'NCP_FIRMWARE',
+	/** Radio stack module */
+	RADIO_STACK: 'RADIO_STACK'
 });
+
+/**
+ * Firmware module readable names
+ *
+ * @enum {String}
+ */
+const FirmwareModuleDisplayNames = {
+	[FirmwareModule.BOOTLOADER]: 'Bootloader',
+	[FirmwareModule.SYSTEM_PART]: 'System Part',
+	[FirmwareModule.USER_PART]: 'User Part',
+	[FirmwareModule.MONO_FIRMWARE]: 'Monolithic Firmware',
+	[FirmwareModule.NCP_FIRMWARE]: 'Network Co-processor Firmware',
+	[FirmwareModule.RADIO_STACK]: 'Radio Stack Module'
+};
 
 /**
  * Device modes.
@@ -390,6 +408,43 @@ class Device extends DeviceBase {
 				// Read firmware data
 				return this._readSectionData(section, 0, size);
 			});
+		});
+	}
+
+	/**
+	 * Get firmware module info.
+	 *
+	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 0.8.0)
+	 *
+	 * @return {Promise<Array>} List of modules installed into the device and their dependencies
+	 */
+	async getFirmwareModuleInfo() {
+		if (this.isInDfuMode) {
+			throw new StateError('Cannot get information when the device is in DFU mode');
+		}
+
+		const moduleInfoResponse = await this.sendProtobufRequest('GetModuleInfoRequest', null);
+		const { modules } = moduleInfoResponse;
+
+		return modules.map(module => {
+			const { index, type, dependencies, size, version } = module;
+
+			return {
+				type: FirmwareModule.fromProtobuf(type),
+				index,
+				version,
+				size,
+				dependencies: dependencies.map(dependency => {
+					return {
+						index: dependency.index,
+						version: dependency.version,
+						type: FirmwareModule.fromProtobuf(dependency.type)
+					};
+				}),
+			};
 		});
 	}
 
@@ -912,6 +967,7 @@ class Device extends DeviceBase {
 
 module.exports = {
 	FirmwareModule,
+	FirmwareModuleDisplayNames,
 	DeviceMode,
 	LogLevel,
 	Device
