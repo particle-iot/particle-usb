@@ -48,11 +48,11 @@
     "usb": "^2.5.0"
   },
   "peerDependencies": {
-    "@particle/device-constants": "^3.1.6"
+    "@particle/device-constants": "^3.1.7"
   },
   "devDependencies": {
     "@particle/async-utils": "^4.0.2",
-    "@particle/device-constants": "^3.1.6",
+    "@particle/device-constants": "^3.1.7",
     "buffer": "^6.0.3",
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
