@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "@particle/device-os-protobuf": "^1.2.1",
-    "protobufjs": "^6.11.3",
+    "protobufjs": "^7.2.4",
     "usb": "^2.5.0"
   },
   "peerDependencies": {
