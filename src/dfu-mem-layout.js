@@ -1,6 +1,9 @@
-const { Dfu } = require('./dfu');
+const { Dfu, DfuDeviceStatus, DfuDeviceState } = require('./dfu');
 // memory layout of the USB device
 // get the addresses needed for different dfu functionalities like download, read, write
+
+
+// dfu-use.js file
 
 const DFUSE_READABLE  = 1;
 const DFUSE_ERASABLE  = 2;
@@ -30,18 +33,10 @@ class MemSegment {
 }
 
 const DfuDevice = (base) => class extends base {
-  // constructor(dev) {
-	// 	this._dev = dev;
-	// 	this._dev.timeout = 5000; // Use longer timeout for control transfers
-	// 	this._transferSize = 0;
-	// 	if (!this._dev.particle) {
-	// 		this._dev.particle = {
-	// 			isOpen: false,
-	// 			serialNumber: null
-	// 		};
-	// 	}
-	// 	this._quirks = {};
-	// }
+    constructor(...args) {
+        super(...args);
+        this.test = 'This is a test string';
+    }
 
   parseMemoryLayoutDesc(desc) {
     const nameEndIndex = desc.indexOf("/");
@@ -181,30 +176,30 @@ const DfuDevice = (base) => class extends base {
         }
 
         return numBytes;
-    };
+  };
 
-    async poll_until(state_predicate) {
-        let dfu_status = await this.getStatus();
+  async poll_until(state_predicate) {
+      let dfu_status = await this._dfu._getStatus();
 
-        let device = this;
-        function async_sleep(duration_ms) {
-            return new Promise(function(resolve, reject) {
-                device.logDebug("Sleeping for " + duration_ms + "ms");
-                setTimeout(resolve, duration_ms);
-            });
-        }
+      let device = this;
+      function async_sleep(duration_ms) {
+          return new Promise(function(resolve, reject) {
+              console.log("Sleeping for " + duration_ms + "ms");
+              setTimeout(resolve, duration_ms);
+          });
+      }
 
-        while (!state_predicate(dfu_status.state) && dfu_status.state != dfu.dfuERROR) {
-            await async_sleep(dfu_status.pollTimeout);
-            dfu_status = await this.getStatus();
-        }
+      while (!state_predicate(dfu_status.state) && dfu_status.state != DfuDeviceState.dfuERROR) {
+          await async_sleep(dfu_status.pollTimeout);
+          dfu_status = await this._dfu._getStatus();
+      }
 
-        return dfu_status;
-    }
+      return dfu_status;
+  }
 
-    async poll_until_idle(idle_state) {
-        return this.poll_until(state => (state == idle_state));
-    }
+  async poll_until_idle(idle_state) {
+      return this.poll_until(state => (state == idle_state));
+  }
 
   async erase(memoryInfo, startAddr, length) {
         let segment = this.getSegment(memoryInfo, startAddr);
@@ -234,7 +229,7 @@ const DfuDevice = (base) => class extends base {
             // await this.dfuseCommand(dfuse.ERASE_SECTOR, sectorAddr, 4);
 
             // build a req packet
-            const req = {};
+            let req = {};
             req.data = Buffer.alloc(5);
             req.data[0] = DfuseCommand.DFUSE_COMMAND_ERASE;
             req.data[1] = addr & 0xff;
@@ -251,61 +246,32 @@ const DfuDevice = (base) => class extends base {
             console.log(bytesErased, bytesToErase, "erase");
         }
   }
-  async downloadBinary(memoryInfo, startAddress, fileBuffer) {
-      let xfer_size = fileBuffer.length;
-      let data = fileBuffer;
-      let bytes_sent = 0;
-      let address = startAddress;
-      while (bytes_sent < expected_size) {
-          const bytes_left = expected_size - bytes_sent;
-          const chunk_size = Math.min(bytes_left, xfer_size);
 
-          let bytes_written = 0;
-          let dfu_status;
-          try {
-              const req = {};
-              req.data = Buffer.alloc(5);
-              req.data[0] = DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER;
-              req.data[1] = addr & 0xff;
-              req.data[2] = (addr >> 8) & 0xff;
-              req.data[3] = (addr >> 16) & 0xff;
-              req.data[4] = (addr >> 24) & 0xff;
-              // await this._dfu._sendDnloadRequest(req);
-              console.log(`Set address to 0x${address.toString(16)}`);
-              bytes_written = await this.downloadImpl(data.slice(bytes_sent, bytes_sent+chunk_size), 2);
-              console.log("Sent " + bytes_written + " bytes");
-              dfu_status = await this.poll_until_idle(dfu.dfuDNLOAD_IDLE);
-              address += chunk_size;
-          } catch (error) {
-              throw "Error during DfuSe download: " + error;
-          }
+  detach = function() {
+    return this.requestOut(dfu.DETACH, undefined, 1000);
+  }
 
-          if (dfu_status.status != dfu.STATUS_OK) {
-              throw `DFU DOWNLOAD failed state=${dfu_status.state}, status=${dfu_status.status}`;
-          }
+  getState = function() {    // this goes
+    return this.requestIn(dfu.GETSTATE, 1).then(
+        data => Promise.resolve(data.getUint8(0)),
+        error => Promise.reject("DFU GETSTATE failed: " + error)
+    );
+  }
 
-          this.logDebug("Wrote " + bytes_written + " bytes");
-          bytes_sent += bytes_written;
+  abort = function() {   // this goes
+    return this.requestOut(dfu.ABORT);
+  }
 
-          this.logProgress(bytes_sent, expected_size, "program");
-      }
-      this.logInfo(`Wrote ${bytes_sent} bytes`);
-
-      if (options.doManifestation) {
-          this.logInfo("Manifesting new firmware");
-          try {
-              await this.dfuseCommand(dfuse.SET_ADDRESS, startAddress, 4);
-              await this.download(new ArrayBuffer(), 0);
-          } catch (error) {
-              throw "Error during DfuSe manifestation: " + error;
-          }
-
-          try {
-              await this.poll_until(state => (state == dfu.dfuMANIFEST));
-          } catch (error) {
-              this.logError(error);
-          }
-      }
+  abortToIdle = async function() {   // this goes
+    await this.abort();
+    let state = await this.getState();
+    if (state == dfu.dfuERROR) {
+        await this.clearStatus();
+        state = await this.getState();
+    }
+    if (state != dfu.dfuIDLE) {
+        throw "Failed to return to idle state after abort: state " + state.state;
+    }
   }
 }
 

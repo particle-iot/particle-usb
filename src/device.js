@@ -398,7 +398,7 @@ class Device extends DeviceBase {
 		// first I should get interfaces
 		// this._dev has the internface information
 		// TODO: get the correct dfu interface from device-constants
-		const memoryInfo = this.parseMemoryLayoutDesc(intrfaces[0].name);
+		const memoryInfo = this.parseMemoryDescriptor(intrfaces[0].name);
 		console.log('memoryInfo', memoryInfo);
 
 		// Validate addresses against the input binary
@@ -406,17 +406,17 @@ class Device extends DeviceBase {
 		// I am assuming it is a system binary
 		let moduleStartAddr = parseInt(fileInfo.prefixInfo.moduleStartAddy, 16);
 		let moduleEndAddr = parseInt(fileInfo.prefixInfo.moduleEndAddy, 16);
-		try {
-			await this.verifyBinary(memoryInfo, moduleStartAddr);
-		} catch (err) {
-			console.log('Error in verifying binary', err);
-			// TODO: Add a msg here
-			throw err;
-		}
+		// try {
+		// 	await this.verifyBinary(memoryInfo, moduleStartAddr);
+		// } catch (err) {
+		// 	console.log('Error in verifying binary', err);
+		// 	// TODO: Add a msg here
+		// 	throw err;
+		// }
 
 		// Erase the correct range
-		await this.erase(memoryInfo, moduleStartAddr, fileInfo.fileBuffer.length);
-		await this.downloadBinary(memoryInfo, moduleStartAddr, fileInfo.fileBuffer);
+		// await this.erase(memoryInfo, moduleStartAddr, fileInfo.fileBuffer.length);
+		await this.do_download(memoryInfo, moduleStartAddr, 4096, fileInfo.fileBuffer, {});
 	}
 
 	// updateFirmwareOverDfu - this method will live in the dfuDevice.js file within the dfuDevice class

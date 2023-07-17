@@ -102,13 +102,13 @@ class UsbDevice {
 					reqData = Buffer.alloc(1);
 				}
 			}
-			this._dev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, reqData, (err) => {
+			this._dev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, reqData, (err, bytes) => {
 			// this._dev.controlTransfer(0x21, 1, 0, 0, reqData, (err) => {
 				if (err) {
 					console.log('Error - ', err);
 					return reject(wrapUsbError(err, 'OUT control transfer failed'));
 				}
-				resolve();
+				resolve(bytes);
 			});
 		});
 	}

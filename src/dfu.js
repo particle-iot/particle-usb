@@ -1,5 +1,7 @@
 const { DeviceError } = require('./error');
 
+// webDfu's dfu.js layer
+
 /**
  * A generic DFU error.
  */
@@ -115,6 +117,8 @@ const DfuseCommand = {
 	DFUSE_COMMAND_READ_UNPROTECT: 0x92
 };
 
+
+
 const DfuBmRequestType = {
 	HOST_TO_DEVICE: 0x21,
 	DEVICE_TO_HOST: 0xA1
@@ -139,7 +143,7 @@ class Dfu {
 	 *
 	 * @return {Promise}
 	 */
-	async open() {
+	async open() { // this open === webdfu/dfu.js open
 		await this._dev.claimInterface(this._interface);
 		await this._dev.setAltSetting(this._interface, this._alternate);
 		// check device-constants - may be that's why it's always set to 0.
@@ -258,6 +262,7 @@ class Dfu {
 		if (state.state !== 'dfuIDLE' && state.state !== 'dfuDNLOAD_IDLE') {
 			throw new DfuError('Invalid state');
 		}
+		return state;
 	}
 
 	async _sendEraseReq(req) {
@@ -277,19 +282,14 @@ class Dfu {
 		throw new DfuError('Unknown DFU_DNLOAD command');
 	}
 
-	async _sendDnloadRequest(req) {
-		if ((!req.cmd || req.cmd === DfuseCommand.DFUSE_COMMAND_NONE) && req.blockNum) {
-			// Send data
-			const setup = {
-				bmRequestType: DfuBmRequestType.HOST_TO_DEVICE,
-				bRequest: DfuRequestType.DFU_DNLOAD,
-				wIndex: this._interface,
-				wValue: req.blockNum
-			};
-			return this._dev.transferOut(setup, req.data ? req.data : Buffer.alloc(0));
-		}
-
-		throw new DfuError('Unknown DFU_DNLOAD command');
+	async _sendDnloadRequest(req, wValue) {	// requestOut
+		const setup = {
+			bmRequestType: DfuBmRequestType.HOST_TO_DEVICE,
+			bRequest: DfuRequestType.DFU_DNLOAD,
+			wIndex: this._interface,
+			wValue: wValue
+		};
+		return this._dev.transferOut(setup, req ? req : Buffer.alloc(0));
 	}
 
 	async _getStatus() {
@@ -320,6 +320,30 @@ class Dfu {
 			state: bState
 		};
 	}
+
+	async poll_until(state_predicate) {
+        let dfu_status = await this._getStatus();
+
+        function async_sleep(duration_ms) {
+            return new Promise(function(resolve, reject) {
+                // console.log("Sleeping for " + duration_ms + "ms");
+                setTimeout(resolve, duration_ms);
+            });
+        }
+
+		// What does this do???
+        while (!state_predicate(dfu_status.state) && dfu_status.state != 'dfuERROR') {
+		// while(dfu_status.state != 'dfuERROR' && dfu_status.state != state_predicate) {
+            await async_sleep(dfu_status.pollTimeout);
+            dfu_status = await this._getStatus();
+        }
+
+        return dfu_status;
+    }
+
+    poll_until_idle(idle_state) {
+        return this.poll_until(state => (state == 'dfuDNLOAD_IDLE'));
+    }
 
 	async _clearStatus() {
 		const setup = {
