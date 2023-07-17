@@ -19,6 +19,7 @@ const { setDevicePrototype } = require('./set-device-prototype');
  * @return {Promise<Array<Device>>}
  */
 function getDevices(options) {
+	console.log('In getDevices function');
 	return getUsbDevices(options).then(devs => devs.map(dev => setDevicePrototype(dev)));
 }
 

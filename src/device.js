@@ -5,6 +5,8 @@ const { fromProtobufEnum } = require('./protobuf-util');
 const usbProto = require('./usb-protocol');
 const { RequestError, NotFoundError, TimeoutError, StateError } = require('./error');
 const { globalOptions } = require('./config');
+const { Dfu } = require('./dfu');
+const BinaryReader = require('binary-version-reader').HalModuleParser;
 
 const proto = require('./protocol');
 
@@ -381,6 +383,48 @@ class Device extends DeviceBase {
 			await s.sendRequest(Request.FINISH_FIRMWARE_UPDATE, { validateOnly: false });
 		});
 	}
+
+	async updateFirmwareOverDfu(binaryFile) {
+		// first check if device is in dfu mode
+		console.log('Updating firmware over dfu empty functions');
+
+		const binReader = new BinaryReader();
+		let fileInfo = await binReader.parseFile(binaryFile);
+
+		// const dfuImpl = new Dfu(this._dev);
+		// await dfuImpl.open();
+		const intrfaces = await this._dfu.getInterfaces(); // check dfu class
+		// Can I be able to access this._dfu???
+		// first I should get interfaces
+		// this._dev has the internface information
+		// TODO: get the correct dfu interface from device-constants
+		const memoryInfo = this.parseMemoryLayoutDesc(intrfaces[0].name);
+		console.log('memoryInfo', memoryInfo);
+
+		// Validate addresses against the input binary
+		// TODO: parse all kinds of binaries supported. Currently for POC,
+		// I am assuming it is a system binary
+		let moduleStartAddr = parseInt(fileInfo.prefixInfo.moduleStartAddy, 16);
+		let moduleEndAddr = parseInt(fileInfo.prefixInfo.moduleEndAddy, 16);
+		try {
+			await this.verifyBinary(memoryInfo, moduleStartAddr);
+		} catch (err) {
+			console.log('Error in verifying binary', err);
+			// TODO: Add a msg here
+			throw err;
+		}
+
+		// Erase the correct range
+		await this.erase(memoryInfo, moduleStartAddr, fileInfo.fileBuffer.length);
+		await this.downloadBinary(memoryInfo, moduleStartAddr, fileInfo.fileBuffer);
+	}
+
+	// updateFirmwareOverDfu - this method will live in the dfuDevice.js file within the dfuDevice class
+	// updateFirmwareOverDfu(buffer with binary data, output of bvr, timeout)
+	// First we need to do the validations like the file size, etc, get the transfer size
+	// _eraseRequest also multiple times and chunkSizes will be calculated. Padding is done accordingly.
+	// _sendDnloadRequest will get called multiples times based on chunk sizes
+	// dfuDevice will know the module format, understand the binary version reader
 
 	/**
 	 * Get firmware module data.

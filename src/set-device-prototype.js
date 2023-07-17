@@ -6,6 +6,7 @@ const { CellularDevice } = require('./cellular-device');
 const { CloudDevice } = require('./cloud-device');
 const { Gen3Device } = require('./gen3-device');
 const { NetworkDevice } = require('./network-device');
+const { DfuDevice } = require('./dfu-mem-layout');
 
 /**
  * This constant has a structure like this:
@@ -15,7 +16,7 @@ const { NetworkDevice } = require('./network-device');
 //   ...
 // }
  */
-const DEVICE_PROTOTYPES = PLATFORMS.reduce((prototypes, platform) => {
+const DEVICE_PROTOTYPES = PLATFORMS.reduce((prototypes, platform) => {	// DEVICE_CLASSES
 	let klass = class extends NetworkDevice(Device) {};
 	if (platform.generation === 3) {
 		klass = class extends Gen3Device(klass) {};
@@ -32,10 +33,12 @@ const DEVICE_PROTOTYPES = PLATFORMS.reduce((prototypes, platform) => {
 	}
 	klass = class extends CloudDevice(klass) {};
 
-	prototypes[platform.name] = klass.prototype;
+	prototypes[platform.name] = klass;	//classes not prototypes
 
 	return prototypes;
 }, {});
+
+
 
 /**
  * Determines the the class and inheritance hierarchy
@@ -45,11 +48,17 @@ const DEVICE_PROTOTYPES = PLATFORMS.reduce((prototypes, platform) => {
  * @returns {*} an instance of a class like WifiDevice, CellularDevice with the correct inheritance hierachy
  */
 function setDevicePrototype(usbDevice) {
-	const proto = DEVICE_PROTOTYPES[usbDevice.type];
+	const proto = DEVICE_PROTOTYPES[usbDevice.type];	// DEVICE_CLASSES.
 	if (!proto) {
 		return usbDevice;
 	}
-	return Object.setPrototypeOf(usbDevice, proto);
+	// if usb device is in dfu mode, we could also add the prototype for the dfu device
+	if (usbDevice.isInDfuMode) {
+		const klass = class extends DfuDevice(proto){};
+		return Object.setPrototypeOf(usbDevice, klass.prototype);
+	} else {
+		return Object.setPrototypeOf(usbDevice, proto.prototype);
+	}
 }
 
 module.exports = {

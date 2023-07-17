@@ -4,6 +4,7 @@ const { PLATFORMS } = require('./platforms');
 const { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, assert } = require('./error');
 const { globalOptions } = require('./config');
 const { Dfu } = require('./dfu');
+const { parseMemoryLayout } = require('./dfu-mem-layout');
 
 const EventEmitter = require('events');
 
@@ -128,6 +129,7 @@ class DeviceBase extends EventEmitter {
 		this._log.trace('Opening device');
 		this._state = DeviceState.OPENING;
 		return this._dev.open().then(() => {
+
 			// Normalize the device ID string
 			this._id = this._dev.serialNumber.replace(/[^\x20-\x7e]/g, '').toLowerCase();
 			this._log.trace(`Device ID: ${this._id}`);
@@ -147,6 +149,20 @@ class DeviceBase extends EventEmitter {
 				this._dfu = new Dfu(this._dev, this._log);
 				return this._dfu.open(options);
 			}
+		}).then(() => {
+			return this._dfu.getInterfaces();
+		}).then((ifaces) => {
+			// iterate over ifaces
+			// for (const iface in ifaces) {
+			// 	const memoryInfo = this._dfu.parseMemoryLayoutDesc(iface.name);
+			// 	console.log('memoryInfo', memoryInfo);
+			// }
+		}).then(() => {
+
+		}).then(() => {
+
+		}).then(() => {
+
 		}).then(() => {
 			this._log.trace('Device is open');
 			this._maxActiveReqs = options.concurrentRequests;

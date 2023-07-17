@@ -89,25 +89,51 @@ class UsbDevice {
 		});
 	}
 
-	transferOut(setup, data) {
-		return new Promise((resolve, reject) => {
-			if (!data) {
+	transferOut(setup, reqData) {
+		return new Promise(async (resolve, reject) => {
+			if (!reqData) {
 				// NOTE: this is a quirk of some USB device-side implementations
 				// where zero-length (no data stage) OUT control requests are not
 				// completed and cause a timeout.
 				// The workaround is always including a data stage.
 				if (!this._quirks.controlOutTransfersRequireDataStage) {
-					data = Buffer.alloc(0);
+					reqData = Buffer.alloc(0);
 				} else {
-					data = Buffer.alloc(1);
+					reqData = Buffer.alloc(1);
 				}
 			}
-			this._dev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, data, err => {
+			this._dev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, reqData, (err) => {
+			// this._dev.controlTransfer(0x21, 1, 0, 0, reqData, (err) => {
 				if (err) {
+					console.log('Error - ', err);
 					return reject(wrapUsbError(err, 'OUT control transfer failed'));
 				}
 				resolve();
 			});
+		});
+	}
+
+	getStringDescriptorA(intrface) {
+		return new Promise((resolve, reject) => {
+			try {
+				this._dev.getStringDescriptor(intrface, (err, intrfaceName) => {
+					if (err) {
+						try {
+							this._dev.close();
+						} catch (err) {
+							this._log.error(`Unable to close device: ${err.message}`);
+							// Ignore error
+						}
+						reject(wrapUsbError(err, 'Unable to get serial number descriptor'));
+						return;
+					}
+					this._dev.particle.isOpen = true;
+					resolve(intrfaceName);
+				});
+			} catch (err) {
+				console.log('Error - ', err);
+				reject(wrapUsbError(err, 'Failed to claim interface'));
+			}
 		});
 	}
 
