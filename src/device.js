@@ -384,12 +384,11 @@ class Device extends DeviceBase {
 		});
 	}
 
-	async updateFirmwareOverDfu(binaryFile) {
+	async updateFirmwareOverDfu(systemPart, tinker) {
 		// first check if device is in dfu mode
-		console.log('Updating firmware over dfu empty functions');
-
+		console.log('Get info from system part');
 		const binReader = new BinaryReader();
-		let fileInfo = await binReader.parseFile(binaryFile);
+		let fileInfo = await binReader.parseFile(systemPart);
 
 		// const dfuImpl = new Dfu(this._dev);
 		// await dfuImpl.open();
@@ -417,6 +416,13 @@ class Device extends DeviceBase {
 		// Erase the correct range
 		// await this.erase(memoryInfo, moduleStartAddr, fileInfo.fileBuffer.length);
 		await this.do_download(memoryInfo, moduleStartAddr, 4096, fileInfo.fileBuffer, {});
+
+		console.log('Get info from tinker');
+		let fileInfoTinker = await binReader.parseFile(tinker);
+		let moduleStartAddrT = parseInt(fileInfoTinker.prefixInfo.moduleStartAddy, 16);
+		let moduleEndAddrT = parseInt(fileInfoTinker.prefixInfo.moduleEndAddy, 16);
+
+		await this.do_download(memoryInfo, moduleStartAddrT, 4096, fileInfoTinker.fileBuffer, {doManifestation: true});
 	}
 
 	// updateFirmwareOverDfu - this method will live in the dfuDevice.js file within the dfuDevice class

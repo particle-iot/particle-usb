@@ -217,6 +217,7 @@ class Dfu {
 	async leave() {
 		await this._goIntoDfuIdleOrDfuDnloadIdle();
 
+		// FIXME: _sendDnloadRequest changed
 		await this._sendDnloadRequest({
 			// Dummy non-zero block number
 			blockNum: 1
@@ -289,7 +290,8 @@ class Dfu {
 			wIndex: this._interface,
 			wValue: wValue
 		};
-		return this._dev.transferOut(setup, req ? req : Buffer.alloc(0));
+		// return this._dev.transferOut(setup, req ? req : Buffer.alloc(0));
+		return this._dev.transferOut(setup, req);
 	}
 
 	async _getStatus() {

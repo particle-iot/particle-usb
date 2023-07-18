@@ -312,15 +312,15 @@ const DfuDeviceNew = (base) => class extends base {
 
         if (options.doManifestation) {
             console.log("Manifesting new firmware");
+            await this._dfu._goIntoDfuIdleOrDfuDnloadIdle();
             try {
                 await this.dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, startAddress, 4);
-                await this._dfu._sendDnloadRequest(Buffer.alloc(1), 0);
+                await this._dfu._sendDnloadRequest(0, 2);
             } catch (error) {
                 throw "Error during DfuSe manifestation: " + error;
             }
 
             try {
-                console.log("Somehting's up with polling");
                 await this._dfu.poll_until(state => (state == 'dfuMANIFEST'));
             } catch (error) {
                 console.log(error);
