@@ -119,6 +119,8 @@ class UsbDevice {
 		}
 	}
 
+	// getStringDescriptor ??
+
 	get vendorId() {
 		return this._dev.vendorId;
 	}

@@ -384,39 +384,25 @@ class Device extends DeviceBase {
 		});
 	}
 
-	async updateFirmwareOverDfu(systemPart, tinker) {
-		// first check if device is in dfu mode
-		console.log('Get info from system part');
+	async updateFirmwareOverDfu(tinker, systemParts) {
+		// first check if device is in dfu mode?
+
+		// Flash system parts
 		const binReader = new BinaryReader();
-		let fileInfo = await binReader.parseFile(systemPart);
-
-		// const dfuImpl = new Dfu(this._dev);
-		// await dfuImpl.open();
-		const intrfaces = await this._dfu.getInterfaces(); // check dfu class
-		// Can I be able to access this._dfu???
-		// first I should get interfaces
-		// this._dev has the internface information
-		// TODO: get the correct dfu interface from device-constants
-		const memoryInfo = this.parseMemoryDescriptor(intrfaces[0].name);
-		console.log('memoryInfo', memoryInfo);
-
-		// Validate addresses against the input binary
-		// TODO: parse all kinds of binaries supported. Currently for POC,
-		// I am assuming it is a system binary
-		let moduleStartAddr = parseInt(fileInfo.prefixInfo.moduleStartAddy, 16);
-		let moduleEndAddr = parseInt(fileInfo.prefixInfo.moduleEndAddy, 16);
-		// try {
-		// 	await this.verifyBinary(memoryInfo, moduleStartAddr);
-		// } catch (err) {
-		// 	console.log('Error in verifying binary', err);
-		// 	// TODO: Add a msg here
-		// 	throw err;
-		// }
-
-		// Erase the correct range
-		// await this.erase(memoryInfo, moduleStartAddr, fileInfo.fileBuffer.length);
-		await this.do_download(memoryInfo, moduleStartAddr, 4096, fileInfo.fileBuffer, {});
-
+		for (const systemPart of systemParts) {
+			console.log('Get info from system part');
+			let fileInfo = await binReader.parseFile(systemPart);
+			const intrfaces = await this._dfu.getInterfaces();
+			const memoryInfo = this.parseMemoryDescriptor(intrfaces[0].name);
+			console.log('memoryInfo', memoryInfo);
+			let moduleStartAddr = parseInt(fileInfo.prefixInfo.moduleStartAddy, 16);
+			let moduleEndAddr = parseInt(fileInfo.prefixInfo.moduleEndAddy, 16);
+			console.log('moduleStartAddr', moduleStartAddr);
+			console.log('moduleEndAddr', moduleEndAddr);
+			await this.do_download(memoryInfo, moduleStartAddr, 4096, fileInfo.fileBuffer, {});
+		}
+		
+		// Flash tinker
 		console.log('Get info from tinker');
 		let fileInfoTinker = await binReader.parseFile(tinker);
 		let moduleStartAddrT = parseInt(fileInfoTinker.prefixInfo.moduleStartAddy, 16);
@@ -424,13 +410,6 @@ class Device extends DeviceBase {
 
 		await this.do_download(memoryInfo, moduleStartAddrT, 4096, fileInfoTinker.fileBuffer, {doManifestation: true});
 	}
-
-	// updateFirmwareOverDfu - this method will live in the dfuDevice.js file within the dfuDevice class
-	// updateFirmwareOverDfu(buffer with binary data, output of bvr, timeout)
-	// First we need to do the validations like the file size, etc, get the transfer size
-	// _eraseRequest also multiple times and chunkSizes will be calculated. Padding is done accordingly.
-	// _sendDnloadRequest will get called multiples times based on chunk sizes
-	// dfuDevice will know the module format, understand the binary version reader
 
 	/**
 	 * Get firmware module data.

@@ -215,25 +215,23 @@ class Dfu {
 	 * @return {Promise}
 	 */
 	async leave() {
-		await this._goIntoDfuIdleOrDfuDnloadIdle();
+		// await this._goIntoDfuIdleOrDfuDnloadIdle();
 
 		// FIXME: _sendDnloadRequest changed
-		await this._sendDnloadRequest({
-			// Dummy non-zero block number
-			blockNum: 1
-			// No data
-		});
+		await this._sendDnloadRequest(0, 2);
 
-		// Check if the leave command was executed without an error
-		const state = await this._getStatus();
-		if (state.state !== 'dfuMANIFEST') {
-			// This is a workaround for Gen 2 DFU implementation where in order to please dfu-util
-			// for some reason we are going off-standard and instead of reporting the actual dfuMANIFEST state
-			// report dfuDNLOAD_IDLE :|
-			if (state.status === 'OK' && state.state !== 'dfuDNLOAD_IDLE') {
-				throw new DfuError('Invalid DFU state');
-			}
-		}
+		await this.poll_until(state => (state == 'dfuMANIFEST' || state == 'dfuMANIFEST_WAIT_RESET'));
+
+		// // Check if the leave command was executed without an error
+		// const state = await this._getStatus();
+		// if (state.state !== 'dfuMANIFEST') {
+		// 	// This is a workaround for Gen 2 DFU implementation where in order to please dfu-util
+		// 	// for some reason we are going off-standard and instead of reporting the actual dfuMANIFEST state
+		// 	// report dfuDNLOAD_IDLE :|
+		// 	if (state.status === 'OK' && state.state !== 'dfuDNLOAD_IDLE') {
+		// 		throw new DfuError('Invalid DFU state');
+		// 	}
+		// }
 
 		// After this, the device will go into dfuMANIFSET_WAIT_RESET state
 		// and eventually should reset

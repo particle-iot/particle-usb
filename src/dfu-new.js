@@ -144,7 +144,8 @@ const DfuDeviceNew = (base) => class extends base {
 
     getSegment(memoryInfo, addr) {
         if (!memoryInfo || ! memoryInfo.segments) {
-            throw "No memory map information available";
+            throw "No memory map information available";    // fix all of these
+            // throw new Error("No memory map information available"):
         }
 
         for (let segment of memoryInfo.segments) {
@@ -288,7 +289,7 @@ const DfuDeviceNew = (base) => class extends base {
             try {
                 await this.dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, address, 4);
                 console.log(`Set address to 0x${address.toString(16)}`);
-                await this._dfu._goIntoDfuIdleOrDfuDnloadIdle();    // Do we need this??? FIXME
+                // await this._dfu._goIntoDfuIdleOrDfuDnloadIdle();    // Do we need this??? FIXME
                 bytes_written = await this._dfu._sendDnloadRequest(data.slice(bytes_sent, bytes_sent+chunk_size), 2);
                 dfu_status = await this._dfu.poll_until_idle(DfuDeviceState.dfuDNLOAD_SYNC);
                 console.log("Sent " + bytes_written + " bytes");
@@ -315,16 +316,16 @@ const DfuDeviceNew = (base) => class extends base {
             await this._dfu._goIntoDfuIdleOrDfuDnloadIdle();
             try {
                 await this.dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, startAddress, 4);
-                await this._dfu._sendDnloadRequest(0, 2);
+                await this._dfu.leave();
             } catch (error) {
                 throw "Error during DfuSe manifestation: " + error;
             }
 
-            try {
-                await this._dfu.poll_until(state => (state == 'dfuMANIFEST'));
-            } catch (error) {
-                console.log(error);
-            }
+            // try {
+            //     await this._dfu.poll_until(state => (state == 'dfuMANIFEST'));
+            // } catch (error) {
+            //     console.log(error);
+            // }
         }
     }
 
