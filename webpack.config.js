@@ -14,7 +14,16 @@ module.exports = {
 	},
 	resolve: {
 		fallback: {
-			buffer: require.resolve('buffer/')
+			buffer: require.resolve('buffer/'),
+			zlib: false,
+			util: false,
+			stream: false,
+			path: false,
+			os: false,
+			crypto: false,
+			constants:false,
+			assert:false,
+			fs: false
 		}
 	},
 	plugins: [
