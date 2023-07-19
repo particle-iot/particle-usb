@@ -103,7 +103,6 @@ class UsbDevice {
 				}
 			}
 			this._dev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, reqData, (err, bytes) => {
-			// this._dev.controlTransfer(0x21, 1, 0, 0, reqData, (err) => {
 				if (err) {
 					console.log('Error - ', err);
 					return reject(wrapUsbError(err, 'OUT control transfer failed'));
@@ -113,7 +112,7 @@ class UsbDevice {
 		});
 	}
 
-	getStringDescriptorA(intrface) {
+	getDescriptorString(intrface) {
 		return new Promise((resolve, reject) => {
 			try {
 				this._dev.getStringDescriptor(intrface, (err, intrfaceName) => {
@@ -131,7 +130,6 @@ class UsbDevice {
 					resolve(intrfaceName);
 				});
 			} catch (err) {
-				console.log('Error - ', err);
 				reject(wrapUsbError(err, 'Failed to claim interface'));
 			}
 		});

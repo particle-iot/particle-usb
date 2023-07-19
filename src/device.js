@@ -385,6 +385,8 @@ class Device extends DeviceBase {
 	}
 
 	async updateFirmwareOverDfu(tinker, systemParts) {
+		// do this looping in CLI
+
 		// first check if device is in dfu mode?
 
 		// Flash system parts
@@ -399,16 +401,18 @@ class Device extends DeviceBase {
 			let moduleEndAddr = parseInt(fileInfo.prefixInfo.moduleEndAddy, 16);
 			console.log('moduleStartAddr', moduleStartAddr);
 			console.log('moduleEndAddr', moduleEndAddr);
-			await this.do_download(memoryInfo, moduleStartAddr, 4096, fileInfo.fileBuffer, {});
+			await this.do_download(memoryInfo, moduleStartAddr, 2048, fileInfo.fileBuffer, {});
 		}
-		
+
 		// Flash tinker
 		console.log('Get info from tinker');
+		const intrfacesT = await this._dfu.getInterfaces();
+		const memoryInfoT = this.parseMemoryDescriptor(intrfacesT[0].name);
 		let fileInfoTinker = await binReader.parseFile(tinker);
 		let moduleStartAddrT = parseInt(fileInfoTinker.prefixInfo.moduleStartAddy, 16);
 		let moduleEndAddrT = parseInt(fileInfoTinker.prefixInfo.moduleEndAddy, 16);
 
-		await this.do_download(memoryInfo, moduleStartAddrT, 4096, fileInfoTinker.fileBuffer, {doManifestation: true});
+		await this.do_download(memoryInfoT, moduleStartAddrT, 2048, fileInfoTinker.fileBuffer, {doManifestation: true});
 	}
 
 	/**

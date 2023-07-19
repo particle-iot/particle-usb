@@ -1,26 +1,7 @@
 /* istanbul ignore file */
 /* eslint-disable */
 /* dfu.js must be included before dfuse.js */
-const { dfu, DfuDeviceState, DfuseCommand } = require('./dfu');
-
-/*
-export const createDfuDevice = async(nativeUsbDevice) => {
-	const interfaces = await getInterfaces(nativeUsbDevice);
-	const dfuDevice = new dfu.Device(nativeUsbDevice, interfaces.internalInterface);
-	const interfaceNames = await dfuDevice.readInterfaceNames();
-	const configIndex = interfaces.internalInterface.configuration.configurationValue;
-	const intfNumber = interfaces.internalInterface['interface'].interfaceNumber;
-	const alt = interfaces.internalInterface.alternate.alternateSetting;
-	interfaces.internalInterface.name =
-		interfaces.internalInterface.name = interfaceNames[configIndex][intfNumber][alt];
-	return {
-		dfuseDevice: new dfuse.Device(dfuDevice.device_, dfuDevice.settings)
-	};
-};
-*/
-
-// export const dfuse = {};
-
+const { DfuDeviceState, DfuseCommand } = require('./dfu');
 
 const DfuDeviceNew = (base) => class extends base {
     constructor(...args) {
@@ -30,23 +11,10 @@ const DfuDeviceNew = (base) => class extends base {
         ERASE_SECTOR = 0x41;
     }
 
-
-    // dfuse.Device = function(device, settings) {
-    //     dfu.Device.call(this, device, settings);
-    //     this.memoryInfo = null;
-    //     this.startAddress = NaN;
-    //     if (settings.name) {
-    //         this.memoryInfo = dfuse.parseMemoryDescriptor(settings.name);
-    //     }
-    // }
-
-    // dfuse.Device.prototype = Object.create(dfu.Device.prototype);
-    // dfuse.Device.prototype.constructor = dfuse.Device;
-
     parseMemoryDescriptor(desc) {
         const nameEndIndex = desc.indexOf("/");
         if (!desc.startsWith("@") || nameEndIndex == -1) {
-            throw `Not a DfuSe memory descriptor: "${desc}"`;
+            throw new Error(`Not a DfuSe memory descriptor: "${desc}"`);
         }
 
         const name = desc.substring(1, nameEndIndex).trim();
@@ -87,7 +55,7 @@ const DfuDeviceNew = (base) => class extends base {
         return {"name": name, "segments": segments};
     };
 
-    async dfuseCommand(command, param, len) {
+    async dfuseCommand(command, param, len, writeOp=false) {
         if (typeof param === 'undefined' && typeof len === 'undefined') {
             param = 0x00;
             len = 1;
@@ -99,22 +67,12 @@ const DfuDeviceNew = (base) => class extends base {
             0x41: "ERASE_SECTOR"
         };
 
-        // let payload = new ArrayBuffer(len + 1);
         let payload = Buffer.alloc(5);
         payload[0] = command;
         payload[1] = param & 0xff;
         payload[2] = (param >> 8) & 0xff;
         payload[3] = (param >> 16) & 0xff;
         payload[4] = (param >> 24) & 0xff;
-        // let view = new DataView(payload);
-        // view.setUint8(0, command);
-        // if (len == 1) {
-        //     view.setUint8(1, param);
-        // } else if (len == 4) {
-        //     view.setUint32(1, param, true);
-        // } else {
-        //     throw "Don't know how to handle data of len " + len;
-        // }
 
         for(let triesLeft = 4; triesLeft >= 0; triesLeft--) {
             try {
@@ -122,7 +80,7 @@ const DfuDeviceNew = (base) => class extends base {
                 break;
             } catch (error) {
                 if (triesLeft == 0 || error != 'stall') {
-                    throw "Error during special DfuSe command " + commandNames[command] + ":" + error;
+                    throw new Error("Error during special DfuSe command " + commandNames[command] + ":" + error);
                 }
                 console.log('dfuse error, retrying', error);
 
@@ -133,19 +91,17 @@ const DfuDeviceNew = (base) => class extends base {
                 });
             }
         }
-
-        let status = await this._dfu.poll_until(state => (state != DfuDeviceState.dfuDNBUSY));
-        // let status = await this._dfu._getStatus();
+        let status;
+        status = await this._dfu.poll_until(state => (state != 'dfuDNBUSY'));
         if (status.status != "OK") {
-            throw "Special DfuSe command failed";
+            throw new Error("Special DfuSe command failed");
         }
         console.log("DFU OK");
     };
 
     getSegment(memoryInfo, addr) {
         if (!memoryInfo || ! memoryInfo.segments) {
-            throw "No memory map information available";    // fix all of these
-            // throw new Error("No memory map information available"):
+            throw new Error("No memory map information available");
         }
 
         for (let segment of memoryInfo.segments) {
@@ -163,7 +119,7 @@ const DfuDeviceNew = (base) => class extends base {
         }
 
         if (!segment) {
-            throw `Address ${addr.toString(16)} outside of memory map`;
+            throw new Error(`Address ${addr.toString(16)} outside of memory map`);
         }
 
         const sectorIndex = Math.floor((addr - segment.start)/segment.sectorSize);
@@ -176,7 +132,7 @@ const DfuDeviceNew = (base) => class extends base {
         }
 
         if (!segment) {
-            throw `Address ${addr.toString(16)} outside of memory map`;
+            throw new Error(`Address ${addr.toString(16)} outside of memory map`);
         }
 
         const sectorIndex = Math.floor((addr - segment.start)/segment.sectorSize);
@@ -185,7 +141,7 @@ const DfuDeviceNew = (base) => class extends base {
 
     getFirstWritableSegment(memoryInfo) {
         if (!memoryInfo || ! memoryInfo.segments) {
-            throw "No memory map information available";
+            throw new Error('No memory map information available');
         }
 
         for (let segment of memoryInfo.segments) {
@@ -199,7 +155,7 @@ const DfuDeviceNew = (base) => class extends base {
 
     getMaxReadSize(memoryInfo, startAddr) {
         if (!memoryInfo || ! memoryInfo.segments) {
-            throw "No memory map information available";
+            throw new Error('No memory map information available');
         }
 
         let numBytes = 0;
@@ -258,10 +214,9 @@ const DfuDeviceNew = (base) => class extends base {
 
     async do_download(memoryInfo, startAddr, xfer_size, data, options) {
         if (!memoryInfo || ! memoryInfo.segments) {
-            throw "No memory map available";
+            throw new Error('No memory map available');
         }
 
-        // let startAddress = this.startAddress;
         let startAddress = startAddr;
         if (isNaN(startAddress)) {
             startAddress = memoryInfo.segments[0].start;
@@ -287,21 +242,19 @@ const DfuDeviceNew = (base) => class extends base {
             let bytes_written = 0;
             let dfu_status;
             try {
-                await this.dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, address, 4);
+                await this.dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, address, 4, true);
                 console.log(`Set address to 0x${address.toString(16)}`);
-                // await this._dfu._goIntoDfuIdleOrDfuDnloadIdle();    // Do we need this??? FIXME
                 bytes_written = await this._dfu._sendDnloadRequest(data.slice(bytes_sent, bytes_sent+chunk_size), 2);
                 dfu_status = await this._dfu.poll_until_idle(DfuDeviceState.dfuDNLOAD_SYNC);
                 console.log("Sent " + bytes_written + " bytes");
-                // dfu_status = await this._dfu.poll_until_idle(DfuDeviceState.dfuDNLOAD_IDLE);
                 dfu_status = await this._dfu._goIntoDfuIdleOrDfuDnloadIdle();
                 address += chunk_size;
             } catch (error) {
-                throw "Error during DfuSe download: " + error;
+                throw new Error("Error during DfuSe download: " + error);
             }
 
             if (dfu_status.status != 'OK') {
-                throw `DFU DOWNLOAD failed state=${dfu_status.state}, status=${dfu_status.status}`;
+                throw new Error(`DFU DOWNLOAD failed state=${dfu_status.state}, status=${dfu_status.status}`);
             }
 
             console.log("Wrote " + bytes_written + " bytes");
@@ -318,14 +271,8 @@ const DfuDeviceNew = (base) => class extends base {
                 await this.dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, startAddress, 4);
                 await this._dfu.leave();
             } catch (error) {
-                throw "Error during DfuSe manifestation: " + error;
+                throw new Error('Error during Dfu manifestation: ' + error);
             }
-
-            // try {
-            //     await this._dfu.poll_until(state => (state == 'dfuMANIFEST'));
-            // } catch (error) {
-            //     console.log(error);
-            // }
         }
     }
 

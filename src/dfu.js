@@ -143,18 +143,10 @@ class Dfu {
 	 *
 	 * @return {Promise}
 	 */
-	async open() { // this open === webdfu/dfu.js open
+	async open() {
 		await this._dev.claimInterface(this._interface);
+		// TODO: Should this be obtained from device-constants?
 		await this._dev.setAltSetting(this._interface, this._alternate);
-		// check device-constants - may be that's why it's always set to 0.
-
-		// console.log('Dumping dev interface 0', this._dev._dev.interface(0));
-		// await this._dev.setAltSetting(this._interface, altSettingIdx);
-		// // await this._dev.getStringDescriptor();
-		// console.log('Dumping dev interface 0', this._dev._dev.interface(0));
-		// 1. first check .interfaces. see if it's only size == 1
-		// this is weird behavior blah - do a forced loop
-			// iterate 0,1... until we get an error
 		this._claimed = true;
 	}
 
@@ -170,9 +162,9 @@ class Dfu {
 		await this._dev.releaseInterface(this._interface);
 	}
 
-	async getInterfaces() {
+	async getInterfacesOld() {	// remove this function
 		let altSettingIdx = this._alternate;
-		// loop through all alt settings for dfu and come out if you have an error
+		// loop through all alt settings for dfu and break if you have an error
 		const interfaces = {};
 		while(true) {
 			try {
@@ -185,7 +177,7 @@ class Dfu {
 					transferSize = bufferData.readUint16LE(5);
 				}
 				interfaces[altSettingIdx] = {};
-				interfaces[altSettingIdx].name = await this._dev.getStringDescriptorA(res.descriptor.iInterface);;
+				interfaces[altSettingIdx].name = await this._dev.getDescriptorString(res.descriptor.iInterface);
 				interfaces[altSettingIdx].transferSize = transferSize;
 				altSettingIdx++;
 			} catch (err) {
@@ -196,6 +188,33 @@ class Dfu {
 		await this._dev.setAltSetting(this._interface, this._alternate);
 		return interfaces;
 	}
+
+	async getInterfaces() {
+		const interfaces = {};
+		const initialAltSetting = this._alternate;
+		for (let altSettingIdx = initialAltSetting; ; altSettingIdx++) {
+		  try {
+			await this._dev.setAltSetting(this._interface, altSettingIdx);
+			const res = this._dev._dev.interface(0);
+
+			let transferSize = 0;
+			const bufferData = res.descriptor.extra;
+			if (bufferData[0] === 0x09 && bufferData[1] === 0x21) {
+			  transferSize = bufferData.readUint16LE(5);
+			}
+
+			interfaces[altSettingIdx] = {
+			  name: await this._dev.getDescriptorString(res.descriptor.iInterface),
+			  transferSize: transferSize,
+			};
+		  } catch (err) {
+			// Ignore the error - this means we got past all the alt settings
+			break;
+		  }
+		}
+		await this._dev.setAltSetting(this._interface, initialAltSetting);
+		return interfaces;
+	  }
 
 
 	/**
@@ -281,14 +300,13 @@ class Dfu {
 		throw new DfuError('Unknown DFU_DNLOAD command');
 	}
 
-	async _sendDnloadRequest(req, wValue) {	// requestOut
+	async _sendDnloadRequest(req, wValue) {
 		const setup = {
 			bmRequestType: DfuBmRequestType.HOST_TO_DEVICE,
 			bRequest: DfuRequestType.DFU_DNLOAD,
 			wIndex: this._interface,
 			wValue: wValue
 		};
-		// return this._dev.transferOut(setup, req ? req : Buffer.alloc(0));
 		return this._dev.transferOut(setup, req);
 	}
 
@@ -331,9 +349,7 @@ class Dfu {
             });
         }
 
-		// What does this do???
         while (!state_predicate(dfu_status.state) && dfu_status.state != 'dfuERROR') {
-		// while(dfu_status.state != 'dfuERROR' && dfu_status.state != state_predicate) {
             await async_sleep(dfu_status.pollTimeout);
             dfu_status = await this._getStatus();
         }

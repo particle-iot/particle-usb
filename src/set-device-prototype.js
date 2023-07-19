@@ -6,7 +6,6 @@ const { CellularDevice } = require('./cellular-device');
 const { CloudDevice } = require('./cloud-device');
 const { Gen3Device } = require('./gen3-device');
 const { NetworkDevice } = require('./network-device');
-const { DfuDevice } = require('./dfu-mem-layout');
 const { DfuDeviceNew } = require('./dfu-new');
 
 /**

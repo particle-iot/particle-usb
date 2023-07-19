@@ -149,20 +149,6 @@ class DeviceBase extends EventEmitter {
 				return this._dfu.open(options);
 			}
 		}).then(() => {
-			return this._dfu.getInterfaces();
-		}).then((ifaces) => {
-			// iterate over ifaces
-			// for (const iface in ifaces) {
-			// 	const memoryInfo = this._dfu.parseMemoryLayoutDesc(iface.name);
-			// 	console.log('memoryInfo', memoryInfo);
-			// }
-		}).then(() => {
-
-		}).then(() => {
-
-		}).then(() => {
-
-		}).then(() => {
 			this._log.trace('Device is open');
 			this._maxActiveReqs = options.concurrentRequests;
 			this._resetAllReqs = true; // Reset all requests remaining from a previous session
