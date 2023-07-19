@@ -55,7 +55,7 @@ const DfuDeviceNew = (base) => class extends base {
         return {"name": name, "segments": segments};
     };
 
-    async dfuseCommand(command, param, len, writeOp=false) {
+    async dfuseCommand(command, param, len) {
         if (typeof param === 'undefined' && typeof len === 'undefined') {
             param = 0x00;
             len = 1;
@@ -242,7 +242,7 @@ const DfuDeviceNew = (base) => class extends base {
             let bytes_written = 0;
             let dfu_status;
             try {
-                await this.dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, address, 4, true);
+                await this.dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, address, 4);
                 console.log(`Set address to 0x${address.toString(16)}`);
                 bytes_written = await this._dfu._sendDnloadRequest(data.slice(bytes_sent, bytes_sent+chunk_size), 2);
                 dfu_status = await this._dfu.poll_until_idle(DfuDeviceState.dfuDNLOAD_SYNC);
