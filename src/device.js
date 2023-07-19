@@ -384,35 +384,21 @@ class Device extends DeviceBase {
 		});
 	}
 
-	async updateFirmwareOverDfu(tinker, systemParts) {
-		// do this looping in CLI
-
-		// first check if device is in dfu mode?
-
-		// Flash system parts
-		const binReader = new BinaryReader();
-		for (const systemPart of systemParts) {
-			console.log('Get info from system part');
-			let fileInfo = await binReader.parseFile(systemPart);
+	async updateFirmwareOverDfu(file, options) {
+		try {
+			const binReader = new BinaryReader();
+			console.log('Get info from file : ', file[0]);
+			let fileInfo = await binReader.parseFile(file[0]);
 			const intrfaces = await this._dfu.getInterfaces();
 			const memoryInfo = this.parseMemoryDescriptor(intrfaces[0].name);
-			console.log('memoryInfo', memoryInfo);
 			let moduleStartAddr = parseInt(fileInfo.prefixInfo.moduleStartAddy, 16);
 			let moduleEndAddr = parseInt(fileInfo.prefixInfo.moduleEndAddy, 16);
 			console.log('moduleStartAddr', moduleStartAddr);
 			console.log('moduleEndAddr', moduleEndAddr);
-			await this.do_download(memoryInfo, moduleStartAddr, 2048, fileInfo.fileBuffer, {});
+			await this.do_download(memoryInfo, moduleStartAddr, 2048, fileInfo.fileBuffer, options);
+		} catch(err) {
+			throw new Error(err);
 		}
-
-		// Flash tinker
-		console.log('Get info from tinker');
-		const intrfacesT = await this._dfu.getInterfaces();
-		const memoryInfoT = this.parseMemoryDescriptor(intrfacesT[0].name);
-		let fileInfoTinker = await binReader.parseFile(tinker);
-		let moduleStartAddrT = parseInt(fileInfoTinker.prefixInfo.moduleStartAddy, 16);
-		let moduleEndAddrT = parseInt(fileInfoTinker.prefixInfo.moduleEndAddy, 16);
-
-		await this.do_download(memoryInfoT, moduleStartAddrT, 2048, fileInfoTinker.fileBuffer, {doManifestation: true});
 	}
 
 	/**
