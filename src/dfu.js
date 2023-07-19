@@ -117,8 +117,6 @@ const DfuseCommand = {
 	DFUSE_COMMAND_READ_UNPROTECT: 0x92
 };
 
-
-
 const DfuBmRequestType = {
 	HOST_TO_DEVICE: 0x21,
 	DEVICE_TO_HOST: 0xA1
@@ -239,15 +237,15 @@ class Dfu {
 		// FIXME: _sendDnloadRequest changed
 		await this._sendDnloadRequest(0, 2);
 
-		await this.poll_until(state => (state == 'dfuMANIFEST' || state == 'dfuMANIFEST_WAIT_RESET'));
+		await this.poll_until(state => (state == DfuDeviceState.dfuMANIFEST || state == DfuDeviceState.dfuMANIFEST_WAIT_RESET));
 
 		// // Check if the leave command was executed without an error
 		// const state = await this._getStatus();
-		// if (state.state !== 'dfuMANIFEST') {
+		// if (state.state !== DfuDeviceState.dfuMANIFEST) {
 		// 	// This is a workaround for Gen 2 DFU implementation where in order to please dfu-util
 		// 	// for some reason we are going off-standard and instead of reporting the actual dfuMANIFEST state
 		// 	// report dfuDNLOAD_IDLE :|
-		// 	if (state.status === 'OK' && state.state !== 'dfuDNLOAD_IDLE') {
+		// 	if (state.status === DfuDeviceStatus.OK && state.state !== DfuDeviceState.dfuDNLOAD_IDLE) {
 		// 		throw new DfuError('Invalid DFU state');
 		// 	}
 		// }
@@ -259,12 +257,12 @@ class Dfu {
 	async _goIntoDfuIdleOrDfuDnloadIdle() {
 		try {
 			const state = await this._getStatus();
-			if (state.state === 'dfuERROR') {
+			if (state.state === DfuDeviceState.dfuERROR) {
 				// If we are in dfuERROR state, simply issue DFU_CLRSTATUS and we'll go into dfuIDLE
 				await this._clearStatus();
 			}
 
-			if (state.state !== 'dfuIDLE' && state.state !== 'dfuDNLOAD_IDLE') {
+			if (state.state !== DfuDeviceState.dfuIDLE && state.state !== DfuDeviceState.dfuDNLOAD_IDLE) {
 				// If we are in some kind of an unknown state, issue DFU_CLRSTATUS, which may fail,
 				// but the device will go into dfuERROR state, so a subsequent DFU_CLRSTATUS will get us
 				// into dfuIDLE
@@ -277,27 +275,10 @@ class Dfu {
 
 		// Confirm we are in dfuIDLE or dfuDNLOAD_IDLE
 		const state = await this._getStatus();
-		if (state.state !== 'dfuIDLE' && state.state !== 'dfuDNLOAD_IDLE') {
+		if (state.state !== DfuDeviceState.dfuIDLE && state.state !== DfuDeviceState.dfuDNLOAD_IDLE) {
 			throw new DfuError('Invalid state');
 		}
 		return state;
-	}
-
-	async _sendEraseReq(req) {
-		const state = await this._getStatus();
-		console.log('DfuState: ', state);
-		if ((!req.cmd || req.cmd === DfuseCommand.DFUSE_COMMAND_NONE)) {
-			// Send data
-			const setup = {
-				bmRequestType: DfuBmRequestType.HOST_TO_DEVICE,
-				bRequest: DfuRequestType.DFU_DNLOAD,
-				wIndex: this._interface,
-				wValue: this._alternate
-			};
-			return this._dev.transferOut(setup, req.data ? req.data : Buffer.alloc(0));
-		}
-
-		throw new DfuError('Unknown DFU_DNLOAD command');
 	}
 
 	async _sendDnloadRequest(req, wValue) {
@@ -322,13 +303,13 @@ class Dfu {
 		if (!data || data.length !== DFU_STATUS_SIZE) {
 			throw new DfuError('Could not parse DFU_GETSTATUS response');
 		}
-
 		let bStatusWithPollTimeout = data.readUInt32LE(0);
-		const bStatus = DfuDeviceStatusMap[(bStatusWithPollTimeout & 0xff)];
-		bStatusWithPollTimeout &= ~(0xff);
-		const bState = DfuDeviceStateMap[data.readUInt8(4)];
 
-		if (!bStatus || !bState) {
+		const bStatus = (bStatusWithPollTimeout & 0xff);
+		bStatusWithPollTimeout &= ~(0xff);
+		const bState = data.readUInt8(4);
+
+		if (bStatus < 0 || bStatus > 255 || !bState) {
 			throw new DfuError('Could not parse DFU result or state');
 		}
 
@@ -349,7 +330,7 @@ class Dfu {
             });
         }
 
-        while (!state_predicate(dfu_status.state) && dfu_status.state != 'dfuERROR') {
+        while (!state_predicate(dfu_status.state) && dfu_status.state != DfuDeviceState.dfuERROR) {
             await async_sleep(dfu_status.pollTimeout);
             dfu_status = await this._getStatus();
         }
@@ -358,7 +339,7 @@ class Dfu {
     }
 
     poll_until_idle(idle_state) {
-        return this.poll_until(state => (state == 'dfuDNLOAD_IDLE'));
+        return this.poll_until(state => (state == DfuDeviceState.dfuDNLOAD_IDLE));
     }
 
 	async _clearStatus() {

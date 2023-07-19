@@ -1,15 +1,9 @@
 /* istanbul ignore file */
 /* eslint-disable */
 /* dfu.js must be included before dfuse.js */
-const { DfuDeviceState, DfuseCommand } = require('./dfu');
+const { DfuDeviceState, DfuseCommand, DfuDeviceStatus } = require('./dfu');
 
 const DfuDeviceNew = (base) => class extends base {
-    constructor(...args) {
-        super(...args);
-        GET_COMMANDS = 0x00;
-        SET_ADDRESS = 0x21;
-        ERASE_SECTOR = 0x41;
-    }
 
     parseMemoryDescriptor(desc) {
         const nameEndIndex = desc.indexOf("/");
@@ -92,11 +86,10 @@ const DfuDeviceNew = (base) => class extends base {
             }
         }
         let status;
-        status = await this._dfu.poll_until(state => (state != 'dfuDNBUSY'));
-        if (status.status != "OK") {
+        status = await this._dfu.poll_until(state => (state != DfuDeviceState.dfuDNBUSY));
+        if (status.status != DfuDeviceStatus.OK) {
             throw new Error("Special DfuSe command failed");
         }
-        console.log("DFU OK");
     };
 
     getSegment(memoryInfo, addr) {
@@ -250,10 +243,10 @@ const DfuDeviceNew = (base) => class extends base {
                 dfu_status = await this._dfu._goIntoDfuIdleOrDfuDnloadIdle();
                 address += chunk_size;
             } catch (error) {
-                throw new Error("Error during DfuSe download: " + error);
+                throw new Error('Error during DfuSe download: ' + error);
             }
 
-            if (dfu_status.status != 'OK') {
+            if (dfu_status.status != DfuDeviceStatus.OK) {
                 throw new Error(`DFU DOWNLOAD failed state=${dfu_status.state}, status=${dfu_status.status}`);
             }
 
