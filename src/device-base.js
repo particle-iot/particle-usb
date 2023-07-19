@@ -4,7 +4,6 @@ const { PLATFORMS } = require('./platforms');
 const { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, assert } = require('./error');
 const { globalOptions } = require('./config');
 const { Dfu } = require('./dfu');
-const { parseMemoryLayout } = require('./dfu-mem-layout');
 
 const EventEmitter = require('events');
 
