@@ -147,73 +147,30 @@ class Dfu {
 		await this._dev.setAltSetting(this._interface, this._alternate);
 		this._claimed = true;
 	}
-
-	async claimInterfaceImpl(intrface) {
-		console.log('claiming interface', intrface);
-		await this._dev.claimInterface(intrface);
-		await this._dev.setAltSetting(intrface, 0);
-		this._claimed = true;
-	}
-
-	async relInterfaceImpl(intrface) {
-		console.log('release interface', intrface);
-		await this._dev.releaseInterface(this._interface);
-	}
-
-	async getInterfacesOld() {	// remove this function
-		let altSettingIdx = this._alternate;
-		// loop through all alt settings for dfu and break if you have an error
-		const interfaces = {};
-		while (true) {
-			try {
-				await this._dev.setAltSetting(this._interface, altSettingIdx);
-				const res = this._dev._dev.interface(0);
-				let transferSize = 0;
-				// get the transfer size for 09 21 buffer
-				const bufferData = res.descriptor.extra;
-				if (bufferData[0] == 0x09 && bufferData[1] == 0x21) {
-					transferSize = bufferData.readUint16LE(5);
-				}
-				interfaces[altSettingIdx] = {};
-				interfaces[altSettingIdx].name = await this._dev.getDescriptorString(res.descriptor.iInterface);
-				interfaces[altSettingIdx].transferSize = transferSize;
-				altSettingIdx++;
-			} catch (err) {
-				// ignore the error - this means we got past all the alt settings
-				break;
-			}
-		}
-		await this._dev.setAltSetting(this._interface, this._alternate);
-		return interfaces;
-	}
-
 	async getInterfaces() {
 		const interfaces = {};
 		const initialAltSetting = this._alternate;
 		for (let altSettingIdx = initialAltSetting; ; altSettingIdx++) {
-		  try {
+			try {
 				await this._dev.setAltSetting(this._interface, altSettingIdx);
 				const res = this._dev._dev.interface(0);
 
 				let transferSize = 0;
 				const bufferData = res.descriptor.extra;
 				if (bufferData[0] === 0x09 && bufferData[1] === 0x21) {
-			  transferSize = bufferData.readUint16LE(5);
+					transferSize = bufferData.readUint16LE(5);
+					interfaces[altSettingIdx] = {
+						name: await this._dev.getDescriptorString(res.descriptor.iInterface),
+						transferSize: transferSize,
+					};
 				}
-
-				interfaces[altSettingIdx] = {
-			  name: await this._dev.getDescriptorString(res.descriptor.iInterface),
-			  transferSize: transferSize,
-				};
-		  } catch (err) {
-			// Ignore the error - this means we got past all the alt settings
+			}	catch (err) {
+				// Ignore the error - this means we got past all the alt settings
 				break;
-		  }
+			}
 		}
 		await this._dev.setAltSetting(this._interface, initialAltSetting);
-		return interfaces;
-	  }
-
+	}
 
 	/**
 	 * Close DFU interface.
@@ -237,7 +194,9 @@ class Dfu {
 		// FIXME: _sendDnloadRequest changed
 		await this._sendDnloadRequest(0, 2);
 
-		await this.poll_until(state => (state == DfuDeviceState.dfuMANIFEST || state == DfuDeviceState.dfuMANIFEST_WAIT_RESET));
+		await this.poll_until(
+			state => (state === DfuDeviceState.dfuMANIFEST || state === DfuDeviceState.dfuMANIFEST_WAIT_RESET)
+		);
 
 		// // Check if the leave command was executed without an error
 		// const state = await this._getStatus();
@@ -320,26 +279,26 @@ class Dfu {
 		};
 	}
 
-	async poll_until(state_predicate) {
-		let dfu_status = await this._getStatus();
+	async poll_until(statePredicate) {
+		let dfuStatus = await this._getStatus();
 
-		function async_sleep(duration_ms) {
-			return new Promise(function(resolve, reject) {
-				// console.log("Sleeping for " + duration_ms + "ms");
-				setTimeout(resolve, duration_ms);
+		function asyncSleep(durationMs) {
+			return new Promise((resolve) => {
+				console.log('Sleeping for ' + durationMs + 'ms');
+				setTimeout(resolve, durationMs);
 			});
 		}
 
-		while (!state_predicate(dfu_status.state) && dfu_status.state != DfuDeviceState.dfuERROR) {
-			await async_sleep(dfu_status.pollTimeout);
-			dfu_status = await this._getStatus();
+		while (!statePredicate(dfuStatus.state) && dfuStatus.state !== DfuDeviceState.dfuERROR) {
+			await asyncSleep(dfuStatus.pollTimeout);
+			dfuStatus = await this._getStatus();
 		}
 
-		return dfu_status;
+		return dfuStatus;
 	}
 
-	poll_until_idle(idle_state) {
-		return this.poll_until(state => (state == DfuDeviceState.dfuDNLOAD_IDLE));
+	poll_until_idle() {
+		return this.poll_until(state => (state === DfuDeviceState.dfuDNLOAD_IDLE));
 	}
 
 	async _clearStatus() {

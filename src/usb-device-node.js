@@ -90,7 +90,7 @@ class UsbDevice {
 	}
 
 	transferOut(setup, reqData) {
-		return new Promise(async (resolve, reject) => {
+		return new Promise((resolve, reject) => {
 			if (!reqData) {
 				// NOTE: this is a quirk of some USB device-side implementations
 				// where zero-length (no data stage) OUT control requests are not
@@ -102,13 +102,18 @@ class UsbDevice {
 					reqData = Buffer.alloc(1);
 				}
 			}
-			this._dev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, reqData, (err, bytes) => {
-				if (err) {
-					console.log('Error - ', err);
-					return reject(wrapUsbError(err, 'OUT control transfer failed'));
-				}
-				resolve(bytes);
-			});
+			this._dev.controlTransfer(
+				setup.bmRequestType,
+				setup.bRequest,
+				setup.wValue,
+				setup.wIndex,
+				reqData, (err, bytes) => {
+					if (err) {
+						console.log('Error - ', err);
+						return reject(wrapUsbError(err, 'OUT control transfer failed'));
+					}
+					resolve(bytes);
+				});
 		});
 	}
 

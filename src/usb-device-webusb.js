@@ -120,24 +120,23 @@ class UsbDevice {
 	}
 
 	getDescriptorString(intrface) {
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve) => {
 			try {
 				this._dev.getStringDescriptor(intrface, (err, intrfaceName) => {
 					if (err) {
 						try {
 							this._dev.close();
 						} catch (err) {
-							this._log.error(`Unable to close device: ${err.message}`);
+							console.log(`Unable to close device: ${err.message}`);
 							// Ignore error
 						}
-						reject(wrapUsbError(err, 'Unable to get serial number descriptor'));
-						return;
+						throw new Error('Unable to get serial number descriptor');
 					}
 					this._dev.particle.isOpen = true;
 					resolve(intrfaceName);
 				});
 			} catch (err) {
-				reject(wrapUsbError(err, 'Failed to claim interface'));
+				throw new Error('Failed to claim interface');
 			}
 		});
 	}
