@@ -5,7 +5,6 @@ const { fromProtobufEnum } = require('./protobuf-util');
 const usbProto = require('./usb-protocol');
 const { RequestError, NotFoundError, TimeoutError, StateError } = require('./error');
 const { globalOptions } = require('./config');
-const { Dfu } = require('./dfu');
 const BinaryReader = require('binary-version-reader').HalModuleParser;
 
 const proto = require('./protocol');
@@ -388,15 +387,15 @@ class Device extends DeviceBase {
 		try {
 			const binReader = new BinaryReader();
 			console.log('Get info from file : ', file[0]);
-			let fileInfo = await binReader.parseFile(file[0]);
+			const fileInfo = await binReader.parseFile(file[0]);
 			const intrfaces = await this._dfu.getInterfaces();
 			const memoryInfo = this.parseMemoryDescriptor(intrfaces[0].name);
-			let moduleStartAddr = parseInt(fileInfo.prefixInfo.moduleStartAddy, 16);
-			let moduleEndAddr = parseInt(fileInfo.prefixInfo.moduleEndAddy, 16);
+			const moduleStartAddr = parseInt(fileInfo.prefixInfo.moduleStartAddy, 16);
+			const moduleEndAddr = parseInt(fileInfo.prefixInfo.moduleEndAddy, 16);
 			console.log('moduleStartAddr', moduleStartAddr);
 			console.log('moduleEndAddr', moduleEndAddr);
 			await this.do_download(memoryInfo, moduleStartAddr, 2048, fileInfo.fileBuffer, options);
-		} catch(err) {
+		} catch (err) {
 			throw new Error(err);
 		}
 	}

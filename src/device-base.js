@@ -128,7 +128,6 @@ class DeviceBase extends EventEmitter {
 		this._log.trace('Opening device');
 		this._state = DeviceState.OPENING;
 		return this._dev.open().then(() => {
-
 			// Normalize the device ID string
 			this._id = this._dev.serialNumber.replace(/[^\x20-\x7e]/g, '').toLowerCase();
 			this._log.trace(`Device ID: ${this._id}`);

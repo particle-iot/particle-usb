@@ -164,7 +164,7 @@ class Dfu {
 		let altSettingIdx = this._alternate;
 		// loop through all alt settings for dfu and break if you have an error
 		const interfaces = {};
-		while(true) {
+		while (true) {
 			try {
 				await this._dev.setAltSetting(this._interface, altSettingIdx);
 				const res = this._dev._dev.interface(0);
@@ -192,22 +192,22 @@ class Dfu {
 		const initialAltSetting = this._alternate;
 		for (let altSettingIdx = initialAltSetting; ; altSettingIdx++) {
 		  try {
-			await this._dev.setAltSetting(this._interface, altSettingIdx);
-			const res = this._dev._dev.interface(0);
+				await this._dev.setAltSetting(this._interface, altSettingIdx);
+				const res = this._dev._dev.interface(0);
 
-			let transferSize = 0;
-			const bufferData = res.descriptor.extra;
-			if (bufferData[0] === 0x09 && bufferData[1] === 0x21) {
+				let transferSize = 0;
+				const bufferData = res.descriptor.extra;
+				if (bufferData[0] === 0x09 && bufferData[1] === 0x21) {
 			  transferSize = bufferData.readUint16LE(5);
-			}
+				}
 
-			interfaces[altSettingIdx] = {
+				interfaces[altSettingIdx] = {
 			  name: await this._dev.getDescriptorString(res.descriptor.iInterface),
 			  transferSize: transferSize,
-			};
+				};
 		  } catch (err) {
 			// Ignore the error - this means we got past all the alt settings
-			break;
+				break;
 		  }
 		}
 		await this._dev.setAltSetting(this._interface, initialAltSetting);
@@ -321,26 +321,26 @@ class Dfu {
 	}
 
 	async poll_until(state_predicate) {
-        let dfu_status = await this._getStatus();
+		let dfu_status = await this._getStatus();
 
-        function async_sleep(duration_ms) {
-            return new Promise(function(resolve, reject) {
-                // console.log("Sleeping for " + duration_ms + "ms");
-                setTimeout(resolve, duration_ms);
-            });
-        }
+		function async_sleep(duration_ms) {
+			return new Promise(function(resolve, reject) {
+				// console.log("Sleeping for " + duration_ms + "ms");
+				setTimeout(resolve, duration_ms);
+			});
+		}
 
-        while (!state_predicate(dfu_status.state) && dfu_status.state != DfuDeviceState.dfuERROR) {
-            await async_sleep(dfu_status.pollTimeout);
-            dfu_status = await this._getStatus();
-        }
+		while (!state_predicate(dfu_status.state) && dfu_status.state != DfuDeviceState.dfuERROR) {
+			await async_sleep(dfu_status.pollTimeout);
+			dfu_status = await this._getStatus();
+		}
 
-        return dfu_status;
-    }
+		return dfu_status;
+	}
 
-    poll_until_idle(idle_state) {
-        return this.poll_until(state => (state == DfuDeviceState.dfuDNLOAD_IDLE));
-    }
+	poll_until_idle(idle_state) {
+		return this.poll_until(state => (state == DfuDeviceState.dfuDNLOAD_IDLE));
+	}
 
 	async _clearStatus() {
 		const setup = {
