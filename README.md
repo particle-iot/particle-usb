@@ -2,6 +2,8 @@
 
 ![CI](https://github.com/particle-iot/particle-usb/workflows/CICD/badge.svg?branch=main)
 
+## This is a branch that pins node-usb to a version compatible with Node 12 for use in the mfg-cli
+
 A library for accessing Particle USB devices.
 
 **Note:** This library requires [Particle firmware](https://github.com/particle-iot/firmware) 0.8.0 or later.
