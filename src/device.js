@@ -383,12 +383,28 @@ class Device extends DeviceBase {
 		});
 	}
 
+// TODO: Writing to DCT
+
+// Dont care about device-constants. I will tell you where to write this into - pass dct address, alt setting
+// Slightly lower level approach - instead of wiritng modules, we will write arb buffer into externally speciied locations
+// Alternatively, add aspeate method to write to DCT
+// `particle update` writes to ota section for bootloader?
+// we still need to be able to write to dct for keys etc - writeToDfu dfu-util replacement
+// Example: 
+
 	async updateFirmwareOverDfu(file, options) {
 		try {
 			const binReader = new BinaryReader();
-			console.log('Get info from file : ', file[0]);
-			const fileInfo = await binReader.parseFile(file[0]);
+			console.log('Get info from file : ', file);
+			const fileInfo = await binReader.parseFile(file);
+			// const fileInfo = await binReader.parseBuffer(fileinputbuffer);
+			// check typeof.
+
 			const intrfaces = await this._dfu.getInterfaces();
+
+			// TODO: device constants
+			// pass file buffer instead of filepath
+			// Always single interface in dfu mode. For now, hardcode it to 0
 			const memoryInfo = this.parseMemoryDescriptor(intrfaces[0].name);
 			const moduleStartAddr = parseInt(fileInfo.prefixInfo.moduleStartAddy, 16);
 			const moduleEndAddr = parseInt(fileInfo.prefixInfo.moduleEndAddy, 16);
@@ -399,6 +415,14 @@ class Device extends DeviceBase {
 			throw new Error(err);
 		}
 	}
+
+	// Scott changed device-os-test-runner to access p-usb device object directly.
+	// From JS side of tests, access pusb directly.
+	// on-device tests
+
+	// unit tests with fake usb
+	// copy over descriptors so it imitates real device
+	// 
 
 	/**
 	 * Get firmware module data.

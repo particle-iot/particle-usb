@@ -1,7 +1,5 @@
 const { DeviceError } = require('./error');
 
-// webDfu's dfu.js layer
-
 /**
  * A generic DFU error.
  */
@@ -127,6 +125,15 @@ const DFU_STATUS_SIZE = 6;
 const DEFAULT_INTERFACE = 0;
 const DEFAULT_ALTERNATE = 0;
 
+// TODO;
+// device-consitants to check system part etc
+// parts which are not writable such as ncp, you should error out
+// soft device is writable
+// assets are not writable over dfu
+// depending on the module type, look into device constnats for that moodule type check whether its writable or not
+
+
+
 class Dfu {
 	constructor(dev, logger) {
 		this._dev = dev;
@@ -147,29 +154,33 @@ class Dfu {
 		await this._dev.setAltSetting(this._interface, this._alternate);
 		this._claimed = true;
 	}
+
 	async getInterfaces() {
+		// just find one of them and apply to all of them
+		let altSettingIdx = this._alternate;
+		// loop through all alt settings for dfu and come out if you have an error
 		const interfaces = {};
-		const initialAltSetting = this._alternate;
-		for (let altSettingIdx = initialAltSetting; ; altSettingIdx++) {
+		while(true) {
 			try {
 				await this._dev.setAltSetting(this._interface, altSettingIdx);
 				const res = this._dev._dev.interface(0);
-
 				let transferSize = 0;
+				// get the transfer size for the extra buffer that starts with 09 21
 				const bufferData = res.descriptor.extra;
-				if (bufferData[0] === 0x09 && bufferData[1] === 0x21) {
+				if (bufferData[0] == 0x09 && bufferData[1] == 0x21) {
 					transferSize = bufferData.readUint16LE(5);
-					interfaces[altSettingIdx] = {
-						name: await this._dev.getDescriptorString(res.descriptor.iInterface),
-						transferSize: transferSize,
-					};
 				}
-			}	catch (err) {
-				// Ignore the error - this means we got past all the alt settings
+				interfaces[altSettingIdx] = {};
+				interfaces[altSettingIdx].name = await this._dev.getDescriptorString(res.descriptor.iInterface);;
+				interfaces[altSettingIdx].transferSize = transferSize;
+				altSettingIdx++;
+			} catch (err) {
+				// ignore the error - this means we got past all the alt settings
 				break;
 			}
 		}
-		await this._dev.setAltSetting(this._interface, initialAltSetting);
+		await this._dev.setAltSetting(this._interface, this._alternate);
+		return interfaces;
 	}
 
 	/**

@@ -173,6 +173,10 @@ const DfuDeviceNew = (base) => class extends base {
         return numBytes;
     };
 
+    // for internal and external flash, it will erase the whole page
+    // for dct, it doesn't matter because its byte by byte
+    // you can see if you parse memorylayout it doenst have pages
+
     async erase(memoryInfo, startAddr, length) {
         let segment = this.getSegment(memoryInfo, startAddr);
         let addr = this.getSectorStart(memoryInfo, startAddr, segment);
