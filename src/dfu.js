@@ -189,14 +189,13 @@ class Dfu {
 	 * @return {Promise}
 	 */
 	async leave() {
-		// await this._goIntoDfuIdleOrDfuDnloadIdle();
+		await this._goIntoDfuIdleOrDfuDnloadIdle();
 
 		// FIXME: _sendDnloadRequest changed
 		await this._sendDnloadRequest(0, 2);
 
 		await this.poll_until(
-			state => (state === DfuDeviceState.dfuMANIFEST || state === DfuDeviceState.dfuMANIFEST_WAIT_RESET)
-		);
+			state => (state === DfuDeviceState.dfuMANIFEST || state === DfuDeviceState.dfuDNLOAD_IDLE));
 
 		// // Check if the leave command was executed without an error
 		// const state = await this._getStatus();
