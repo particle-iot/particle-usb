@@ -6,7 +6,8 @@ const { CellularDevice } = require('./cellular-device');
 const { CloudDevice } = require('./cloud-device');
 const { Gen3Device } = require('./gen3-device');
 const { NetworkDevice } = require('./network-device');
-const { DfuDeviceNew } = require('./dfu-new');
+// const { DfuDeviceNew } = require('./dfu-new');
+const { DfuDevis } = require('./dfu-devis');
 
 /**
  * This constant has a structure like this:
@@ -54,7 +55,7 @@ function setDevicePrototype(usbDevice) {
 	}
 	// if usb device is in dfu mode, we could also add the prototype for the dfu device
 	if (usbDevice.isInDfuMode) {
-		const klass = class extends DfuDeviceNew(proto){};
+		const klass = class extends DfuDevis(proto){};
 		return Object.setPrototypeOf(usbDevice, klass.prototype);
 	} else {
 		return Object.setPrototypeOf(usbDevice, proto.prototype);

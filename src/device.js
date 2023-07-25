@@ -437,7 +437,7 @@ class Device extends DeviceBase {
 	}
 
 	async updateFirmwareOverDfu(file, options) {	// -> this belogn to dfuDeviceclass? and DfuParse also belong to dfuDeviceCLass?
-		//knoow the specicsi of particle firmware is and know what the memory addresses are after it;s parsed and know the dfu alt to use 
+		//knoow the specicsi of particle firmware is and know what the memory addresses are after it;s parsed and know the dfu alt to use
 		// next layer: you have a do_download where i can pass th einterface and at that layer - it should go and download
 		// Add a new layer for the above - you take an interface number, moduleStart, moduleEnd, buffer and options and etc
 
@@ -468,8 +468,6 @@ class Device extends DeviceBase {
 			console.log('moduleStartAddr', moduleStartAddr);
 			console.log('moduleEndAddr', moduleEndAddr);
 			await this.do_download(memoryInfo, moduleStartAddr, transferSize, fileInfo.fileBuffer, options);
-
-
 
 		} catch (err) {
 			throw new Error(err);
