@@ -48,12 +48,12 @@ const DfuDevis = (base) => class extends base {
             const intrfaces = await this._dfu.getInterfaces();
             const transferSize = this._getTransferSizeFromIfaces(intrfaces);
             await this._dfu.setAltInterface(1); // Un-hardcode this
-            const memoryInfo = this.parseMemoryDescriptor(intrfaces[1].name);
+            const memoryInfo = this._dfu.parseMemoryDescriptor(intrfaces[1].name);
             let options = {};
             if (leave) {
                 options = { doManifestation: true };
             }
-            await this.do_download(memoryInfo, addr, transferSize, buffer, options);
+            await this._dfu.do_download(memoryInfo, addr, transferSize, buffer, options);
         } catch (e) {
             throw new Error(e);
         }
@@ -85,12 +85,12 @@ const DfuDevis = (base) => class extends base {
             // TODO: device constants
             // pass file buffer instead of filepath
             // Always single interface in dfu mode. For now, hardcode it to 0
-            const memoryInfo = this.parseMemoryDescriptor(intrfaces[0].name);
+            const memoryInfo = this._dfu.parseMemoryDescriptor(intrfaces[0].name);
             const moduleStartAddr = parseInt(fileInfo.prefixInfo.moduleStartAddy, 16);
             const moduleEndAddr = parseInt(fileInfo.prefixInfo.moduleEndAddy, 16);
             console.log('moduleStartAddr', moduleStartAddr);
             console.log('moduleEndAddr', moduleEndAddr);
-            await this.do_download(memoryInfo, moduleStartAddr, transferSize, fileInfo.fileBuffer, options);
+            await this._dfu.do_download(memoryInfo, moduleStartAddr, transferSize, fileInfo.fileBuffer, options);
 
         } catch (err) {
             throw new Error(err);
