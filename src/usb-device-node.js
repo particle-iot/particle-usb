@@ -82,7 +82,7 @@ class UsbDevice {
 			this._dev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, setup.wLength,
 				(err, data) => {
 					if (err) {
-						return reject(wrapUsbError(err, 'IN control transfer failed'));
+						return reject(wrapUsbError(err, 'IN control transfer failed with error' + err));
 					}
 					resolve(data);
 				});

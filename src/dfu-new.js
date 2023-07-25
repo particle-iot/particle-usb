@@ -194,6 +194,7 @@ const DfuDeviceNew = (base) => class extends base {
             }
             if (!segment.erasable) {
                 // Skip over the non-erasable section
+                // misleading comment?
                 bytesErased = Math.min(bytesErased + segment.end - addr, bytesToErase);
                 addr = segment.end;
                 console.log(bytesErased, bytesToErase, "erase");

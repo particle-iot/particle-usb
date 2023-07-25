@@ -156,31 +156,35 @@ class Dfu {
 	}
 
 	async getInterfaces() {
-		// just find one of them and apply to all of them
-		let altSettingIdx = this._alternate;
-		// loop through all alt settings for dfu and come out if you have an error
+		// loop through all alt settings for dfu until we get an error
 		const interfaces = {};
-		while(true) {
+		for (let altSettingIdx = this._alternate; ; altSettingIdx++) {
 			try {
 				await this._dev.setAltSetting(this._interface, altSettingIdx);
 				const res = this._dev._dev.interface(0);
-				let transferSize = 0;
 				// get the transfer size for the extra buffer that starts with 09 21
+				let transferSize = 0;
 				const bufferData = res.descriptor.extra;
-				if (bufferData[0] == 0x09 && bufferData[1] == 0x21) {
+				if (bufferData[0] === 0x09 && bufferData[1] === 0x21) {
 					transferSize = bufferData.readUint16LE(5);
 				}
-				interfaces[altSettingIdx] = {};
-				interfaces[altSettingIdx].name = await this._dev.getDescriptorString(res.descriptor.iInterface);;
-				interfaces[altSettingIdx].transferSize = transferSize;
-				altSettingIdx++;
+
+				interfaces[altSettingIdx] = {
+					name: await this._dev.getDescriptorString(res.descriptor.iInterface),
+					transferSize: transferSize
+				};
 			} catch (err) {
 				// ignore the error - this means we got past all the alt settings
 				break;
 			}
 		}
+		// set it back to the original alt setting
 		await this._dev.setAltSetting(this._interface, this._alternate);
 		return interfaces;
+	}
+
+	async setAltInterface(intrfaceIdx) {
+		await this._dev.setAltSetting(this._interface, intrfaceIdx);
 	}
 
 	/**

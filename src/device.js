@@ -4,6 +4,7 @@ const { Result, messageForResultCode } = require('./result');
 const { fromProtobufEnum } = require('./protobuf-util');
 const usbProto = require('./usb-protocol');
 const { RequestError, NotFoundError, TimeoutError, StateError } = require('./error');
+const fs = require('fs-extra');
 const { globalOptions } = require('./config');
 const BinaryReader = require('binary-version-reader').HalModuleParser;
 
@@ -383,6 +384,15 @@ class Device extends DeviceBase {
 		});
 	}
 
+	_getTransferSizeFromIfaces(ifaces) {
+		// Each interface has a transferSize property, get the first one with a value
+		for (const iface in ifaces) {
+			if (ifaces[iface].transferSize) {
+				return ifaces[iface].transferSize;
+			}
+		}
+	}
+
 // TODO: Writing to DCT
 
 // Dont care about device-constants. I will tell you where to write this into - pass dct address, alt setting
@@ -390,17 +400,64 @@ class Device extends DeviceBase {
 // Alternatively, add aspeate method to write to DCT
 // `particle update` writes to ota section for bootloader?
 // we still need to be able to write to dct for keys etc - writeToDfu dfu-util replacement
-// Example: 
+// Example:
 
-	async updateFirmwareOverDfu(file, options) {
+	async updateDctFirmwareOverDfu(file, addr, leave) {
 		try {
-			const binReader = new BinaryReader();
-			console.log('Get info from file : ', file);
-			const fileInfo = await binReader.parseFile(file);
-			// const fileInfo = await binReader.parseBuffer(fileinputbuffer);
-			// check typeof.
+			// check if file is a file path or a file buffer
+
+			// functions should be opinionated about the interface.
+			// Make it be a buffer. Upto the caller to handle that
+			// Dont make the interface wishy washy
+			// Dont need to check if its a buffer or not!
+			// Extract a different method. Get file content.
+			let buffer;
+			if (typeof file === 'string' && fs.existsSync(file)) {
+				buffer = await fs.readFile(file);
+			} else if (!fs.existsSync(file)) {
+				throw new Error('File does not exist');
+			} else if (file instanceof Buffer) {
+				buffer = file;
+			} else {
+				throw new Error('Invalid file type');
+			}
 
 			const intrfaces = await this._dfu.getInterfaces();
+			const transferSize = this._getTransferSizeFromIfaces(intrfaces);
+			await this._dfu.setAltInterface(1); // Un-hardcode this
+			const memoryInfo = this.parseMemoryDescriptor(intrfaces[1].name);
+			let options = {};
+			if (leave) {
+				options = { doManifestation: true };
+			}
+			await this.do_download(memoryInfo, addr, transferSize, buffer, options);
+		} catch (e) {
+			throw new Error(e);
+		}
+	}
+
+	async updateFirmwareOverDfu(file, options) {	// -> this belogn to dfuDeviceclass? and DfuParse also belong to dfuDeviceCLass?
+		//knoow the specicsi of particle firmware is and know what the memory addresses are after it;s parsed and know the dfu alt to use 
+		// next layer: you have a do_download where i can pass th einterface and at that layer - it should go and download
+		// Add a new layer for the above - you take an interface number, moduleStart, moduleEnd, buffer and options and etc
+
+		try {
+			const binReader = new BinaryReader();
+			let fileInfo;
+			// check if file is a file path or a file buffer
+			if (typeof file === 'string' && fs.existsSync(file)) {
+				fileInfo = await binReader.parseFile(file);
+			} else if (!fs.existsSync(file)) {
+				throw new Error('File does not exist');
+			} else if (file instanceof Buffer) {
+				fileInfo = await binReader.parseBuffer(file);
+			} else {
+				throw new Error('Invalid file type');
+			}
+
+			const intrfaces = await this._dfu.getInterfaces();
+			const transferSize = this._getTransferSizeFromIfaces(intrfaces);
+			await this._dfu.setAltInterface(0); // Un-hardcode this
 
 			// TODO: device constants
 			// pass file buffer instead of filepath
@@ -410,7 +467,10 @@ class Device extends DeviceBase {
 			const moduleEndAddr = parseInt(fileInfo.prefixInfo.moduleEndAddy, 16);
 			console.log('moduleStartAddr', moduleStartAddr);
 			console.log('moduleEndAddr', moduleEndAddr);
-			await this.do_download(memoryInfo, moduleStartAddr, 2048, fileInfo.fileBuffer, options);
+			await this.do_download(memoryInfo, moduleStartAddr, transferSize, fileInfo.fileBuffer, options);
+
+
+
 		} catch (err) {
 			throw new Error(err);
 		}
@@ -422,7 +482,7 @@ class Device extends DeviceBase {
 
 	// unit tests with fake usb
 	// copy over descriptors so it imitates real device
-	// 
+	//
 
 	/**
 	 * Get firmware module data.
