@@ -276,7 +276,7 @@ class Dfu {
 
 		function asyncSleep(durationMs) {
 			return new Promise((resolve) => {
-				console.log('Sleeping for ' + durationMs + 'ms');
+				// this._log.trace('Sleeping for ' + durationMs + 'ms');
 				setTimeout(resolve, durationMs);
 			});
 		}
@@ -374,7 +374,7 @@ class Dfu {
 				if (triesLeft === 0 || error !== 'stall') {
 					throw new Error('Error during special DfuSe command ' + commandNames[command] + ':' + error);
 				}
-				console.log('dfuse error, retrying', error);
+				this._log.trace('dfuse error, retrying', error);
 
 				await new Promise(resolve => setTimeout(resolve, 1000));
 
@@ -476,7 +476,7 @@ class Dfu {
 		let bytesErased = 0;
 		const bytesToErase = endAddr - addr;
 		if (bytesToErase > 0) {
-			console.log(bytesErased, bytesToErase, 'erase');
+			this._log.info(bytesErased, bytesToErase, 'erase');
 		}
 
 		while (addr < endAddr) {
@@ -487,16 +487,16 @@ class Dfu {
 				// Skip over the non-erasable section
 				bytesErased = Math.min(bytesErased + segment.end - addr, bytesToErase);
 				addr = segment.end;
-				console.log(bytesErased, bytesToErase, 'erase');
+				this._log.trace(bytesErased, bytesToErase, 'erase');
 				continue;
 			}
 			const sectorIndex = Math.floor((addr - segment.start) / segment.sectorSize);
 			const sectorAddr = segment.start + sectorIndex * segment.sectorSize;
-			console.log(`Erasing ${segment.sectorSize}B at 0x${sectorAddr.toString(16)}`);
+			this._log.trace(`Erasing ${segment.sectorSize}B at 0x${sectorAddr.toString(16)}`);
 			await this.dfuseCommand(DfuseCommand.DFUSE_COMMAND_ERASE, sectorAddr, 4);
 			addr = sectorAddr + segment.sectorSize;
 			bytesErased += segment.sectorSize;
-			console.log(bytesErased, bytesToErase, 'erase');
+			this._log.info(bytesErased, bytesToErase, 'erase');
 		}
 	}
 
@@ -530,18 +530,18 @@ class Dfu {
 		let startAddress = startAddr;
 		if (isNaN(startAddress)) {
 			startAddress = this.memoryInfo.segments[0].start;
-			console.log('Using inferred start address 0x' + startAddress.toString(16));
+			this._log.warn('Using inferred start address 0x' + startAddress.toString(16));
 		} else if (this.getSegment(startAddress) === null) {
-			console.log(`Start address 0x${startAddress.toString(16)} outside of memory map bounds`);
+			this._log.error(`Start address 0x${startAddress.toString(16)} outside of memory map bounds`);
 		}
 		const expectedSize = data.byteLength;
 
 		if (!options.noErase) {
-			console.log('Erasing DFU device memory');
+			this._log.info('Erasing DFU device memory');
 			await this.erase(startAddress, expectedSize);
 		}
 
-		console.log('Copying binary data to DFU device startAddress=' + startAddress + ' total_expected_size=' + expectedSize);
+		this._log.info('Copying binary data to DFU device startAddress=' + startAddress + ' total_expected_size=' + expectedSize);
 
 		let bytesSent = 0;
 		let address = startAddress;
@@ -553,10 +553,10 @@ class Dfu {
 			let dfuStatus;
 			try {
 				await this.dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, address, 4);
-				console.log(`Set address to 0x${address.toString(16)}`);
+				this._log.trace(`Set address to 0x${address.toString(16)}`);
 				bytesWritten = await this._sendDnloadRequest(data.slice(bytesSent, bytesSent + chunkSize), 2);
 				dfuStatus = await this.poll_until_idle(DfuDeviceState.dfuDNLOAD_SYNC);
-				console.log('Sent ' + bytesWritten + ' bytes');
+				this._log.trace('Sent ' + bytesWritten + ' bytes');
 				dfuStatus = await this._goIntoDfuIdleOrDfuDnloadIdle();
 				address += chunkSize;
 			} catch (error) {
@@ -567,15 +567,15 @@ class Dfu {
 				throw new Error(`DFU DOWNLOAD failed state=${dfuStatus.state}, status=${dfuStatus.status}`);
 			}
 
-			console.log('Wrote ' + bytesWritten + ' bytes');
+			this._log.trace('Wrote ' + bytesWritten + ' bytes');
 			bytesSent += bytesWritten;
 
-			console.log(bytesSent, expectedSize, 'program');
+			this._log.info(bytesSent, expectedSize, 'program');
 		}
-		console.log(`Wrote ${bytesSent} bytes`);
+		this._log.info(`Wrote ${bytesSent} bytes`);
 
 		if (options.doManifestation) {
-			console.log('Manifesting new firmware');
+			this._log.info('Manifesting new firmware');
 			await this._goIntoDfuIdleOrDfuDnloadIdle();
 			try {
 				await this.dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, startAddress, 4);
@@ -586,26 +586,8 @@ class Dfu {
 		}
 	}
 
-	// async do_upload(memoryInfo, startAddr, max_size) {
-	//     let startAddress = startAddr;
-	//     if (isNaN(startAddress)) {
-	//         startAddress = memoryInfo.segments[0].start;
-	//         console.log("Using inferred start address 0x" + startAddress.toString(16));
-	//     } else if (this.getSegment(memoryInfo, startAddress) === null) {
-	//         console.log(`Start address 0x${startAddress.toString(16)} outside of memory map bounds`);
-	//     }
-	//
-	//     console.log(`Reading up to 0x${max_size.toString(16)} bytes starting at 0x${startAddress.toString(16)}`);
-	//     let state = await this.getState();
-	//     if (state != DfuDeviceState.dfuIDLE) {
-	//         await this.abortToIdle();
-	//     }
-	//     await this.dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, startAddress, 4);
-	//     await this.abortToIdle();
-	//
-	//     // DfuSe encodes the read address based on the transfer size,
-	//     // the block number - 2, and the SET_ADDRESS pointer.
-	//     return await dfu.Device.prototype.do_upload.call(this, this.transferSize, max_size, 2);
+	// async do_upload(startAddr, max_size) {
+	//     // TODO
 	// }
 }
 

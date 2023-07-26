@@ -405,7 +405,7 @@ class DfuClass {
 
 		function asyncSleep(durationMs) {
 			return new Promise((resolve) => {
-				console.log('Sleeping for ' + durationMs + 'ms');
+				// this._log.trace('Sleeping for ' + durationMs + 'ms');
 				setTimeout(resolve, durationMs);
 			});
 		}
@@ -494,21 +494,17 @@ class DfuClass {
 	}
 
 	_dnload(setup, data) {
-		// Handle only leave request
-		if (data && data.length > 0) {
-			// throw new UsbError('Unsupport DFU_DNLOAD request');
-		}
+		// if (data && data.length > 0) {
+		// 	throw new UsbError('Unsupport DFU_DNLOAD request');
+		// }
 
 		switch (this._state.state) {
-			case dfu.DfuDeviceState.dfuDNBUSY:
-				this._setState(dfu.DfuDeviceState.dfuDNLOAD_IDLE);
 			case dfu.DfuDeviceState.dfuIDLE:
 			case dfu.DfuDeviceState.dfuDNLOAD_IDLE: {
 				// Go into dfuMANIFEST_SYNC state
 				this._setState(dfu.DfuDeviceState.dfuMANIFEST_SYNC);
 				break;
 			}
-
 			default: {
 				this._setError(dfu.DfuDeviceStatus.errUNKNOWN);
 				throw new UsbError('Invalid state (endpoint stalled)');

@@ -93,15 +93,15 @@ const InternalFlashParsedElectron = {
 };
 
 const InternalFlashParsedP2 = {
-	"name": "Internal Flash",
-	"segments": [
+	'name': 'Internal Flash',
+	'segments': [
 		{
-			"start": 134217728,
-			"sectorSize": 4096,
-			"end": 142606336,
-			"readable": true,
-			"erasable": true,
-			"writable": true
+			'start': 134217728,
+			'sectorSize': 4096,
+			'end': 142606336,
+			'readable': true,
+			'erasable': true,
+			'writable': true
 		}
 	]
 };

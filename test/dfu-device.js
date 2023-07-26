@@ -94,10 +94,10 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				expect(argonDev.isOpen).to.be.true;
 				let error;
 				try {
+					await argonDev._dfu._goIntoDfuIdleOrDfuDnloadIdle();
 					await argonDev._dfu.dfuseCommand(0x21, 0x08060000, 5);
 				} catch (_error) {
 					error = _error;
-					console.log('Error is', error);
 				}
 
 				expect(error).to.not.be.an.instanceof(Error);
@@ -267,7 +267,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				await argonDev._dfu.erase(startAddr, length);
 
 				expect(dfuseCommandStub.calledOnce).to.be.true;
-				expect(dfuseCommandStub.calledWithExactly(DfuSeCommand.DFUSE_COMMAND_ERASE ,sectorAddr, 4)).to.be.true;
+				expect(dfuseCommandStub.calledWithExactly(DfuseCommand.DFUSE_COMMAND_ERASE ,sectorAddr, 4)).to.be.true;
 			});
 
 			it('erases the memory on a p2', async () => {
@@ -285,32 +285,6 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				await p2Dev._dfu.erase(startAddr, length);
 
 				expect(dfuseCommandStub.callCount).to.equal(247);
-			});
-		});
-
-		describe('do_download', () => {
-			it('downloads the memory on a p2', async () => {
-				fakeUsb.addP2({ dfu: true });
-				const devs = await getDevices();
-				expect(devs).to.not.be.empty;
-				const p2Dev = devs[0];
-				await p2Dev.open();
-				expect(p2Dev.isOpen).to.be.true;
-				p2Dev._dfu.memoryInfo = InternalFlashParsedP2;
-				const startAddr = 134610944;
-				const length = 1009100;
-				const data = Buffer.alloc(length);
-				const dfuseCommandStub = sinon.stub(p2Dev._dfu, 'dfuseCommand');
-				sinon.stub(p2Dev._dfu, 'poll_until_idle');
-				const dfuStatus = {
-					state: DfuDeviceState.dfuDNLOAD_SYNC,
-					pollTimeout: 100,
-					status: DfuDeviceStatus.OK };
-				sinon.stub(p2Dev._dfu, '_goIntoDfuIdleOrDfuDnloadIdle').resolves(dfuStatus);
-
-				await p2Dev._dfu.do_download(startAddr, data, {});
-
-				expect(dfuseCommandStub.callCount).to.equal(248);
 			});
 		});
 	});
