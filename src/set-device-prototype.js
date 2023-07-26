@@ -16,7 +16,7 @@ const { DfuDevice } = require('./dfu-device');
 //   ...
 // }
  */
-const DEVICE_PROTOTYPES = PLATFORMS.reduce((prototypes, platform) => {	// DEVICE_CLASSES
+const DEVICE_PROTOTYPES = PLATFORMS.reduce((prototypes, platform) => {
 	let klass = class extends NetworkDevice(Device) {};
 	if (platform.generation === 3) {
 		klass = class extends Gen3Device(klass) {};
@@ -33,7 +33,7 @@ const DEVICE_PROTOTYPES = PLATFORMS.reduce((prototypes, platform) => {	// DEVICE
 	}
 	klass = class extends CloudDevice(klass) {};
 
-	prototypes[platform.name] = klass;	//classes not prototypes
+	prototypes[platform.name] = klass;
 
 	return prototypes;
 }, {});

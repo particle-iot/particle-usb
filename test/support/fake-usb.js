@@ -497,10 +497,12 @@ class DfuClass {
 	_dnload(setup, data) {
 		// Handle only leave request
 		if (data && data.length > 0) {
-			throw new UsbError('Unsupport DFU_DNLOAD request');
+			// throw new UsbError('Unsupport DFU_DNLOAD request');
 		}
 
 		switch (this._state.state) {
+			case dfu.DfuDeviceState.dfuDNBUSY:
+				this._setState(dfu.DfuDeviceState.dfuDNLOAD_IDLE);
 			case dfu.DfuDeviceState.dfuIDLE:
 			case dfu.DfuDeviceState.dfuDNLOAD_IDLE: {
 				// Go into dfuMANIFEST_SYNC state

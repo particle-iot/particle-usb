@@ -143,7 +143,6 @@ class Dfu {
 	 */
 	async open() {
 		await this._dev.claimInterface(this._interface);
-		// TODO: Should this be obtained from device-constants?
 		await this._dev.setAltSetting(this._interface, this._alternate);
 		this._claimed = true;
 	}

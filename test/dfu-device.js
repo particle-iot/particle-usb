@@ -120,7 +120,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				expect(argonDev.isOpen).to.be.true;
 				let error;
 				try {
-					await argonDev._dfu.dfuseCommand(0x21, 0x8006000, 5);
+					await argonDev._dfu.dfuseCommand(0x21, 0x08060000, 5);
 				} catch (_error) {
 					error = _error;
 					console.log('Error is', error);
