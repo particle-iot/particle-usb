@@ -2,7 +2,7 @@ const { fakeUsb, expect } = require('./support');
 const proxyquire = require('proxyquire');
 const sinon = require('sinon');
 const { InternalFlashParsedElectron, InternalFlashParsedP2 } = require('./support/usb-data');
-const { DfuDeviceStatus, DfuDeviceState, DfuseCommand } = require('../src/dfu');
+const { DfuDeviceState, DfuseCommand } = require('../src/dfu');
 
 const { getDevices } = proxyquire('../src/particle-usb', {
 	'./device-base': proxyquire('../src/device-base', {

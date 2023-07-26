@@ -493,7 +493,7 @@ class DfuClass {
 		}
 	}
 
-	_dnload(setup, data) {
+	_dnload() {
 		// if (data && data.length > 0) {
 		// 	throw new UsbError('Unsupport DFU_DNLOAD request');
 		// }
