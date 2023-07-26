@@ -27,6 +27,11 @@ const USB_DEVICES = PLATFORMS.reduce((arr, platform) => {
 	return arr;
 }, []);
 
+const descriptorStrings = {
+	6: '@Internal Flash   /0x08000000/03*016Ka,01*016Kg,01*064Kg,07*128Kg',
+	7: '@DCT Flash   /0x00000000/01*016Kg',
+  };
+
 // Low-level vendor requests
 const VendorRequest = {
 	SYSTEM_VERSION: 30 // Get system version
@@ -321,6 +326,10 @@ class DfuClass {
 		};
 	}
 
+	getInterfaces() {
+		return
+	}
+
 	hostToDeviceRequest(setup, data) {
 		if (setup.bmRequestType !== dfu.DfuBmRequestType.HOST_TO_DEVICE) {
 			throw new UsbError('Unknown bmRequestType');
@@ -384,6 +393,30 @@ class DfuClass {
 
 	setAltSetting(/* iface, setting */) {
 		// Noop for now
+
+		// check if alt interface is <=2
+
+		// set the interfaces in the device descriptor to something
+
+
+	}
+
+	async poll_until(statePredicate) {
+		let dfuStatus = await this._getStatus();
+
+		function asyncSleep(durationMs) {
+			return new Promise((resolve) => {
+				console.log('Sleeping for ' + durationMs + 'ms');
+				setTimeout(resolve, durationMs);
+			});
+		}
+
+		while (!statePredicate(dfuStatus.state) && dfuStatus.state !== dfu.DfuDeviceState.dfuERROR) {
+			await asyncSleep(dfuStatus.pollTimeout);
+			dfuStatus = await this._getStatus();
+		}
+
+		return dfuStatus;
 	}
 
 	_getStatus(setup) {
@@ -463,9 +496,9 @@ class DfuClass {
 
 	_dnload(setup, data) {
 		// Handle only leave request
-		if (data && data.length > 0) {
-			throw new UsbError('Unsupport DFU_DNLOAD request');
-		}
+		// if (data && data.length > 0) {
+		// 	throw new UsbError('Unsupport DFU_DNLOAD request');
+		// }
 
 		switch (this._state.state) {
 			case dfu.DfuDeviceState.dfuIDLE:
@@ -597,8 +630,16 @@ class Device {
 		if (!this.options.dfu) {
 			throw new UsbError('Unsupported command');
 		}
-
 		return this._dfu.setAltSetting(iface, setting);
+	}
+
+	getDescriptorString(iIntefaceNum) {
+		// TODO: Add more as needed
+		const descriptor = descriptorStrings[iIntefaceNum];
+  		if (descriptor === undefined) {
+    		throw new Error('Failed to claim interface');
+  		}
+  		return descriptor;
 	}
 
 	detach() {

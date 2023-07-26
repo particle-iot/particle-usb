@@ -141,6 +141,8 @@ class Dfu {
 		this._interface = DEFAULT_INTERFACE;
 		this._alternate = DEFAULT_ALTERNATE;
 		this._claimed = false;
+		this.memoryInfo = null;
+		this.transferSize = 0;
 	}
 
 	/**
@@ -293,23 +295,23 @@ class Dfu {
 		};
 	}
 
-	async poll_until(statePredicate) {
-		let dfuStatus = await this._getStatus();
+		async poll_until(statePredicate) {
+			let dfuStatus = await this._getStatus();
 
-		function asyncSleep(durationMs) {
-			return new Promise((resolve) => {
-				console.log('Sleeping for ' + durationMs + 'ms');
-				setTimeout(resolve, durationMs);
-			});
+			function asyncSleep(durationMs) {
+				return new Promise((resolve) => {
+					console.log('Sleeping for ' + durationMs + 'ms');
+					setTimeout(resolve, durationMs);
+				});
+			}
+
+			while (!statePredicate(dfuStatus.state) && dfuStatus.state !== DfuDeviceState.dfuERROR) {
+				await asyncSleep(dfuStatus.pollTimeout);
+				dfuStatus = await this._getStatus();
+			}
+
+			return dfuStatus;
 		}
-
-		while (!statePredicate(dfuStatus.state) && dfuStatus.state !== DfuDeviceState.dfuERROR) {
-			await asyncSleep(dfuStatus.pollTimeout);
-			dfuStatus = await this._getStatus();
-		}
-
-		return dfuStatus;
-	}
 
 	poll_until_idle() {
 		return this.poll_until(state => (state === DfuDeviceState.dfuDNLOAD_IDLE));
@@ -327,15 +329,15 @@ class Dfu {
 
 	// porting over starts here.
 	parseMemoryDescriptor(desc) {
-		const nameEndIndex = desc.indexOf("/");
-		if (!desc.startsWith("@") || nameEndIndex == -1) {
+		const nameEndIndex = desc.indexOf('/');
+		if (!desc.startsWith('@') || nameEndIndex == -1) {
 			throw new Error(`Not a DfuSe memory descriptor: "${desc}"`);
 		}
 
 		const name = desc.substring(1, nameEndIndex).trim();
 		const segmentString = desc.substring(nameEndIndex);
 
-		let segments = [];
+		const segments = [];
 
 		const sectorMultipliers = {
 			' ': 1,
@@ -344,17 +346,17 @@ class Dfu {
 			'M': 1048576
 		};
 
-		let contiguousSegmentRegex = /\/\s*(0x[0-9a-fA-F]{1,8})\s*\/(\s*[0-9]+\s*\*\s*[0-9]+\s?[ BKM]\s*[abcdefg]\s*,?\s*)+/g;
+		const contiguousSegmentRegex = /\/\s*(0x[0-9a-fA-F]{1,8})\s*\/(\s*[0-9]+\s*\*\s*[0-9]+\s?[ BKM]\s*[abcdefg]\s*,?\s*)+/g;
 		let contiguousSegmentMatch;
 		while (contiguousSegmentMatch = contiguousSegmentRegex.exec(segmentString)) {
-			let segmentRegex = /([0-9]+)\s*\*\s*([0-9]+)\s?([ BKM])\s*([abcdefg])\s*,?\s*/g;
+			const segmentRegex = /([0-9]+)\s*\*\s*([0-9]+)\s?([ BKM])\s*([abcdefg])\s*,?\s*/g;
 			let startAddress = parseInt(contiguousSegmentMatch[1], 16);
 			let segmentMatch;
 			while (segmentMatch = segmentRegex.exec(contiguousSegmentMatch[0])) {
-				let segment = {}
-				let sectorCount = parseInt(segmentMatch[1], 10);
-				let sectorSize = parseInt(segmentMatch[2]) * sectorMultipliers[segmentMatch[3]];
-				let properties = segmentMatch[4].charCodeAt(0) - 'a'.charCodeAt(0) + 1;
+				const segment = {};
+				const sectorCount = parseInt(segmentMatch[1], 10);
+				const sectorSize = parseInt(segmentMatch[2]) * sectorMultipliers[segmentMatch[3]];
+				const properties = segmentMatch[4].charCodeAt(0) - 'a'.charCodeAt(0) + 1;
 				segment.start = startAddress;
 				segment.sectorSize = sectorSize;
 				segment.end = startAddress + sectorSize * sectorCount;
@@ -367,35 +369,35 @@ class Dfu {
 			}
 		}
 
-		return {"name": name, "segments": segments};
-	};
+		return { 'name': name, 'segments': segments };
+	}
 
-	async dfuseCommand(command, param, len) {
+	async dfuseCommand(command, param, len) { // TODO: add test
 		if (typeof param === 'undefined' && typeof len === 'undefined') {
 			param = 0x00;
 			len = 1;
 		}
 
 		const commandNames = {
-			0x00: "GET_COMMANDS",
-			0x21: "SET_ADDRESS",
-			0x41: "ERASE_SECTOR"
+			0x00: 'GET_COMMANDS',
+			0x21: 'SET_ADDRESS',
+			0x41: 'ERASE_SECTOR'
 		};
 
-		let payload = Buffer.alloc(5);
+		const payload = Buffer.alloc(5);
 		payload[0] = command;
 		payload[1] = param & 0xff;
 		payload[2] = (param >> 8) & 0xff;
 		payload[3] = (param >> 16) & 0xff;
 		payload[4] = (param >> 24) & 0xff;
 
-		for(let triesLeft = 4; triesLeft >= 0; triesLeft--) {
+		for (let triesLeft = 4; triesLeft >= 0; triesLeft--) {
 			try {
 				await this._sendDnloadRequest(payload, 0);
 				break;
 			} catch (error) {
 				if (triesLeft == 0 || error != 'stall') {
-					throw new Error("Error during special DfuSe command " + commandNames[command] + ":" + error);
+					throw new Error('Error during special DfuSe command ' + commandNames[command] + ':' + error);
 				}
 				console.log('dfuse error, retrying', error);
 
@@ -409,71 +411,71 @@ class Dfu {
 		let status;
 		status = await this.poll_until(state => (state != DfuDeviceState.dfuDNBUSY));
 		if (status.status != DfuDeviceStatus.OK) {
-			throw new Error("Special DfuSe command failed");
+			throw new Error('Special DfuSe command failed');
 		}
-	};
+	}
 
-	getSegment(memoryInfo, addr) {
-		if (!memoryInfo || ! memoryInfo.segments) {
-			throw new Error("No memory map information available");
+	getSegment(addr) {
+		if (!this.memoryInfo || !this.memoryInfo.segments) {
+			throw new Error('No memory map information available');
 		}
 
-		for (let segment of memoryInfo.segments) {
+		for (const segment of this.memoryInfo.segments) {
 			if (segment.start <= addr && addr < segment.end) {
 				return segment;
 			}
 		}
 
 		return null;
-	};
+	}
 
-	getSectorStart(memoryInfo, addr, segment) {
+	getSectorStart(addr, segment) {
 		if (typeof segment === 'undefined') {
-			segment = this.getSegment(memoryInfo, addr);
+			segment = this.getSegment(addr);
 		}
 
 		if (!segment) {
 			throw new Error(`Address ${addr.toString(16)} outside of memory map`);
 		}
 
-		const sectorIndex = Math.floor((addr - segment.start)/segment.sectorSize);
+		const sectorIndex = Math.floor((addr - segment.start) / segment.sectorSize);
 		return segment.start + sectorIndex * segment.sectorSize;
-	};
+	}
 
-	getSectorEnd(memoryInfo, addr, segment) {
+	getSectorEnd(addr, segment) {
 		if (typeof segment === 'undefined') {
-			segment = this.getSegment(memoryInfo, addr);
+			segment = this.getSegment(addr);
 		}
 
 		if (!segment) {
 			throw new Error(`Address ${addr.toString(16)} outside of memory map`);
 		}
 
-		const sectorIndex = Math.floor((addr - segment.start)/segment.sectorSize);
+		const sectorIndex = Math.floor((addr - segment.start) / segment.sectorSize);
 		return segment.start + (sectorIndex + 1) * segment.sectorSize;
-	};
+	}
 
-	getFirstWritableSegment(memoryInfo) {
-		if (!memoryInfo || ! memoryInfo.segments) {
+	getFirstWritableSegment() {
+		if (!this.memoryInfo || !this.memoryInfo.segments) {
 			throw new Error('No memory map information available');
 		}
 
-		for (let segment of memoryInfo.segments) {
+		for (const segment of this.memoryInfo.segments) {
 			if (segment.writable) {
 				return segment;
 			}
 		}
 
 		return null;
-	};
+	}
 
-	getMaxReadSize(memoryInfo, startAddr) {
-		if (!memoryInfo || ! memoryInfo.segments) {
+	getMaxReadSize(startAddr) {
+		if (!this.memoryInfo || !this.memoryInfo.segments) {
 			throw new Error('No memory map information available');
 		}
 
 		let numBytes = 0;
-		for (let segment of memoryInfo.segments) {
+		for (const segment of this.memoryInfo.segments) {
 			if (segment.start <= startAddr && startAddr < segment.end) {
 				// Found the first segment the read starts in
 				if (segment.readable) {
@@ -481,7 +483,7 @@ class Dfu {
 				} else {
 					return 0;
 				}
-			} else if (segment.start == startAddr + numBytes) {
+			} else if (segment.start === startAddr + numBytes) {
 				// Include a contiguous segment
 				if (segment.readable) {
 					numBytes += (segment.end - segment.start);
@@ -492,80 +494,102 @@ class Dfu {
 		}
 
 		return numBytes;
-	};
+	}
 
 	// for internal and external flash, it will erase the whole page
 	// for dct, it doesn't matter because its byte by byte
 	// you can see if you parse memorylayout it doenst have pages
 
-	async erase(memoryInfo, startAddr, length) {
-		let segment = this.getSegment(memoryInfo, startAddr);
-		let addr = this.getSectorStart(memoryInfo, startAddr, segment);
-		const endAddr = this.getSectorEnd(memoryInfo, startAddr + length - 1);
+	async erase(startAddr, length) {
+		let segment = this.getSegment(startAddr);
+		let addr = this.getSectorStart(startAddr, segment);
+		const endAddr = this.getSectorEnd(startAddr + length - 1);
 
 		let bytesErased = 0;
 		const bytesToErase = endAddr - addr;
 		if (bytesToErase > 0) {
-			console.log(bytesErased, bytesToErase, "erase");
+			console.log(bytesErased, bytesToErase, 'erase');
 		}
 
 		while (addr < endAddr) {
 			if (segment.end <= addr) {
-				segment = this.getSegment(memoryInfo, addr);
+				segment = this.getSegment(addr);
 			}
 			if (!segment.erasable) {
 				// Skip over the non-erasable section
 				// misleading comment?
 				bytesErased = Math.min(bytesErased + segment.end - addr, bytesToErase);
 				addr = segment.end;
-				console.log(bytesErased, bytesToErase, "erase");
+				console.log(bytesErased, bytesToErase, 'erase');
 				continue;
 			}
-			const sectorIndex = Math.floor((addr - segment.start)/segment.sectorSize);
+			const sectorIndex = Math.floor((addr - segment.start) / segment.sectorSize);
 			const sectorAddr = segment.start + sectorIndex * segment.sectorSize;
 			console.log(`Erasing ${segment.sectorSize}B at 0x${sectorAddr.toString(16)}`);
 			await this.dfuseCommand(DfuseCommand.DFUSE_COMMAND_ERASE, sectorAddr, 4);
 			addr = sectorAddr + segment.sectorSize;
 			bytesErased += segment.sectorSize;
-			console.log(bytesErased, bytesToErase, "erase");
+			console.log(bytesErased, bytesToErase, 'erase');
 		}
-	};
+	}
 
-	async do_download(memoryInfo, startAddr, xfer_size, data, options) {
-		if (!memoryInfo || ! memoryInfo.segments) {
+	async setIfaceForDfu(ifaceIdx) {
+		if (!this.memoryInfo || !this.memoryInfo.segments) {
+			const intrfaces = await this.getInterfaces();
+			this.transferSize = this._getTransferSizeFromIfaces(intrfaces);
+			await this.setAltInterface(ifaceIdx);
+			this._setMemoryInfo(intrfaces[ifaceIdx].name);
+		}
+	}
+
+	_getTransferSizeFromIfaces(ifaces) {
+	// Each interface has a transferSize property, get the first one with a value
+		for (const iface in ifaces) {
+			if (ifaces[iface].transferSize) {
+				return ifaces[iface].transferSize;
+			}
+		}
+	}
+
+	_setMemoryInfo(desc) {
+		this.memoryInfo = this.parseMemoryDescriptor(desc);
+	}
+
+	async do_download(startAddr, data, options) {
+		if (!this.memoryInfo || !this.memoryInfo.segments) {
 			throw new Error('No memory map available');
 		}
 
 		let startAddress = startAddr;
 		if (isNaN(startAddress)) {
-			startAddress = memoryInfo.segments[0].start;
-			console.log("Using inferred start address 0x" + startAddress.toString(16));
-		} else if (this.getSegment(memoryInfo, startAddress) === null) {
+			startAddress = this.memoryInfo.segments[0].start;
+			console.log('Using inferred start address 0x' + startAddress.toString(16));
+		} else if (this.getSegment(startAddress) === null) {
 			console.log(`Start address 0x${startAddress.toString(16)} outside of memory map bounds`);
 		}
-		let expected_size = data.byteLength;
+		const expected_size = data.byteLength;
 
 		if (!options.noErase) {
-			console.log("Erasing DFU device memory");
-			await this.erase(memoryInfo, startAddress, expected_size);
+			console.log('Erasing DFU device memory');
+			await this.erase(startAddress, expected_size);
 		}
 
-		console.log("Copying binary data to DFU device startAddress=" + startAddress + " total_expected_size=" + expected_size);
+		console.log('Copying binary data to DFU device startAddress=' + startAddress + ' total_expected_size=' + expected_size);
 
 		let bytes_sent = 0;
 		let address = startAddress;
 		while (bytes_sent < expected_size) {
 			const bytes_left = expected_size - bytes_sent;
-			const chunk_size = Math.min(bytes_left, xfer_size);
+			const chunk_size = Math.min(bytes_left, this.transferSize);
 
 			let bytes_written = 0;
 			let dfu_status;
 			try {
 				await this.dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, address, 4);
 				console.log(`Set address to 0x${address.toString(16)}`);
-				bytes_written = await this._sendDnloadRequest(data.slice(bytes_sent, bytes_sent+chunk_size), 2);
+				bytes_written = await this._sendDnloadRequest(data.slice(bytes_sent, bytes_sent + chunk_size), 2);
 				dfu_status = await this.poll_until_idle(DfuDeviceState.dfuDNLOAD_SYNC);
-				console.log("Sent " + bytes_written + " bytes");
+				console.log('Sent ' + bytes_written + ' bytes');
 				dfu_status = await this._goIntoDfuIdleOrDfuDnloadIdle();
 				address += chunk_size;
 			} catch (error) {
@@ -576,15 +600,15 @@ class Dfu {
 				throw new Error(`DFU DOWNLOAD failed state=${dfu_status.state}, status=${dfu_status.status}`);
 			}
 
-			console.log("Wrote " + bytes_written + " bytes");
+			console.log('Wrote ' + bytes_written + ' bytes');
 			bytes_sent += bytes_written;
 
-			console.log(bytes_sent, expected_size, "program");
+			console.log(bytes_sent, expected_size, 'program');
 		}
 		console.log(`Wrote ${bytes_sent} bytes`);
 
 		if (options.doManifestation) {
-			console.log("Manifesting new firmware");
+			console.log('Manifesting new firmware');
 			await this._goIntoDfuIdleOrDfuDnloadIdle();
 			try {
 				await this.dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, startAddress, 4);
@@ -595,7 +619,7 @@ class Dfu {
 		}
 	}
 
-	// async do_upload(memoryInfo, startAddr, xfer_size, max_size) {
+	// async do_upload(memoryInfo, startAddr, max_size) {
 	//     let startAddress = startAddr;
 	//     if (isNaN(startAddress)) {
 	//         startAddress = memoryInfo.segments[0].start;
@@ -614,7 +638,7 @@ class Dfu {
 	//
 	//     // DfuSe encodes the read address based on the transfer size,
 	//     // the block number - 2, and the SET_ADDRESS pointer.
-	//     return await dfu.Device.prototype.do_upload.call(this, xfer_size, max_size, 2);
+	//     return await dfu.Device.prototype.do_upload.call(this, this.transferSize, max_size, 2);
 	// }
 }
 
