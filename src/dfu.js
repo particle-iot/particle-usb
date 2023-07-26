@@ -347,7 +347,7 @@ class Dfu {
 		return { 'name': name, 'segments': segments };
 	}
 
-	async dfuseCommand(command, param, len) { // TODO: add test
+	async dfuseCommand(command, param, len) {
 		if (typeof param === 'undefined' && typeof len === 'undefined') {
 			param = 0x00;
 			len = 1;
@@ -485,7 +485,6 @@ class Dfu {
 			}
 			if (!segment.erasable) {
 				// Skip over the non-erasable section
-				// misleading comment?
 				bytesErased = Math.min(bytesErased + segment.end - addr, bytesToErase);
 				addr = segment.end;
 				console.log(bytesErased, bytesToErase, 'erase');
@@ -501,7 +500,7 @@ class Dfu {
 		}
 	}
 
-	async setIfaceForDfu(ifaceIdx) {
+	async setIfaceForDfu(ifaceIdx) {	// TODO: add test for this
 		if (!this.memoryInfo || !this.memoryInfo.segments) {
 			const intrfaces = await this.getInterfaces();
 			this.transferSize = this._getTransferSizeFromIfaces(intrfaces);

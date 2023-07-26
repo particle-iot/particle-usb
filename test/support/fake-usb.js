@@ -398,7 +398,6 @@ class DfuClass {
 
 		// set the interfaces in the device descriptor to something
 
-
 	}
 
 	async poll_until(statePredicate) {

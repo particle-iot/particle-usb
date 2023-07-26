@@ -54,7 +54,7 @@ const iInterface6 = {
 	}
 };
 
-const InternalFlashParsedP2 = { // TODO: change this with actual P2's data
+const InternalFlashParsedElectron = {
 	'name': 'Internal Flash',
 	'segments': [
 		{
@@ -92,8 +92,23 @@ const InternalFlashParsedP2 = { // TODO: change this with actual P2's data
 	]
 };
 
+const InternalFlashParsedP2 = {
+	"name": "Internal Flash",
+	"segments": [
+		{
+			"start": 134217728,
+			"sectorSize": 4096,
+			"end": 142606336,
+			"readable": true,
+			"erasable": true,
+			"writable": true
+		}
+	]
+};
+
 module.exports = {
 	iInterface7,
 	iInterface6,
+	InternalFlashParsedElectron,
 	InternalFlashParsedP2
 };
