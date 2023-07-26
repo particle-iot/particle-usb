@@ -30,7 +30,7 @@ const USB_DEVICES = PLATFORMS.reduce((arr, platform) => {
 const descriptorStrings = {
 	6: '@Internal Flash   /0x08000000/03*016Ka,01*016Kg,01*064Kg,07*128Kg',
 	7: '@DCT Flash   /0x00000000/01*016Kg',
-  };
+};
 
 // Low-level vendor requests
 const VendorRequest = {
@@ -327,7 +327,7 @@ class DfuClass {
 	}
 
 	getInterfaces() {
-		return
+		return;
 	}
 
 	hostToDeviceRequest(setup, data) {
@@ -496,9 +496,9 @@ class DfuClass {
 
 	_dnload(setup, data) {
 		// Handle only leave request
-		// if (data && data.length > 0) {
-		// 	throw new UsbError('Unsupport DFU_DNLOAD request');
-		// }
+		if (data && data.length > 0) {
+			throw new UsbError('Unsupport DFU_DNLOAD request');
+		}
 
 		switch (this._state.state) {
 			case dfu.DfuDeviceState.dfuIDLE:
@@ -634,12 +634,11 @@ class Device {
 	}
 
 	getDescriptorString(iIntefaceNum) {
-		// TODO: Add more as needed
 		const descriptor = descriptorStrings[iIntefaceNum];
-  		if (descriptor === undefined) {
-    		throw new Error('Failed to claim interface');
-  		}
-  		return descriptor;
+		if (descriptor === undefined) {
+			throw new Error('Failed to claim interface');
+		}
+		return descriptor;
 	}
 
 	detach() {

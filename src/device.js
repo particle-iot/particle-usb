@@ -4,9 +4,7 @@ const { Result, messageForResultCode } = require('./result');
 const { fromProtobufEnum } = require('./protobuf-util');
 const usbProto = require('./usb-protocol');
 const { RequestError, NotFoundError, TimeoutError, StateError } = require('./error');
-const fs = require('fs-extra');
 const { globalOptions } = require('./config');
-const BinaryReader = require('binary-version-reader').HalModuleParser;
 
 const proto = require('./protocol');
 

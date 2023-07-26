@@ -123,7 +123,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 					await argonDev._dfu.dfuseCommand(0x21, 0x8006000, 5);
 				} catch (_error) {
 					error = _error;
-					console.log("Error is", error);
+					console.log('Error is', error);
 				}
 
 				expect(error).to.not.be.an.instanceof(Error);

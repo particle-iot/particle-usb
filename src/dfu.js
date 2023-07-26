@@ -125,15 +125,6 @@ const DFU_STATUS_SIZE = 6;
 const DEFAULT_INTERFACE = 0;
 const DEFAULT_ALTERNATE = 0;
 
-// TODO;
-// device-consitants to check system part etc
-// parts which are not writable such as ncp, you should error out
-// soft device is writable
-// assets are not writable over dfu
-// depending on the module type, look into device constnats for that moodule type check whether its writable or not
-
-
-
 class Dfu {
 	constructor(dev, logger) {
 		this._dev = dev;
@@ -213,20 +204,6 @@ class Dfu {
 
 		await this.poll_until(
 			state => (state === DfuDeviceState.dfuMANIFEST || state === DfuDeviceState.dfuDNLOAD_IDLE));
-
-		// // Check if the leave command was executed without an error
-		// const state = await this._getStatus();
-		// if (state.state !== DfuDeviceState.dfuMANIFEST) {
-		// 	// This is a workaround for Gen 2 DFU implementation where in order to please dfu-util
-		// 	// for some reason we are going off-standard and instead of reporting the actual dfuMANIFEST state
-		// 	// report dfuDNLOAD_IDLE :|
-		// 	if (state.status === DfuDeviceStatus.OK && state.state !== DfuDeviceState.dfuDNLOAD_IDLE) {
-		// 		throw new DfuError('Invalid DFU state');
-		// 	}
-		// }
-
-		// After this, the device will go into dfuMANIFSET_WAIT_RESET state
-		// and eventually should reset
 	}
 
 	async _goIntoDfuIdleOrDfuDnloadIdle() {
@@ -295,23 +272,23 @@ class Dfu {
 		};
 	}
 
-		async poll_until(statePredicate) {
-			let dfuStatus = await this._getStatus();
+	async poll_until(statePredicate) {
+		let dfuStatus = await this._getStatus();
 
-			function asyncSleep(durationMs) {
-				return new Promise((resolve) => {
-					console.log('Sleeping for ' + durationMs + 'ms');
-					setTimeout(resolve, durationMs);
-				});
-			}
-
-			while (!statePredicate(dfuStatus.state) && dfuStatus.state !== DfuDeviceState.dfuERROR) {
-				await asyncSleep(dfuStatus.pollTimeout);
-				dfuStatus = await this._getStatus();
-			}
-
-			return dfuStatus;
+		function asyncSleep(durationMs) {
+			return new Promise((resolve) => {
+				console.log('Sleeping for ' + durationMs + 'ms');
+				setTimeout(resolve, durationMs);
+			});
 		}
+
+		while (!statePredicate(dfuStatus.state) && dfuStatus.state !== DfuDeviceState.dfuERROR) {
+			await asyncSleep(dfuStatus.pollTimeout);
+			dfuStatus = await this._getStatus();
+		}
+
+		return dfuStatus;
+	}
 
 	poll_until_idle() {
 		return this.poll_until(state => (state === DfuDeviceState.dfuDNLOAD_IDLE));
@@ -327,10 +304,9 @@ class Dfu {
 		return this._dev.transferOut(setup, Buffer.alloc(0));
 	}
 
-	// porting over starts here.
 	parseMemoryDescriptor(desc) {
 		const nameEndIndex = desc.indexOf('/');
-		if (!desc.startsWith('@') || nameEndIndex == -1) {
+		if (!desc.startsWith('@') || nameEndIndex === -1) {
 			throw new Error(`Not a DfuSe memory descriptor: "${desc}"`);
 		}
 
@@ -346,13 +322,13 @@ class Dfu {
 			'M': 1048576
 		};
 
-		const contiguousSegmentRegex = /\/\s*(0x[0-9a-fA-F]{1,8})\s*\/(\s*[0-9]+\s*\*\s*[0-9]+\s?[ BKM]\s*[abcdefg]\s*,?\s*)+/g;
+		const rgx = /\/\s*(0x[0-9a-fA-F]{1,8})\s*\/(\s*[0-9]+\s*\*\s*[0-9]+\s?[ BKM]\s*[abcdefg]\s*,?\s*)+/g;
 		let contiguousSegmentMatch;
-		while (contiguousSegmentMatch = contiguousSegmentRegex.exec(segmentString)) {
+		while ((contiguousSegmentMatch = rgx.exec(segmentString)) !== null) {
 			const segmentRegex = /([0-9]+)\s*\*\s*([0-9]+)\s?([ BKM])\s*([abcdefg])\s*,?\s*/g;
 			let startAddress = parseInt(contiguousSegmentMatch[1], 16);
 			let segmentMatch;
-			while (segmentMatch = segmentRegex.exec(contiguousSegmentMatch[0])) {
+			while ((segmentMatch = segmentRegex.exec(contiguousSegmentMatch[0])) !== null) {
 				const segment = {};
 				const sectorCount = parseInt(segmentMatch[1], 10);
 				const sectorSize = parseInt(segmentMatch[2]) * sectorMultipliers[segmentMatch[3]];
@@ -360,9 +336,9 @@ class Dfu {
 				segment.start = startAddress;
 				segment.sectorSize = sectorSize;
 				segment.end = startAddress + sectorSize * sectorCount;
-				segment.readable = (properties & 0x1) != 0;
-				segment.erasable = (properties & 0x2) != 0;
-				segment.writable = (properties & 0x4) != 0;
+				segment.readable = (properties & 0x1) !== 0;
+				segment.erasable = (properties & 0x2) !== 0;
+				segment.writable = (properties & 0x4) !== 0;
 				segments.push(segment);
 
 				startAddress += sectorSize * sectorCount;
@@ -396,21 +372,18 @@ class Dfu {
 				await this._sendDnloadRequest(payload, 0);
 				break;
 			} catch (error) {
-				if (triesLeft == 0 || error != 'stall') {
+				if (triesLeft === 0 || error !== 'stall') {
 					throw new Error('Error during special DfuSe command ' + commandNames[command] + ':' + error);
 				}
 				console.log('dfuse error, retrying', error);
 
-				await new Promise(function(resolve) {
-					setTimeout(function() {
-						resolve();
-					}, 1000);
-				});
+				await new Promise(resolve => setTimeout(resolve, 1000));
+
 			}
 		}
-		let status;
-		status = await this.poll_until(state => (state != DfuDeviceState.dfuDNBUSY));
-		if (status.status != DfuDeviceStatus.OK) {
+
+		const status = await this.poll_until(state => (state !== DfuDeviceState.dfuDNBUSY));
+		if (status.status !== DfuDeviceStatus.OK) {
 			throw new Error('Special DfuSe command failed');
 		}
 	}
@@ -496,10 +469,6 @@ class Dfu {
 		return numBytes;
 	}
 
-	// for internal and external flash, it will erase the whole page
-	// for dct, it doesn't matter because its byte by byte
-	// you can see if you parse memorylayout it doenst have pages
-
 	async erase(startAddr, length) {
 		let segment = this.getSegment(startAddr);
 		let addr = this.getSectorStart(startAddr, segment);
@@ -567,45 +536,45 @@ class Dfu {
 		} else if (this.getSegment(startAddress) === null) {
 			console.log(`Start address 0x${startAddress.toString(16)} outside of memory map bounds`);
 		}
-		const expected_size = data.byteLength;
+		const expectedSize = data.byteLength;
 
 		if (!options.noErase) {
 			console.log('Erasing DFU device memory');
-			await this.erase(startAddress, expected_size);
+			await this.erase(startAddress, expectedSize);
 		}
 
-		console.log('Copying binary data to DFU device startAddress=' + startAddress + ' total_expected_size=' + expected_size);
+		console.log('Copying binary data to DFU device startAddress=' + startAddress + ' total_expected_size=' + expectedSize);
 
-		let bytes_sent = 0;
+		let bytesSent = 0;
 		let address = startAddress;
-		while (bytes_sent < expected_size) {
-			const bytes_left = expected_size - bytes_sent;
-			const chunk_size = Math.min(bytes_left, this.transferSize);
+		while (bytesSent < expectedSize) {
+			const bytesLeft = expectedSize - bytesSent;
+			const chunkSize = Math.min(bytesLeft, this.transferSize);
 
-			let bytes_written = 0;
-			let dfu_status;
+			let bytesWritten = 0;
+			let dfuStatus;
 			try {
 				await this.dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, address, 4);
 				console.log(`Set address to 0x${address.toString(16)}`);
-				bytes_written = await this._sendDnloadRequest(data.slice(bytes_sent, bytes_sent + chunk_size), 2);
-				dfu_status = await this.poll_until_idle(DfuDeviceState.dfuDNLOAD_SYNC);
-				console.log('Sent ' + bytes_written + ' bytes');
-				dfu_status = await this._goIntoDfuIdleOrDfuDnloadIdle();
-				address += chunk_size;
+				bytesWritten = await this._sendDnloadRequest(data.slice(bytesSent, bytesSent + chunkSize), 2);
+				dfuStatus = await this.poll_until_idle(DfuDeviceState.dfuDNLOAD_SYNC);
+				console.log('Sent ' + bytesWritten + ' bytes');
+				dfuStatus = await this._goIntoDfuIdleOrDfuDnloadIdle();
+				address += chunkSize;
 			} catch (error) {
 				throw new Error('Error during DfuSe download: ' + error);
 			}
 
-			if (dfu_status.status != DfuDeviceStatus.OK) {
-				throw new Error(`DFU DOWNLOAD failed state=${dfu_status.state}, status=${dfu_status.status}`);
+			if (dfuStatus.status !== DfuDeviceStatus.OK) {
+				throw new Error(`DFU DOWNLOAD failed state=${dfuStatus.state}, status=${dfuStatus.status}`);
 			}
 
-			console.log('Wrote ' + bytes_written + ' bytes');
-			bytes_sent += bytes_written;
+			console.log('Wrote ' + bytesWritten + ' bytes');
+			bytesSent += bytesWritten;
 
-			console.log(bytes_sent, expected_size, 'program');
+			console.log(bytesSent, expectedSize, 'program');
 		}
-		console.log(`Wrote ${bytes_sent} bytes`);
+		console.log(`Wrote ${bytesSent} bytes`);
 
 		if (options.doManifestation) {
 			console.log('Manifesting new firmware');
