@@ -16,7 +16,7 @@ const { DfuDevice } = require('./dfu-device');
 //   ...
 // }
  */
-const DEVICE_PROTOTYPES = PLATFORMS.reduce((prototypes, platform) => {
+const DEVICE_CLASSES = PLATFORMS.reduce((classes, platform) => {
 	let klass = class extends NetworkDevice(Device) {};
 	if (platform.generation === 3) {
 		klass = class extends Gen3Device(klass) {};
@@ -33,9 +33,9 @@ const DEVICE_PROTOTYPES = PLATFORMS.reduce((prototypes, platform) => {
 	}
 	klass = class extends CloudDevice(klass) {};
 
-	prototypes[platform.name] = klass;
+	classes[platform.name] = klass;
 
-	return prototypes;
+	return classes;
 }, {});
 
 
@@ -48,16 +48,16 @@ const DEVICE_PROTOTYPES = PLATFORMS.reduce((prototypes, platform) => {
  * @returns {*} an instance of a class like WifiDevice, CellularDevice with the correct inheritance hierachy
  */
 function setDevicePrototype(usbDevice) {
-	const proto = DEVICE_PROTOTYPES[usbDevice.type];	// DEVICE_CLASSES.
-	if (!proto) {
+	let klass = DEVICE_CLASSES[usbDevice.type];	// DEVICE_CLASSES.
+	if (!klass) {
 		return usbDevice;
 	}
 	// if usb device is in dfu mode, we could also add the prototype for the dfu device
 	if (usbDevice.isInDfuMode) {
-		const klass = class extends DfuDevice(proto){};
+		klass = class extends DfuDevice(klass){};
 		return Object.setPrototypeOf(usbDevice, klass.prototype);
 	} else {
-		return Object.setPrototypeOf(usbDevice, proto.prototype);
+		return Object.setPrototypeOf(usbDevice, klass.prototype);
 	}
 }
 
