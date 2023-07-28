@@ -326,7 +326,7 @@ class DfuClass {
 		};
 	}
 
-	getInterfaces() {
+	_getInterfaces() {
 		return;
 	}
 
@@ -400,7 +400,7 @@ class DfuClass {
 
 	}
 
-	async poll_until(statePredicate) {
+	async _pollUntil(statePredicate) {
 		let dfuStatus = await this._getStatus();
 
 		function asyncSleep(durationMs) {

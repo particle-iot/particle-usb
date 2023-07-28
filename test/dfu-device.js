@@ -49,7 +49,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				}
 			});
 
-			it('getInterfaces', async () => {
+			it('_getInterfaces', async () => {
 				// TODO: get the interfaces
 				// this currently sets the alt setting on a given interface.
 				// For example: set alt setting = 1 on interface number 5
@@ -57,7 +57,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 			});
 		});
 
-		describe('poll_until', () => {
+		describe('_pollUntil', () => {
 
 			it('should resolve when statePredicate returns true', async () => {
 				// Arrange
@@ -74,7 +74,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				const statePredicate = (state) => state === DfuDeviceState.dfuDNLOAD_SYNC;
 
 				// Act
-				const result = await argonDev._dfu.poll_until(statePredicate);
+				const result = await argonDev._dfu._pollUntil(statePredicate);
 
 				// Assert
 				expect(result.state).to.equal(DfuDeviceState.dfuDNLOAD_SYNC);
@@ -84,7 +84,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 			});
 		});
 
-		describe('dfuseCommand', () => {
+		describe('_dfuseCommand', () => {
 			it('sends a dfuSe command', async () => {
 				fakeUsb.addArgon({ dfu: true });
 				const devs = await getDevices();
@@ -95,7 +95,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				let error;
 				try {
 					await argonDev._dfu._goIntoDfuIdleOrDfuDnloadIdle();
-					await argonDev._dfu.dfuseCommand(0x21, 0x08060000, 5);
+					await argonDev._dfu._dfuseCommand(0x21, 0x08060000, 5);
 				} catch (_error) {
 					error = _error;
 				}
@@ -104,7 +104,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 			});
 		});
 
-		describe('parseMemoryDescriptor', () => {
+		describe('_parseMemoryDescriptor', () => {
 			it('should parse memory descriptor', async () => {
 				const memoryDescStr = '@Internal Flash   /0x08000000/03*016Ka,01*016Kg,01*064Kg,07*128Kg';
 
@@ -114,7 +114,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				const argonDev = devs[0];
 				await argonDev.open();
 				expect(argonDev.isOpen).to.be.true;
-				const parsedRes = argonDev._dfu.parseMemoryDescriptor(memoryDescStr);
+				const parsedRes = argonDev._dfu._parseMemoryDescriptor(memoryDescStr);
 
 				expect(parsedRes).to.eql(InternalFlashParsedElectron);
 			});
@@ -131,7 +131,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				let error;
 
 				try {
-					argonDev._dfu.parseMemoryDescriptor(memoryDescStr);
+					argonDev._dfu._parseMemoryDescriptor(memoryDescStr);
 				} catch (_error) {
 					error = _error;
 				}
@@ -140,7 +140,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 			});
 		});
 
-		describe('getSegment', () => {
+		describe('_getSegment', () => {
 			it('gets segment', async () => {
 				fakeUsb.addArgon({ dfu: true });
 				const devs = await getDevices();
@@ -150,7 +150,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				expect(argonDev.isOpen).to.be.true;
 				argonDev._dfu.memoryInfo = InternalFlashParsedElectron;
 
-				const parsedRes = argonDev._dfu.getSegment(134348800);
+				const parsedRes = argonDev._dfu._getSegment(134348800);
 
 				expect(parsedRes).to.eql({
 					'end': 135266304,
@@ -163,7 +163,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 			});
 		});
 
-		describe('getSectorStart', () => {
+		describe('_getSectorStart', () => {
 			it('gets sector start', async () => {
 				fakeUsb.addArgon({ dfu: true });
 				const devs = await getDevices();
@@ -172,15 +172,15 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				await argonDev.open();
 				expect(argonDev.isOpen).to.be.true;
 				argonDev._dfu.memoryInfo = InternalFlashParsedElectron;
-				const segment = argonDev._dfu.getSegment(134348800);
+				const segment = argonDev._dfu._getSegment(134348800);
 
-				const parsedRes = argonDev._dfu.getSectorStart(134348800, segment);
+				const parsedRes = argonDev._dfu._getSectorStart(134348800, segment);
 
 				expect(parsedRes).to.eql(134348800);
 			});
 		});
 
-		describe('getSectorEnd', () => {
+		describe('_getSectorEnd', () => {
 			it('gets sector end', async () => {
 				fakeUsb.addArgon({ dfu: true });
 				const devs = await getDevices();
@@ -189,15 +189,15 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				await argonDev.open();
 				expect(argonDev.isOpen).to.be.true;
 				argonDev._dfu.memoryInfo = InternalFlashParsedElectron;
-				const segment = argonDev._dfu.getSegment(134348800);
+				const segment = argonDev._dfu._getSegment(134348800);
 
-				const parsedRes = argonDev._dfu.getSectorEnd(134348800, segment);
+				const parsedRes = argonDev._dfu._getSectorEnd(134348800, segment);
 
 				expect(parsedRes).to.eql(134479872);
 			});
 		});
 
-		describe('getSectorEnd', () => {
+		describe('_getSectorEnd', () => {
 			it('gets sector end', async () => {
 				fakeUsb.addArgon({ dfu: true });
 				const devs = await getDevices();
@@ -206,9 +206,9 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				await argonDev.open();
 				expect(argonDev.isOpen).to.be.true;
 				argonDev._dfu.memoryInfo = InternalFlashParsedElectron;
-				const segment = argonDev._dfu.getSegment(134348800);
+				const segment = argonDev._dfu._getSegment(134348800);
 
-				const parsedRes = argonDev._dfu.getSectorEnd(134348800, segment);
+				const parsedRes = argonDev._dfu._getSectorEnd(134348800, segment);
 
 				expect(parsedRes).to.eql(134479872);
 			});
@@ -262,7 +262,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				const startAddr = 134610944;
 				const sectorAddr = 134610944;
 				const length = 87468;
-				const dfuseCommandStub = sinon.stub(argonDev._dfu, 'dfuseCommand');
+				const dfuseCommandStub = sinon.stub(argonDev._dfu, '_dfuseCommand');
 
 				await argonDev._dfu.erase(startAddr, length);
 
@@ -280,7 +280,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				p2Dev._dfu.memoryInfo = InternalFlashParsedP2;
 				const startAddr = 134610944;
 				const length = 1009100;
-				const dfuseCommandStub = sinon.stub(p2Dev._dfu, 'dfuseCommand');
+				const dfuseCommandStub = sinon.stub(p2Dev._dfu, '_dfuseCommand');
 
 				await p2Dev._dfu.erase(startAddr, length);
 
