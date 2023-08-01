@@ -188,22 +188,25 @@ class Dfu {
 		await this._sendDnloadRequest(0, 2);
 
 		await this._pollUntil(
+			// Wait for dfuDNLOAD_IDLE in case of Gen2 and for dfuMANIFEST in case of Gen3 and above.
+			// This is a workaround for Gen 2 DFU implementation where in order to please dfu-util
+			// for some reason we are going off-standard and instead of reporting the actual dfuMANIFEST state
+			// report dfuDNLOAD_IDLE :|
 			state => (state === DfuDeviceState.dfuMANIFEST || state === DfuDeviceState.dfuDNLOAD_IDLE));
 	}
 
 	/**
-	 * Set the alternate interface for DFU and initialize memory information if not already set.
+	 * Set the alternate interface for DFU and initialize memory information.
 	 *
 	 * @param {number} ifaceIdx - The alternate interface index to set.
 	 * @return {Promise}
 	 */
 	async setIfaceForDfu(ifaceIdx) {
-		if (!this._memoryInfo || !this._memoryInfo.segments) {
-			const intrfaces = await this._getInterfaces();
-			this._transferSize = this._getTransferSizeFromIfaces(intrfaces);
-			await this._setAltInterface(ifaceIdx);
-			this._setMemoryInfo(intrfaces[ifaceIdx].name);
-		}
+		this._memoryInfo = null
+		const intrfaces = await this._getInterfaces();
+		this._transferSize = this._getTransferSizeFromIfaces(intrfaces);
+		await this._setAltInterface(ifaceIdx);
+		this._setMemoryInfo(intrfaces[ifaceIdx].name);
 	}
 
 	/**
@@ -214,7 +217,7 @@ class Dfu {
 	 * @param {object} options - Options for the download process.
 	 * @return {Promise}
 	 */
-	async do_download(startAddr, data, options) {
+	async doDownload(startAddr, data, options) {
 		if (!this._memoryInfo || !this._memoryInfo.segments) {
 			throw new Error('No memory map available');
 		}
@@ -247,8 +250,8 @@ class Dfu {
 				await this._dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, address, 4);
 				this._log.trace(`Set address to 0x${address.toString(16)}`);
 				bytesWritten = await this._sendDnloadRequest(data.slice(bytesSent, bytesSent + chunkSize), 2);
-				dfuStatus = await this._pollUntilIdle(DfuDeviceState.dfuDNLOAD_SYNC);
-				this._log.trace('Sent ' + bytesWritten + ' bytes');
+				dfuStatus = await this._pollUntilIdle(DfuDeviceState.dfuDNLOAD_IDLE);
+				console.log('Sent ' + bytesWritten + ' bytes');
 				dfuStatus = await this._goIntoDfuIdleOrDfuDnloadIdle();
 				address += chunkSize;
 			} catch (error) {
@@ -266,7 +269,7 @@ class Dfu {
 		}
 		this._log.info(`Wrote ${bytesSent} bytes`);
 
-		if (options.doManifestation) {
+		if (options.leave) {
 			this._log.info('Manifesting new firmware');
 			await this._goIntoDfuIdleOrDfuDnloadIdle();
 			try {
@@ -277,11 +280,6 @@ class Dfu {
 			}
 		}
 	}
-
-	// async do_upload(startAddr, max_size) {
-	//     // TODO
-	// }
-
 
 	/**
 	 * Internal Helper Methods
@@ -295,28 +293,35 @@ class Dfu {
 	async _getInterfaces() {
 		// loop through all alt settings for dfu until we get an error
 		const interfaces = {};
-		for (let altSettingIdx = this._alternate; ; altSettingIdx++) {
+		for (let altSettingIdx = DEFAULT_ALTERNATE; ; altSettingIdx++) {
 			try {
 				await this._dev.setAltSetting(this._interface, altSettingIdx);
-				const res = this._dev._dev.interface(0);
+				const ifaceList = this._dev.getInterfaceInfo();
 				// get the transfer size for the extra buffer that starts with 09 21
 				let transferSize = 0;
-				const bufferData = res.descriptor.extra;
+				const bufferData = ifaceList.descriptor.extra;
 				if (bufferData[0] === 0x09 && bufferData[1] === 0x21) {
 					transferSize = bufferData.readUint16LE(5);
 				}
 
 				interfaces[altSettingIdx] = {
-					name: await this._dev.getDescriptorString(res.descriptor.iInterface),
+					name: await this._dev.getDescriptorString(ifaceList.descriptor.iInterface),
 					transferSize: transferSize
 				};
 			} catch (err) {
 				// ignore the error - this means we got past all the alt settings
+				if (err.message !== 'Failed to set alt setting') {
+					throw new Error (err);
+				}
 				break;
 			}
 		}
 		// set it back to the original alt setting
 		await this._dev.setAltSetting(this._interface, this._alternate);
+
+		if (Object.keys(interfaces).length === 0) {
+			throw new Error("Unable to read interfaces");
+		}
 		return interfaces;
 	}
 
@@ -339,11 +344,11 @@ class Dfu {
 	 */
 	_getTransferSizeFromIfaces(ifaces) {
 		// Each interface has a transferSize property, get the first one with a value
-			for (const iface in ifaces) {
-				if (ifaces[iface].transferSize) {
-					return ifaces[iface].transferSize;
-				}
+		for (const iface in ifaces) {
+			if (ifaces[iface].transferSize) {
+				return ifaces[iface].transferSize;
 			}
+		}
 		}
 
 	async _goIntoDfuIdleOrDfuDnloadIdle() {
@@ -414,7 +419,7 @@ class Dfu {
 		bStatusWithPollTimeout &= ~(0xff);
 		const bState = data.readUInt8(4);
 
-		if (bStatus < 0 || bStatus > 255 || !bState) {
+		if (!bState) {
 			throw new DfuError('Could not parse DFU result or state');
 		}
 
@@ -452,8 +457,8 @@ class Dfu {
 	/**
 	 * Polls until the dfu state is dfuDNLOAD_IDLE
 	 */
-	_pollUntilIdle() {
-		return this._pollUntil(state => (state === DfuDeviceState.dfuDNLOAD_IDLE));
+	_pollUntilIdle(idle_state) {
+		return this._pollUntil(state => (state === idle_state));
 	}
 
 	/**
@@ -561,7 +566,7 @@ class Dfu {
 				await this._sendDnloadRequest(payload, 0);
 				break;
 			} catch (error) {
-				if (triesLeft === 0 || error !== 'stall') {
+				if (triesLeft === 0 || error.message !== 'LIBUSB_TRANSFER_STALL') {
 					throw new Error('Error during special DfuSe command ' + commandNames[command] + ':' + error);
 				}
 				this._log.trace('dfuse error, retrying', error);
@@ -635,58 +640,6 @@ class Dfu {
 
 		const sectorIndex = Math.floor((addr - segment.start) / segment.sectorSize);
 		return segment.start + (sectorIndex + 1) * segment.sectorSize;
-	}
-
-	/**
-	 * Get the first writable memory segment from the memory map.
-	 *
-	 * @return {object|null} - The first writable memory segment, or null if not found.
-	 */
-	_getFirstWritableSegment() {
-		if (!this._memoryInfo || !this._memoryInfo.segments) {
-			throw new Error('No memory map information available');
-		}
-
-		for (const segment of this._memoryInfo.segments) {
-			if (segment.writable) {
-				return segment;
-			}
-		}
-
-		return null;
-	}
-
-	/**
-	 * Get the maximum size that can be read starting from the given address.
-	 *
-	 * @param {number} startAddr - The starting address to read from.
-	 * @return {number} - The maximum size that can be read.
-	 */
-	_getMaxReadSize(startAddr) {
-		if (!this._memoryInfo || !this._memoryInfo.segments) {
-			throw new Error('No memory map information available');
-		}
-
-		let numBytes = 0;
-		for (const segment of this._memoryInfo.segments) {
-			if (segment.start <= startAddr && startAddr < segment.end) {
-				// Found the first segment the read starts in
-				if (segment.readable) {
-					numBytes += segment.end - startAddr;
-				} else {
-					return 0;
-				}
-			} else if (segment.start === startAddr + numBytes) {
-				// Include a contiguous segment
-				if (segment.readable) {
-					numBytes += (segment.end - segment.start);
-				} else {
-					break;
-				}
-			}
-		}
-
-		return numBytes;
 	}
 
 	/**

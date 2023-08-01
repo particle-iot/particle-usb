@@ -1,7 +1,3 @@
-/* istanbul ignore file */
-/* eslint-disable */
-/* dfu.js must be included before dfuse.js */
-
 const DfuDevice = (base) => class extends base {
     /**
      * Flashes the firmware over DFU interface.
@@ -13,12 +9,8 @@ const DfuDevice = (base) => class extends base {
      * @returns {Promise<void>} A Promise that resolves when the firmware is successfully flashed.
      */
 	async flashWithDfu(iface, buffer, addr, options) {
-		try {
-			await this._dfu.setIfaceForDfu(iface);
-			await this._dfu.do_download(addr, buffer, options);
-		} catch (err) {
-			throw new Error(err);
-		}
+        await this._dfu.setIfaceForDfu(iface);
+        await this._dfu.doDownload(addr, buffer, options);
 	}
 };
 

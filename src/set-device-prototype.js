@@ -48,7 +48,7 @@ const DEVICE_CLASSES = PLATFORMS.reduce((classes, platform) => {
  * @returns {*} an instance of a class like WifiDevice, CellularDevice with the correct inheritance hierachy
  */
 function setDevicePrototype(usbDevice) {
-	let klass = DEVICE_CLASSES[usbDevice.type];	// DEVICE_CLASSES.
+	let klass = DEVICE_CLASSES[usbDevice.type];
 	if (!klass) {
 		return usbDevice;
 	}

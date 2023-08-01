@@ -119,6 +119,10 @@ class UsbDevice {
 		}
 	}
 
+	getInterfaceInfo() {
+
+	}
+
 	getDescriptorString(intrface) {
 		return new Promise((resolve) => {
 			try {

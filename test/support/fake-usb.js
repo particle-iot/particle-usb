@@ -494,10 +494,6 @@ class DfuClass {
 	}
 
 	_dnload() {
-		// if (data && data.length > 0) {
-		// 	throw new UsbError('Unsupport DFU_DNLOAD request');
-		// }
-
 		switch (this._state.state) {
 			case dfu.DfuDeviceState.dfuIDLE:
 			case dfu.DfuDeviceState.dfuDNLOAD_IDLE: {
