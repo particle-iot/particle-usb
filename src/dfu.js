@@ -202,7 +202,7 @@ class Dfu {
 	 * @return {Promise}
 	 */
 	async setIfaceForDfu(ifaceIdx) {
-		this._memoryInfo = null
+		this._memoryInfo = null;
 		const intrfaces = await this._getInterfaces();
 		this._transferSize = this._getTransferSizeFromIfaces(intrfaces);
 		await this._setAltInterface(ifaceIdx);
@@ -244,14 +244,13 @@ class Dfu {
 			const bytesLeft = expectedSize - bytesSent;
 			const chunkSize = Math.min(bytesLeft, this._transferSize);
 
-			let bytesWritten = 0;
 			let dfuStatus;
 			try {
 				await this._dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, address, 4);
 				this._log.trace(`Set address to 0x${address.toString(16)}`);
-				bytesWritten = await this._sendDnloadRequest(data.slice(bytesSent, bytesSent + chunkSize), 2);
+				await this._sendDnloadRequest(data.slice(bytesSent, bytesSent + chunkSize), 2);
 				dfuStatus = await this._pollUntilIdle(DfuDeviceState.dfuDNLOAD_IDLE);
-				console.log('Sent ' + bytesWritten + ' bytes');
+				this._log.trace('Sent ' + chunkSize + ' bytes');
 				dfuStatus = await this._goIntoDfuIdleOrDfuDnloadIdle();
 				address += chunkSize;
 			} catch (error) {
@@ -262,8 +261,8 @@ class Dfu {
 				throw new Error(`DFU DOWNLOAD failed state=${dfuStatus.state}, status=${dfuStatus.status}`);
 			}
 
-			this._log.trace('Wrote ' + bytesWritten + ' bytes');
-			bytesSent += bytesWritten;
+			this._log.trace('Wrote ' + chunkSize + ' bytes');
+			bytesSent += chunkSize;
 
 			this._log.info(bytesSent, expectedSize, 'program');
 		}
@@ -305,7 +304,7 @@ class Dfu {
 				}
 
 				interfaces[altSettingIdx] = {
-					name: await this._dev.getDescriptorString(ifaceList.descriptor.iInterface),
+					name: await this._dev.getDescriptorString(ifaceList.descriptor.iInterface, 0x0409),
 					transferSize: transferSize
 				};
 			} catch (err) {
@@ -320,7 +319,7 @@ class Dfu {
 		await this._dev.setAltSetting(this._interface, this._alternate);
 
 		if (Object.keys(interfaces).length === 0) {
-			throw new Error("Unable to read interfaces");
+			throw new Error('Unable to read interfaces');
 		}
 		return interfaces;
 	}
@@ -349,7 +348,7 @@ class Dfu {
 				return ifaces[iface].transferSize;
 			}
 		}
-		}
+	}
 
 	async _goIntoDfuIdleOrDfuDnloadIdle() {
 		try {
@@ -457,8 +456,8 @@ class Dfu {
 	/**
 	 * Polls until the dfu state is dfuDNLOAD_IDLE
 	 */
-	_pollUntilIdle(idle_state) {
-		return this._pollUntil(state => (state === idle_state));
+	_pollUntilIdle(idleState) {
+		return this._pollUntil(state => (state === idleState));
 	}
 
 	/**

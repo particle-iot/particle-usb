@@ -107,11 +107,11 @@ class UsbDevice {
 				setup.bRequest,
 				setup.wValue,
 				setup.wIndex,
-				reqData, (err, bytes) => {
+				reqData, (err) => {
 					if (err) {
 						return reject(wrapUsbError(err, 'OUT control transfer failed'));
 					}
-					resolve(bytes);
+					resolve();
 				});
 		});
 	}
@@ -181,7 +181,7 @@ class UsbDevice {
 		});
 	}
 
-	getInterfaceInfo(intrface) {
+	getInterfaceInfo() {
 		return this._dev.interface();
 	}
 
