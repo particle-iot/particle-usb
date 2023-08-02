@@ -1,7 +1,6 @@
 const { fakeUsb, expect } = require('./support');
 const proxyquire = require('proxyquire');
 const sinon = require('sinon');
-const { InternalFlashParsedP2 } = require('./support/usb-data');
 const { DfuDeviceState, DfuseCommand } = require('../src/dfu');
 
 const { getDevices } = proxyquire('../src/particle-usb', {
@@ -142,7 +141,19 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				const p2Dev = devs[0];
 				await p2Dev.open();
 				expect(p2Dev.isOpen).to.be.true;
-				p2Dev._dfu._memoryInfo = InternalFlashParsedP2;
+				p2Dev._dfu._memoryInfo = {
+					'name': 'Internal Flash',
+					'segments': [
+						{
+							'start': 134217728,
+							'sectorSize': 4096,
+							'end': 142606336,
+							'readable': true,
+							'erasable': true,
+							'writable': true
+						}
+					]
+				};
 				const startAddr = 134610944;
 				const length = 1009100;
 				const dfuseCommandStub = sinon.stub(p2Dev._dfu, '_dfuseCommand');

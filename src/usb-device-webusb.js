@@ -119,32 +119,6 @@ class UsbDevice {
 		}
 	}
 
-	getInterfaceInfo() {
-
-	}
-
-	getDescriptorString(intrface) {
-		return new Promise((resolve) => {
-			try {
-				this._dev.getStringDescriptor(intrface, (err, intrfaceName) => {
-					if (err) {
-						try {
-							this._dev.close();
-						} catch (err) {
-							console.log(`Unable to close device: ${err.message}`);
-							// Ignore error
-						}
-						throw new Error('Unable to get serial number descriptor');
-					}
-					this._dev.particle.isOpen = true;
-					resolve(intrfaceName);
-				});
-			} catch (err) {
-				throw new Error('Failed to claim interface');
-			}
-		});
-	}
-
 	get vendorId() {
 		return this._dev.vendorId;
 	}

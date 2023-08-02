@@ -321,10 +321,6 @@ class DfuClass {
 		};
 	}
 
-	_getInterfaces() {
-		return;
-	}
-
 	hostToDeviceRequest(setup, data) {
 		if (setup.bmRequestType !== dfu.DfuBmRequestType.HOST_TO_DEVICE) {
 			throw new UsbError('Unknown bmRequestType');
@@ -388,11 +384,6 @@ class DfuClass {
 
 	setAltSetting(/* iface, setting */) {
 		// Noop for now
-
-		// check if alt interface is <=2
-
-		// set the interfaces in the device descriptor to something
-
 	}
 
 	async _pollUntil(statePredicate) {
