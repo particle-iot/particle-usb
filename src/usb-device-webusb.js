@@ -72,6 +72,9 @@ class UsbDevice {
 				value: setup.wValue,
 				index: setup.wIndex
 			}, setup.wLength);
+			if (res.status !== 'ok') {
+				throw new Error(res.status);
+			}
 			return Buffer.from(res.data.buffer);
 		} catch (err) {
 			throw new UsbError('IN control transfer failed', { cause: err });
@@ -83,13 +86,16 @@ class UsbDevice {
 			if (!data && this._quirks.controlOutTransfersRequireDataStage) {
 				data = Buffer.alloc(1);
 			}
-			await this._dev.controlTransferOut({
+			const res = await this._dev.controlTransferOut({
 				requestType: bmRequestTypeToString(setup.bmRequestType),
 				recipient: bmRequestTypeToRecipientString(setup.bmRequestType),
 				request: setup.bRequest,
 				value: setup.wValue,
 				index: setup.wIndex
 			}, data); // data is optional
+			if (res.status !== 'ok') {
+				throw new Error(res.status);
+			}
 		} catch (err) {
 			throw new UsbError('OUT control transfer failed', { cause: err });
 		}
