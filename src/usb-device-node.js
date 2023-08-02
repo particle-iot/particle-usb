@@ -89,30 +89,25 @@ class UsbDevice {
 		});
 	}
 
-	transferOut(setup, reqData) {
+	transferOut(setup, data) {
 		return new Promise((resolve, reject) => {
-			if (!reqData) {
+			if (!data) {
 				// NOTE: this is a quirk of some USB device-side implementations
 				// where zero-length (no data stage) OUT control requests are not
 				// completed and cause a timeout.
 				// The workaround is always including a data stage.
 				if (!this._quirks.controlOutTransfersRequireDataStage) {
-					reqData = Buffer.alloc(0);
+					data = Buffer.alloc(0);
 				} else {
-					reqData = Buffer.alloc(1);
+					data = Buffer.alloc(1);
 				}
 			}
-			this._dev.controlTransfer(
-				setup.bmRequestType,
-				setup.bRequest,
-				setup.wValue,
-				setup.wIndex,
-				reqData, (err) => {
-					if (err) {
-						return reject(wrapUsbError(err, 'OUT control transfer failed'));
-					}
-					resolve();
-				});
+			this._dev.controlTransfer(setup.bmRequestType, setup.bRequest, setup.wValue, setup.wIndex, data, err => {
+				if (err) {
+					return reject(wrapUsbError(err, 'OUT control transfer failed'));
+				}
+				resolve();
+			});
 		});
 	}
 
@@ -166,18 +161,6 @@ class UsbDevice {
 			} catch (err) {
 				return reject(wrapUsbError(err, 'Unknown interface'));
 			}
-		});
-	}
-
-	getInterfaceName(idx) {
-		return new Promise((resolve, reject) => {
-			this._dev.getStringDescriptor(this._dev.interface(idx).descriptor.iInterface, (err, intrfaceName) => {
-				if (err) {
-					this._log.error(`Unable to get interface name: ${err.message}`);
-					return reject(wrapUsbError(err, 'Unable to get interface name'));
-				}
-				resolve(intrfaceName);
-			});
 		});
 	}
 
