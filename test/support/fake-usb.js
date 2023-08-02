@@ -25,7 +25,7 @@ const USB_DEVICES = PLATFORMS.reduce((arr, platform) => {
 	}
 
 	return arr;
-}, []);	
+}, []);
 
 // Low-level vendor requests
 const VendorRequest = {
@@ -620,7 +620,7 @@ class Device {
 		}
 		return this._dfu.setAltSetting(iface, setting);
 	}
-	
+
 	detach() {
 		this._proto.reset();
 		if (this._dfu) {
