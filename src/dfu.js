@@ -19,7 +19,6 @@
  */
 
 const { DeviceError } = require('./error');
-const { MAX_CONTROL_TRANSFER_DATA_SIZE } = require('./usb-device-node');
 
 /**
  * A generic DFU error.
@@ -145,6 +144,8 @@ const DFU_STATUS_SIZE = 6;
 const DEFAULT_INTERFACE = 0;
 const DEFAULT_ALTERNATE = 0;
 
+const DEFAULT_TRANSFER_SIZE = 1024;
+
 class Dfu {
 	constructor(dev, logger) {
 		this._dev = dev;
@@ -153,7 +154,8 @@ class Dfu {
 		this._alternate = DEFAULT_ALTERNATE;
 		this._claimed = false;
 		this._memoryInfo = null;
-		this._transferSize = 0;
+		this._transferSize = DEFAULT_TRANSFER_SIZE;
+		this._allInterfaces = [];
 	}
 
 	/**
@@ -163,8 +165,11 @@ class Dfu {
 	 */
 	async open() {
 		await this._dev.claimInterface(this._interface);
-		await this._dev.setAltSetting(this._interface, this._alternate);
 		this._claimed = true;
+		await this._dev.setAltSetting(this._interface, this._alternate);
+		let desc = await this._getConfigDescriptor(this._interface); // XXX: Changing the interface is not supported
+		desc = this._parseConfigDescriptor(desc);
+		this._allInterfaces = desc.interfaces;
 	}
 
 	/**
@@ -202,12 +207,30 @@ class Dfu {
 	 * @param {number} ifaceIdx - The alternate interface index to set.
 	 * @return {Promise}
 	 */
-	async setIfaceForDfu(ifaceIdx) {
-		this._memoryInfo = null;
-		const intrfaces = await this._getInterfaces();
-		this._transferSize = MAX_CONTROL_TRANSFER_DATA_SIZE;
-		await this._setAltInterface(ifaceIdx);
-		this._setMemoryInfo(intrfaces[ifaceIdx].name);
+	async setAltSetting(setting) {
+		let iface = null;
+		for (const i of this._allInterfaces) {
+			if (i.bInterfaceNumber === this._interface && i.bAlternateSetting === setting) {
+				iface = i;
+				break;
+			}
+		}
+		if (!iface) {
+			throw new Error('Invalid alternate setting');
+		}
+		if (!iface.iInterface) {
+			throw new Error('Missing string descriptor');
+		}
+		const ifaceName = await this._getStringDescriptor(iface.iInterface);
+		const memInfo = this._parseMemoryDescriptor(ifaceName);
+		await this._dev.setAltInterface(setting);
+		if (iface.dfuFunctional && iface.dfuFunctional.wTransferSize) {
+			this._transferSize = iface.dfuFunctional.wTransferSize;
+		} else {
+			this._transferSize = DEFAULT_TRANSFER_SIZE;
+		}
+		this._memoryInfo = memInfo;
+		this._alternate = setting;
 	}
 
 	/**
@@ -279,51 +302,6 @@ class Dfu {
 				throw new Error('Error during Dfu manifestation: ' + error);
 			}
 		}
-	}
-
-	/**
-	 * Internal Helper Methods
-	 */
-
-	/**
-	 * Get information about the memory segments for the all interfaces.
-	 *
-	 * @return {Promise<object>} - Memory map information.
-	 */
-	async _getInterfaces() {
-		// loop through all alt settings for dfu until we get an error
-		const interfaces = {};
-		for (let altSettingIdx = DEFAULT_ALTERNATE; ; altSettingIdx++) {
-			try {
-				await this._dev.setAltSetting(this._interface, altSettingIdx);
-				interfaces[altSettingIdx] = {
-					name: await this._dev.getInterfaceName(0),
-				};
-			} catch (err) {
-				// ignore the error - this means we got past all the alt settings
-				if (err.message !== 'Failed to set alt setting') {
-					throw new Error (err);
-				}
-				break;
-			}
-		}
-		// set it back to the original alt setting
-		await this._dev.setAltSetting(this._interface, this._alternate);
-
-		if (Object.keys(interfaces).length === 0) {
-			throw new Error('Unable to read interfaces');
-		}
-		return interfaces;
-	}
-
-	/**
-	 * Sets the dfu interface to a particlular iface as specified
-	 * This facilitates flashing the firmware over the selected interface
-	 *
-	 * @return {Promise<object>} - Memory map information.
-	 */
-	async _setAltInterface(intrfaceIdx) {
-		await this._dev.setAltSetting(this._interface, intrfaceIdx);
 	}
 
 	async _goIntoDfuIdleOrDfuDnloadIdle() {
@@ -500,16 +478,6 @@ class Dfu {
 	}
 
 	/**
-	 * Sets the memory information by parsing the provided memory descriptor.
-	 * The memory descriptor contains information about memory segments and their properties.
-	 *
-	 * @param {string} desc The memory descriptor string to parse and set memory information.
-	 */
-	_setMemoryInfo(desc) {
-		this._memoryInfo = this._parseMemoryDescriptor(desc);
-	}
-
-	/**
 	 * Send a DfuSe command to the DFU device.
 	 *
 	 * @param {number} command - The DfuSe command to send.
@@ -655,6 +623,113 @@ class Dfu {
 			bytesErased += segment.sectorSize;
 			this._log.info(bytesErased, bytesToErase, 'erase');
 		}
+	}
+
+	async _getStringDescriptor(index) {
+		// Read the size of the descriptor
+		let d = await this._dev.transferIn({
+			bmRequestType: 0x80, // Direction: device-to-host; type: standard; recipient: device
+			bRequest: 0x06, // GET_DESCRIPTOR
+			wValue: (0x03 /* STRING */ << 8) | (index & 0xff),
+			wIndex: 0x0409, // English (US)
+			wLength: 1
+		});
+		let len = d.readUInt8(0); // bLength
+		// Read the descriptor
+		d = await this._dev.transferIn({
+			bmRequestType: 0x80,
+			bRequest: 0x06,
+			wValue: (0x03 << 8) | (index & 0xff),
+			wIndex: 0x0409,
+			wLength: len
+		});
+		// Decode the UTF-16 data
+		const utf16 = [];
+		let offs = 2; // Skip bLength and bDescriptorType
+		while (offs < d.length) {
+			utf16.push(d.readUInt16LE(offs));
+			offs += 2;
+		}
+		return String.fromCharCode(...utf16);
+	}
+
+	async _getConfigDescriptor(index) {
+		// Read the total size of the descriptors
+		const d = await this._dev.transferIn({
+			bmRequestType: 0x80, // Direction: device-to-host; type: standard; recipient: device
+			bRequest: 0x06, // GET_DESCRIPTOR
+			wValue: (0x02 /* CONFIGURATION */ << 8) | (index & 0xff),
+			wIndex: 0,
+			wLength: 4
+		});
+		const len = d.readUInt16LE(2); // wTotalLength
+		// Read the descriptors
+		return await this._dev.transferIn({
+			bmRequestType: 0x80,
+			bRequest: 0x06,
+			wValue: (0x02 << 8) | (index & 0xff),
+			wIndex: 0,
+			wLength: len
+		});
+	}
+
+	_parseConfigDescriptor(data) {
+		// https://www.beyondlogic.org/usbnutshell/usb5.shtml#ConfigurationDescriptors
+		if (data.length < 9) {
+			throw new Error('Invalid descriptor size');
+		}
+		const type = data.readUInt8(1); // bDescriptorType
+		if (type !== 0x02) { // CONFIGURATION
+			throw new Error('Invalid descriptor type');
+		}
+		const desc = {
+			interfaces: []
+		};
+		let curIface = null;
+		let dfuExpected = false;
+		let offs = 9;
+		while (offs < data.length) {
+			const len = data.readUInt8(offs); // bLength
+			const type = data.readUInt8(offs + 1); // bDescriptorType
+			// Only parse the interface descriptors for now
+			switch (type) {
+				case 0x04: { // INTERFACE
+					const cls = data.readUInt8(offs + 5); // bInterfaceClass
+					const subclass = data.readUInt8(offs + 6); // bInterfaceSubClass
+					curIface = {
+						bLength: len,
+						bDescriptorType: type,
+						bInterfaceNumber: data.readUInt8(offs + 2),
+						bAlternateSetting: data.readUInt8(offs + 3),
+						bNumEndpoints: data.readUInt8(offs + 4),
+						bInterfaceClass: cls,
+						bInterfaceSubClass: subclass,
+						bInterfaceProtocol: data.readUInt8(offs + 7),
+						iInterface: data.readUInt8(offs + 8)
+					};
+					desc.interfaces.push(curIface);
+					dfuExpected = cls === 0xfe && subclass === 0x01; // 4.1.2 Run-Time DFU Interface Descriptor
+					break;
+				}
+				case 0x21: { // DFU_FUNCTIONAL
+					if (!dfuExpected) {
+						throw new Error('Unexpected descriptor');
+					}
+					curIface.dfuFunctional = {
+						bLength: len,
+						bDescriptorType: type,
+						bmAttributes: data.readUInt8(offs + 2),
+						wDetachTimeOut: data.readUInt16LE(offs + 3),
+						wTransferSize: data.readUInt16LE(offs + 5),
+						bcdDFUVersion: data.readUInt16LE(offs + 7)
+					};
+					dfuExpected = false; // 4.1 Run-Time Descriptor Set
+					break;
+				}
+			}
+			offs += len;
+		}
+		return desc;
 	}
 }
 
