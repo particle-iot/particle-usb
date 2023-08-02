@@ -167,7 +167,7 @@ class Dfu {
 		await this._dev.claimInterface(this._interface);
 		this._claimed = true;
 		await this._dev.setAltSetting(this._interface, this._alternate);
-		let desc = await this._getConfigDescriptor(this._interface); // XXX: Changing the interface is not supported
+		let desc = await this._getConfigDescriptor(0); // Use the default config
 		desc = this._parseConfigDescriptor(desc);
 		this._allInterfaces = desc.interfaces;
 	}
@@ -204,15 +204,30 @@ class Dfu {
 	/**
 	 * Set the alternate interface for DFU and initialize memory information.
 	 *
-	 * @param {number} ifaceIdx - The alternate interface index to set.
+	 * @param {number} setting - The alternate interface index to set.
 	 * @return {Promise}
 	 */
 	async setAltSetting(setting) {
 		let iface = null;
+		let xferSize = null;
 		for (const i of this._allInterfaces) {
-			if (i.bInterfaceNumber === this._interface && i.bAlternateSetting === setting) {
-				iface = i;
-				break;
+			if (i.bInterfaceNumber === this._interface) {
+				if (!iface && i.bAlternateSetting === setting) {
+					iface = i;
+					if (i.dfuFunctional) {
+						xferSize = i.dfuFunctional.wTransferSize;
+					}
+					if (xferSize) {
+						break;
+					}
+				}
+				// DFU_FUNCTIONAL descriptor may not be available for each interface with the given number
+				if (!xferSize && i.dfuFunctional) {
+					xferSize = i.dfuFunctional.wTransferSize;
+					if (iface) {
+						break;
+					}
+				}
 			}
 		}
 		if (!iface) {
@@ -223,12 +238,8 @@ class Dfu {
 		}
 		const ifaceName = await this._getStringDescriptor(iface.iInterface);
 		const memInfo = this._parseMemoryDescriptor(ifaceName);
-		await this._dev.setAltInterface(setting);
-		if (iface.dfuFunctional && iface.dfuFunctional.wTransferSize) {
-			this._transferSize = iface.dfuFunctional.wTransferSize;
-		} else {
-			this._transferSize = DEFAULT_TRANSFER_SIZE;
-		}
+		await this._dev.setAltSetting(this._interface, setting);
+		this._transferSize = xferSize || DEFAULT_TRANSFER_SIZE;
 		this._memoryInfo = memInfo;
 		this._alternate = setting;
 	}

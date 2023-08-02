@@ -73,7 +73,7 @@ class UsbDevice {
 				index: setup.wIndex
 			}, setup.wLength);
 			if (res.status !== 'ok') {
-				throw new Error(res.status);
+				throw new Error(`Status: ${res.status}`);
 			}
 			return Buffer.from(res.data.buffer);
 		} catch (err) {
@@ -94,7 +94,7 @@ class UsbDevice {
 				index: setup.wIndex
 			}, data); // data is optional
 			if (res.status !== 'ok') {
-				throw new Error(res.status);
+				throw new Error(`Status: ${res.status}`);
 			}
 		} catch (err) {
 			throw new UsbError('OUT control transfer failed', { cause: err });
