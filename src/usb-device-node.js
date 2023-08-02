@@ -116,18 +116,6 @@ class UsbDevice {
 		});
 	}
 
-	getDescriptorString(intrface) {
-		return new Promise((resolve, reject) => {
-			this._dev.getStringDescriptor(intrface, (err, intrfaceName) => {
-				if (err) {
-					this._log.error(`Unable to get interface name: ${err.message}`);
-					return reject(wrapUsbError(err, 'Unable to get interface name'));
-				}
-				resolve(intrfaceName);
-			});
-		});
-	}
-
 	claimInterface(intrface) {
 		return new Promise((resolve, reject) => {
 			try {
@@ -181,8 +169,16 @@ class UsbDevice {
 		});
 	}
 
-	getInterfaceInfo() {
-		return this._dev.interface();
+	getInterfaceName(idx) {
+		return new Promise((resolve, reject) => {
+			this._dev.getStringDescriptor(this._dev.interface(idx).descriptor.iInterface, (err, intrfaceName) => {
+				if (err) {
+					this._log.error(`Unable to get interface name: ${err.message}`);
+					return reject(wrapUsbError(err, 'Unable to get interface name'));
+				}
+				resolve(intrfaceName);
+			});
+		});
 	}
 
 	get vendorId() {

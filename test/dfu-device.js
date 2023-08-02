@@ -1,7 +1,7 @@
 const { fakeUsb, expect } = require('./support');
 const proxyquire = require('proxyquire');
 const sinon = require('sinon');
-const { InternalFlashParsedElectron, InternalFlashParsedP2 } = require('./support/usb-data');
+const { InternalFlashParsedP2 } = require('./support/usb-data');
 const { DfuDeviceState, DfuseCommand } = require('../src/dfu');
 
 const { getDevices } = proxyquire('../src/particle-usb', {
@@ -104,141 +104,6 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 			});
 		});
 
-		describe('_parseMemoryDescriptor', () => {
-			it('should parse memory descriptor', async () => {
-				const memoryDescStr = '@Internal Flash   /0x08000000/03*016Ka,01*016Kg,01*064Kg,07*128Kg';
-
-				fakeUsb.addArgon({ dfu: true });
-				const devs = await getDevices();
-				expect(devs).to.not.be.empty;
-				const argonDev = devs[0];
-				await argonDev.open();
-				expect(argonDev.isOpen).to.be.true;
-				const parsedRes = argonDev._dfu._parseMemoryDescriptor(memoryDescStr);
-
-				expect(parsedRes).to.eql(InternalFlashParsedElectron);
-			});
-
-			it('errors when memory map is unavailable', async () => {
-				const memoryDescStr = '';
-
-				fakeUsb.addArgon({ dfu: true });
-				const devs = await getDevices();
-				expect(devs).to.not.be.empty;
-				const argonDev = devs[0];
-				await argonDev.open();
-				expect(argonDev.isOpen).to.be.true;
-				let error;
-
-				try {
-					argonDev._dfu._parseMemoryDescriptor(memoryDescStr);
-				} catch (_error) {
-					error = _error;
-				}
-
-				expect(error).to.be.an.instanceof(Error);
-			});
-		});
-
-		describe('_getSegment', () => {
-			it('gets segment', async () => {
-				fakeUsb.addArgon({ dfu: true });
-				const devs = await getDevices();
-				expect(devs).to.not.be.empty;
-				const argonDev = devs[0];
-				await argonDev.open();
-				expect(argonDev.isOpen).to.be.true;
-				argonDev._dfu.memoryInfo = InternalFlashParsedElectron;
-
-				const parsedRes = argonDev._dfu._getSegment(134348800);
-
-				expect(parsedRes).to.eql({
-					'end': 135266304,
-					'erasable': true,
-					'readable': true,
-					'sectorSize': 131072,
-					'start': 134348800,
-					'writable': true,
-				});
-			});
-		});
-
-		describe('_getSectorStart', () => {
-			it('gets sector start', async () => {
-				fakeUsb.addArgon({ dfu: true });
-				const devs = await getDevices();
-				expect(devs).to.not.be.empty;
-				const argonDev = devs[0];
-				await argonDev.open();
-				expect(argonDev.isOpen).to.be.true;
-				argonDev._dfu.memoryInfo = InternalFlashParsedElectron;
-				const segment = argonDev._dfu._getSegment(134348800);
-
-				const parsedRes = argonDev._dfu._getSectorStart(134348800, segment);
-
-				expect(parsedRes).to.eql(134348800);
-			});
-		});
-
-		describe('_getSectorEnd', () => {
-			it('gets sector end', async () => {
-				fakeUsb.addArgon({ dfu: true });
-				const devs = await getDevices();
-				expect(devs).to.not.be.empty;
-				const argonDev = devs[0];
-				await argonDev.open();
-				expect(argonDev.isOpen).to.be.true;
-				argonDev._dfu.memoryInfo = InternalFlashParsedElectron;
-				const segment = argonDev._dfu._getSegment(134348800);
-
-				const parsedRes = argonDev._dfu._getSectorEnd(134348800, segment);
-
-				expect(parsedRes).to.eql(134479872);
-			});
-		});
-
-		describe('_getSectorEnd', () => {
-			it('gets sector end', async () => {
-				fakeUsb.addArgon({ dfu: true });
-				const devs = await getDevices();
-				expect(devs).to.not.be.empty;
-				const argonDev = devs[0];
-				await argonDev.open();
-				expect(argonDev.isOpen).to.be.true;
-				argonDev._dfu.memoryInfo = InternalFlashParsedElectron;
-				const segment = argonDev._dfu._getSegment(134348800);
-
-				const parsedRes = argonDev._dfu._getSectorEnd(134348800, segment);
-
-				expect(parsedRes).to.eql(134479872);
-			});
-		});
-
-		describe('_getTransferSizeFromIfaces', () => {
-			it('gets transfer size', async () => {
-				const ifaces = {
-					'0': {
-						'name': '@Internal Flash   /0x08000000/03*016Ka,01*016Kg,01*064Kg,07*128Kg',
-						'transferSize': 0
-					},
-					'1': {
-						'name': '@DCT Flash   /0x00000000/01*016Kg',
-						'transferSize': 4096
-					}
-				};
-				fakeUsb.addArgon({ dfu: true });
-				const devs = await getDevices();
-				expect(devs).to.not.be.empty;
-				const argonDev = devs[0];
-				await argonDev.open();
-				expect(argonDev.isOpen).to.be.true;
-
-				const transferSize = argonDev._dfu._getTransferSizeFromIfaces(ifaces);
-
-				expect(transferSize).to.eql(4096);
-			});
-		});
-
 		describe('erase', () => {
 			it('erases the memory on an electron', async () => {
 				fakeUsb.addArgon({ dfu: true });
@@ -255,7 +120,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 					'erasable': true,
 					'writable': true
 				};
-				argonDev._dfu.memoryInfo = {
+				argonDev._dfu._memoryInfo = {
 					'name': 'Internal Flash',
 					segments: [segment],
 				};
@@ -264,7 +129,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				const length = 87468;
 				const dfuseCommandStub = sinon.stub(argonDev._dfu, '_dfuseCommand');
 
-				await argonDev._dfu.erase(startAddr, length);
+				await argonDev._dfu._erase(startAddr, length);
 
 				expect(dfuseCommandStub.calledOnce).to.be.true;
 				expect(dfuseCommandStub.calledWithExactly(DfuseCommand.DFUSE_COMMAND_ERASE ,sectorAddr, 4)).to.be.true;
@@ -277,12 +142,12 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				const p2Dev = devs[0];
 				await p2Dev.open();
 				expect(p2Dev.isOpen).to.be.true;
-				p2Dev._dfu.memoryInfo = InternalFlashParsedP2;
+				p2Dev._dfu._memoryInfo = InternalFlashParsedP2;
 				const startAddr = 134610944;
 				const length = 1009100;
 				const dfuseCommandStub = sinon.stub(p2Dev._dfu, '_dfuseCommand');
 
-				await p2Dev._dfu.erase(startAddr, length);
+				await p2Dev._dfu._erase(startAddr, length);
 
 				expect(dfuseCommandStub.callCount).to.equal(247);
 			});

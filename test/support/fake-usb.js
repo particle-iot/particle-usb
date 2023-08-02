@@ -25,12 +25,7 @@ const USB_DEVICES = PLATFORMS.reduce((arr, platform) => {
 	}
 
 	return arr;
-}, []);
-
-const descriptorStrings = {
-	6: '@Internal Flash   /0x08000000/03*016Ka,01*016Kg,01*064Kg,07*128Kg',
-	7: '@DCT Flash   /0x00000000/01*016Kg',
-};
+}, []);	
 
 // Low-level vendor requests
 const VendorRequest = {
@@ -625,15 +620,7 @@ class Device {
 		}
 		return this._dfu.setAltSetting(iface, setting);
 	}
-
-	getDescriptorString(iIntefaceNum) {
-		const descriptor = descriptorStrings[iIntefaceNum];
-		if (descriptor === undefined) {
-			throw new Error('Failed to claim interface');
-		}
-		return descriptor;
-	}
-
+	
 	detach() {
 		this._proto.reset();
 		if (this._dfu) {

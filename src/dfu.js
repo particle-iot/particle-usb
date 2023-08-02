@@ -19,6 +19,7 @@
  */
 
 const { DeviceError } = require('./error');
+const { MAX_CONTROL_TRANSFER_DATA_SIZE } = require('./usb-device-node');
 
 /**
  * A generic DFU error.
@@ -204,7 +205,7 @@ class Dfu {
 	async setIfaceForDfu(ifaceIdx) {
 		this._memoryInfo = null;
 		const intrfaces = await this._getInterfaces();
-		this._transferSize = this._getTransferSizeFromIfaces(intrfaces);
+		this._transferSize = MAX_CONTROL_TRANSFER_DATA_SIZE;
 		await this._setAltInterface(ifaceIdx);
 		this._setMemoryInfo(intrfaces[ifaceIdx].name);
 	}
@@ -295,17 +296,8 @@ class Dfu {
 		for (let altSettingIdx = DEFAULT_ALTERNATE; ; altSettingIdx++) {
 			try {
 				await this._dev.setAltSetting(this._interface, altSettingIdx);
-				const ifaceList = this._dev.getInterfaceInfo();
-				// get the transfer size for the extra buffer that starts with 09 21
-				let transferSize = 0;
-				const bufferData = ifaceList.descriptor.extra;
-				if (bufferData[0] === 0x09 && bufferData[1] === 0x21) {
-					transferSize = bufferData.readUint16LE(5);
-				}
-
 				interfaces[altSettingIdx] = {
-					name: await this._dev.getDescriptorString(ifaceList.descriptor.iInterface, 0x0409),
-					transferSize: transferSize
+					name: await this._dev.getInterfaceName(0),
 				};
 			} catch (err) {
 				// ignore the error - this means we got past all the alt settings
@@ -332,22 +324,6 @@ class Dfu {
 	 */
 	async _setAltInterface(intrfaceIdx) {
 		await this._dev.setAltSetting(this._interface, intrfaceIdx);
-	}
-
-	/**
-	 * Returns the transfer size from the provided interface objects.
-	 * Each interface has a transferSize property, and this method returns the first one with a value.
-	 *
-	 * @param {Object} ifaces An object containing interface objects with transferSize properties.
-	 * @returns {number} The transfer size obtained from the interfaces, or 0 if none of them have it set.
-	 */
-	_getTransferSizeFromIfaces(ifaces) {
-		// Each interface has a transferSize property, get the first one with a value
-		for (const iface in ifaces) {
-			if (ifaces[iface].transferSize) {
-				return ifaces[iface].transferSize;
-			}
-		}
 	}
 
 	async _goIntoDfuIdleOrDfuDnloadIdle() {

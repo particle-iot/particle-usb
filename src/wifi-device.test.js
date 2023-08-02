@@ -31,7 +31,7 @@ describe('WifiDevice', () => {
 	});
 
 	describe('behaviors', () => {
-		const fakeUSBDevice = { type: 'p2', isInDfuMode: true };
+		const fakeUSBDevice = { type: 'p2', isInDfuMode: false };
 		let wifiDevice;
 
 		beforeEach(async () => {
