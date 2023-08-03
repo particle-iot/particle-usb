@@ -304,9 +304,7 @@ class Dfu {
 
 		if (options.leave) {
 			this._log.info('Manifesting new firmware');
-			await this._goIntoDfuIdleOrDfuDnloadIdle();
 			try {
-				await this._dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, startAddress, 4);
 				await this.leave();
 			} catch (error) {
 				throw new Error('Error during Dfu manifestation: ' + error);
