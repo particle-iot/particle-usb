@@ -298,10 +298,8 @@ class Dfu {
 
 			this._log.trace('Wrote ' + chunkSize + ' bytes');
 			bytesSent += chunkSize;
-
-			this._log.info(bytesSent, expectedSize, 'program');
 		}
-		this._log.info(`Wrote ${bytesSent} bytes`);
+		this._log.info(`Wrote ${bytesSent} bytes total`);
 
 		if (options.leave) {
 			this._log.info('Manifesting new firmware');
@@ -611,9 +609,6 @@ class Dfu {
 
 		let bytesErased = 0;
 		const bytesToErase = endAddr - addr;
-		if (bytesToErase > 0) {
-			this._log.info(bytesErased, bytesToErase, 'erase');
-		}
 
 		while (addr < endAddr) {
 			if (segment.end <= addr) {
@@ -623,7 +618,6 @@ class Dfu {
 				// Skip over the non-erasable section
 				bytesErased = Math.min(bytesErased + segment.end - addr, bytesToErase);
 				addr = segment.end;
-				this._log.trace(bytesErased, bytesToErase, 'erase');
 				continue;
 			}
 			const sectorIndex = Math.floor((addr - segment.start) / segment.sectorSize);
@@ -632,7 +626,6 @@ class Dfu {
 			await this._dfuseCommand(DfuseCommand.DFUSE_COMMAND_ERASE, sectorAddr, 4);
 			addr = sectorAddr + segment.sectorSize;
 			bytesErased += segment.sectorSize;
-			this._log.info(bytesErased, bytesToErase, 'erase');
 		}
 	}
 
