@@ -136,7 +136,8 @@ const DfuseCommand = {
 
 const DfuBmRequestType = {
 	HOST_TO_DEVICE: 0x21,
-	DEVICE_TO_HOST: 0xA1
+	DEVICE_TO_HOST: 0xA1,
+	DEVICE_TO_HOST_STANDARD: 0x80 // Direction: device-to-host; type: standard; recipient: device
 };
 
 const DFU_STATUS_SIZE = 6;
@@ -632,16 +633,16 @@ class Dfu {
 	async _getStringDescriptor(index) {
 		// Read the size of the descriptor
 		let d = await this._dev.transferIn({
-			bmRequestType: 0x80, // Direction: device-to-host; type: standard; recipient: device
+			bmRequestType: DfuBmRequestType.DEVICE_TO_HOST_STANDARD,
 			bRequest: 0x06, // GET_DESCRIPTOR
 			wValue: (0x03 /* STRING */ << 8) | (index & 0xff),
 			wIndex: 0x0409, // English (US)
 			wLength: 1
 		});
-		let len = d.readUInt8(0); // bLength
+		const len = d.readUInt8(0); // bLength
 		// Read the descriptor
 		d = await this._dev.transferIn({
-			bmRequestType: 0x80,
+			bmRequestType: DfuBmRequestType.DEVICE_TO_HOST_STANDARD,
 			bRequest: 0x06,
 			wValue: (0x03 << 8) | (index & 0xff),
 			wIndex: 0x0409,
@@ -660,7 +661,7 @@ class Dfu {
 	async _getConfigDescriptor(index) {
 		// Read the total size of the descriptors
 		const d = await this._dev.transferIn({
-			bmRequestType: 0x80, // Direction: device-to-host; type: standard; recipient: device
+			bmRequestType: DfuBmRequestType.DEVICE_TO_HOST_STANDARD,
 			bRequest: 0x06, // GET_DESCRIPTOR
 			wValue: (0x02 /* CONFIGURATION */ << 8) | (index & 0xff),
 			wIndex: 0,
@@ -669,7 +670,7 @@ class Dfu {
 		const len = d.readUInt16LE(2); // wTotalLength
 		// Read the descriptors
 		return await this._dev.transferIn({
-			bmRequestType: 0x80,
+			bmRequestType: DfuBmRequestType.DEVICE_TO_HOST_STANDARD,
 			bRequest: 0x06,
 			wValue: (0x02 << 8) | (index & 0xff),
 			wIndex: 0,

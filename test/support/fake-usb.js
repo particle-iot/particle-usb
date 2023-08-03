@@ -50,7 +50,8 @@ class Protocol {
 	}
 
 	deviceToHostRequest(setup) {
-		if (setup.bmRequestType !== proto.BmRequestType.DEVICE_TO_HOST) {
+		if (setup.bmRequestType !== proto.BmRequestType.DEVICE_TO_HOST &&
+			setup.bmRequestType !== dfu.DfuBmRequestType.DEVICE_TO_HOST_STANDARD) {
 			throw new ProtocolError(`Unsupported device-to-host request: bmRequestType: ${setup.bmRequestType}`);
 		}
 		let data = null;
@@ -82,6 +83,9 @@ class Protocol {
 				}
 				break;
 			}
+			case 0x06:
+				// GET_DESCRIPTOR
+				break;
 			default: {
 				throw new ProtocolError(`Unsupported device-to-host request: bRequest: ${setup.bRequest}`);
 			}
@@ -346,7 +350,8 @@ class DfuClass {
 
 	deviceToHostRequest(setup) {
 		// Implements DFU_GETSTATUS only
-		if (setup.bmRequestType !== dfu.DfuBmRequestType.DEVICE_TO_HOST) {
+		if (setup.bmRequestType !== dfu.DfuBmRequestType.DEVICE_TO_HOST &&
+			setup.bmRequestType !== dfu.DfuBmRequestType.DEVICE_TO_HOST_STANDARD) {
 			throw new UsbError('Unknown bmRequestType');
 		}
 
@@ -358,7 +363,11 @@ class DfuClass {
 			case dfu.DfuRequestType.DFU_GETSTATUS: {
 				return this._getStatus(setup);
 			}
-
+			case 0x06: {
+				// (GET_DESCRIPTOR)
+				const sample = [9,2,36,0,1,1,4,192,50,9,4,0,0,0,254,1,2,5,9,4,0,1,0,254,1,2,6,9,33,11,255,0,0,16,26,1];
+				return Buffer.from(sample);
+			}
 			default: {
 				throw new UsbError('Unknown bRequest');
 			}
