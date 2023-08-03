@@ -150,7 +150,9 @@ class DeviceBase extends EventEmitter {
 		}).then(() => {
 			this._log.trace('Device is open');
 			this._maxActiveReqs = options.concurrentRequests;
-			this._resetAllReqs = true; // Reset all requests remaining from a previous session
+			if (!this._dfu) {
+				this._resetAllReqs = true; // Reset all requests remaining from a previous session
+			}
 			this._state = DeviceState.OPEN;
 			this.emit('open');
 			this._process();
@@ -636,6 +638,7 @@ class DeviceBase extends EventEmitter {
 			this._state = DeviceState.CLOSED;
 			this._wantClose = false;
 			this._maxActiveReqs = null;
+			this._dfu = null;
 			this._fwVer = null;
 			this._id = null;
 			if (emitEvent) {
