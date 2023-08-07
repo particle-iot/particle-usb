@@ -50,8 +50,7 @@ class Protocol {
 	}
 
 	deviceToHostRequest(setup) {
-		if (setup.bmRequestType !== proto.BmRequestType.DEVICE_TO_HOST &&
-			setup.bmRequestType !== 0x80) {
+		if (setup.bmRequestType !== proto.BmRequestType.DEVICE_TO_HOST) {
 			throw new ProtocolError(`Unsupported device-to-host request: bmRequestType: ${setup.bmRequestType}`);
 		}
 		let data = null;
@@ -83,9 +82,6 @@ class Protocol {
 				}
 				break;
 			}
-			case 0x06:
-				// GET_DESCRIPTOR
-				break;
 			default: {
 				throw new ProtocolError(`Unsupported device-to-host request: bRequest: ${setup.bRequest}`);
 			}
@@ -349,27 +345,68 @@ class DfuClass {
 	}
 
 	deviceToHostRequest(setup) {
-		// Implements DFU_GETSTATUS only
-		if (setup.bmRequestType !== dfu.DfuBmRequestType.DEVICE_TO_HOST &&
-			setup.bmRequestType !== 0x80) {
-			throw new UsbError('Unknown bmRequestType');
-		}
-
-		if (!(setup.wIndex in this._claimed)) {
-			throw new UsbError('Interface is not claimed');
-		}
-
-		switch (setup.bRequest) {
-			case dfu.DfuRequestType.DFU_GETSTATUS: {
-				return this._getStatus(setup);
+		switch (setup.bmRequestType) {
+			case dfu.DfuBmRequestType.DEVICE_TO_HOST: {
+				// Implements DFU_GETSTATUS only
+				if (!(setup.wIndex in this._claimed)) {
+					throw new UsbError('Interface is not claimed');
+				}
+				switch (setup.bRequest) {
+					case dfu.DfuRequestType.DFU_GETSTATUS: {
+						return this._getStatus(setup);
+					}
+					default: {
+						throw new UsbError('Unknown bRequest');
+					}
+				}
+				break;
 			}
-			case 0x06: {
-				// (GET_DESCRIPTOR)
-				const sample = [9,2,36,0,1,1,4,192,50,9,4,0,0,0,254,1,2,5,9,4,0,1,0,254,1,2,6,9,33,11,255,0,0,16,26,1];
-				return Buffer.from(sample);
+
+			case 0x80: { // Direction: device-to-host; type: standard; recipient: device
+				switch (setup.bRequest) {
+					case 0x06: { // GET_DESCRIPTOR
+						const type = setup.wValue >> 8;
+						const index = setup.wValue & 0xff;
+						switch (type) {
+							case 0x02: { // CONFIGURATION
+								// Below is the configuration descriptor of a Boron in DFU mode
+								return Buffer.from('09022d00010104c0320904000000fe0102060904000100fe0102070904000200fe01020809210bff0000101a01', 'hex');
+							}
+							case 0x03: { // STRING
+								switch (index) {
+									case 6: {
+										// @Internal Flash   /0x00000000/1*004Ka,47*004Kg,192*004Kg,4*004Kg,4*004Kg,8*004Ka
+										return Buffer.from('a203400049006e007400650072006e0061006c00200046006c006100730068002000200020002f0030007800300030003000300030003000300030002f0031002a003000300034004b0061002c00340037002a003000300034004b0067002c003100390032002a003000300034004b0067002c0034002a003000300034004b0067002c0034002a003000300034004b0067002c0038002a003000300034004b006100', 'hex');
+									}
+									case 7: {
+										// @DCT Flash   /0x00000000/1*016Ke
+										return Buffer.from('42034000440043005400200046006c006100730068002000200020002f0030007800300030003000300030003000300030002f0031002a003000310036004b006500', 'hex');
+									}
+									case 8: {
+										// @External Flash   /0x80000000/1024*004Kg
+										return Buffer.from('52034000450078007400650072006e0061006c00200046006c006100730068002000200020002f0030007800380030003000300030003000300030002f0031003000320034002a003000300034004b006700', 'hex');
+									}
+									default: {
+										throw new UsbError('Unknown index of string descriptor');
+									}
+								}
+								break;
+							}
+							default: {
+								throw new UsbError('Unknown descriptor type');
+							}
+						}
+						break;
+					}
+					default: {
+						throw new UsbError('Unknown bRequest');
+					}
+				}
+				break;
 			}
+
 			default: {
-				throw new UsbError('Unknown bRequest');
+				throw new UsbError('Unknown bmRequestType');
 			}
 		}
 	}
@@ -393,24 +430,6 @@ class DfuClass {
 
 	setAltSetting(/* iface, setting */) {
 		// Noop for now
-	}
-
-	async _pollUntil(statePredicate) {
-		let dfuStatus = await this._getStatus();
-
-		function asyncSleep(durationMs) {
-			return new Promise((resolve) => {
-				// this._log.trace('Sleeping for ' + durationMs + 'ms');
-				setTimeout(resolve, durationMs);
-			});
-		}
-
-		while (!statePredicate(dfuStatus.state) && dfuStatus.state !== dfu.DfuDeviceState.dfuERROR) {
-			await asyncSleep(dfuStatus.pollTimeout);
-			dfuStatus = await this._getStatus();
-		}
-
-		return dfuStatus;
 	}
 
 	_getStatus(setup) {
