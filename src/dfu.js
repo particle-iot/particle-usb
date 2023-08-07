@@ -372,7 +372,7 @@ class Dfu {
 		let bStatusWithPollTimeout = data.readUInt32LE(0);
 
 		const bStatus = (bStatusWithPollTimeout & 0xff);
-		bStatusWithPollTimeout &= ~(0xff);
+		bStatusWithPollTimeout >>= 8;
 		const bState = data.readUInt8(4);
 
 		return {
