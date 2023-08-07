@@ -359,7 +359,7 @@ class DfuClass {
 						throw new UsbError('Unknown bRequest');
 					}
 				}
-				break;
+				break; // eslint-disable-line
 			}
 
 			case 0x80: { // Direction: device-to-host; type: standard; recipient: device
@@ -390,19 +390,19 @@ class DfuClass {
 										throw new UsbError('Unknown index of string descriptor');
 									}
 								}
-								break;
+								break; // eslint-disable-line
 							}
 							default: {
 								throw new UsbError('Unknown descriptor type');
 							}
 						}
-						break;
+						break; // eslint-disable-line
 					}
 					default: {
 						throw new UsbError('Unknown bRequest');
 					}
 				}
-				break;
+				break; // eslint-disable-line
 			}
 
 			default: {
