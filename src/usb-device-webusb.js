@@ -1,4 +1,4 @@
-const { UsbError } = require('./error');
+const { UsbError, UsbStallError } = require('./error');
 
 // Maximum size of a control transfer's data stage
 const MAX_CONTROL_TRANSFER_DATA_SIZE = 4096;
@@ -73,6 +73,9 @@ class UsbDevice {
 				index: setup.wIndex
 			}, setup.wLength);
 			if (res.status !== 'ok') {
+				if (res.status === 'stall') {
+					throw new UsbStallError(`Status: ${res.status}`);
+				}
 				throw new Error(`Status: ${res.status}`);
 			}
 			return Buffer.from(res.data.buffer);
@@ -94,6 +97,9 @@ class UsbDevice {
 				index: setup.wIndex
 			}, data); // data is optional
 			if (res.status !== 'ok') {
+				if (res.status === 'stall') {
+					throw new UsbStallError(`Status: ${res.status}`);
+				}
 				throw new Error(`Status: ${res.status}`);
 			}
 		} catch (err) {

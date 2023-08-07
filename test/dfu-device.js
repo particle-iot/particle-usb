@@ -94,7 +94,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				let error;
 				try {
 					await argonDev._dfu._goIntoDfuIdleOrDfuDnloadIdle();
-					await argonDev._dfu._dfuseCommand(0x21, 0x08060000, 5);
+					await argonDev._dfu._dfuseCommand(0x21, 0x08060000);
 				} catch (_error) {
 					error = _error;
 				}
@@ -131,7 +131,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				await argonDev._dfu._erase(startAddr, length);
 
 				expect(dfuseCommandStub.calledOnce).to.be.true;
-				expect(dfuseCommandStub.calledWithExactly(DfuseCommand.DFUSE_COMMAND_ERASE ,sectorAddr, 4)).to.be.true;
+				expect(dfuseCommandStub.calledWithExactly(DfuseCommand.DFUSE_COMMAND_ERASE ,sectorAddr)).to.be.true;
 			});
 
 			it('erases the memory on a p2', async () => {

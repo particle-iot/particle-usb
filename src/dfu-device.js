@@ -8,7 +8,7 @@ const DfuDevice = (base) => class extends base {
 	 * @param {Object} options Optional options for the flashing process.
 	 * @returns {Promise<void>} A Promise that resolves when the firmware is successfully flashed.
 	 */
-	async flashWithDfu(altSetting, buffer, addr, options) {
+	async writeOverDfu(altSetting, buffer, addr, options) {
 		await this._dfu.setAltSetting(altSetting);
 		await this._dfu.doDownload(addr, buffer, options);
 	}

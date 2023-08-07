@@ -51,7 +51,7 @@ class Protocol {
 
 	deviceToHostRequest(setup) {
 		if (setup.bmRequestType !== proto.BmRequestType.DEVICE_TO_HOST &&
-			setup.bmRequestType !== dfu.DfuBmRequestType.DEVICE_TO_HOST_STANDARD) {
+			setup.bmRequestType !== 0x80) {
 			throw new ProtocolError(`Unsupported device-to-host request: bmRequestType: ${setup.bmRequestType}`);
 		}
 		let data = null;
@@ -351,7 +351,7 @@ class DfuClass {
 	deviceToHostRequest(setup) {
 		// Implements DFU_GETSTATUS only
 		if (setup.bmRequestType !== dfu.DfuBmRequestType.DEVICE_TO_HOST &&
-			setup.bmRequestType !== dfu.DfuBmRequestType.DEVICE_TO_HOST_STANDARD) {
+			setup.bmRequestType !== 0x80) {
 			throw new UsbError('Unknown bmRequestType');
 		}
 

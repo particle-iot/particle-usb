@@ -18,7 +18,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-const { DeviceError } = require('./error');
+const { DeviceError, UsbStallError } = require('./error');
 
 /**
  * A generic DFU error.
@@ -136,8 +136,7 @@ const DfuseCommand = {
 
 const DfuBmRequestType = {
 	HOST_TO_DEVICE: 0x21,
-	DEVICE_TO_HOST: 0xA1,
-	DEVICE_TO_HOST_STANDARD: 0x80 // Direction: device-to-host; type: standard; recipient: device
+	DEVICE_TO_HOST: 0xA1
 };
 
 const DFU_STATUS_SIZE = 6;
@@ -192,7 +191,7 @@ class Dfu {
 	async leave() {
 		await this._goIntoDfuIdleOrDfuDnloadIdle();
 
-		await this._sendDnloadRequest(0, 2);
+		await this._sendDnloadRequest(Buffer.alloc(0), 2);
 
 		await this._pollUntil(
 			// Wait for dfuDNLOAD_IDLE in case of Gen2 and for dfuMANIFEST in case of Gen3 and above.
@@ -253,16 +252,13 @@ class Dfu {
 	 * @param {object} options - Options for the download process.
 	 * @return {Promise}
 	 */
-	async doDownload(startAddr, data, options) {
+	async doDownload(startAddr, data, options = { noErase: false, leave: false }) {
 		if (!this._memoryInfo || !this._memoryInfo.segments) {
 			throw new Error('No memory map available');
 		}
 
-		let startAddress = startAddr;
-		if (isNaN(startAddress)) {
-			startAddress = this._memoryInfo.segments[0].start;
-			this._log.warn('Using inferred start address 0x' + startAddress.toString(16));
-		} else if (this._getSegment(startAddress) === null) {
+		const startAddress = startAddr;
+		if (this._getSegment(startAddress) === null) {
 			this._log.error(`Start address 0x${startAddress.toString(16)} outside of memory map bounds`);
 		}
 		const expectedSize = data.byteLength;
@@ -282,12 +278,11 @@ class Dfu {
 
 			let dfuStatus;
 			try {
-				await this._dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, address, 4);
+				await this._dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, address);
 				this._log.trace(`Set address to 0x${address.toString(16)}`);
 				await this._sendDnloadRequest(data.slice(bytesSent, bytesSent + chunkSize), 2);
-				dfuStatus = await this._pollUntilIdle(DfuDeviceState.dfuDNLOAD_IDLE);
+				dfuStatus = await this._pollUntil(state => (state === DfuDeviceState.dfuDNLOAD_IDLE));
 				this._log.trace('Sent ' + chunkSize + ' bytes');
-				dfuStatus = await this._goIntoDfuIdleOrDfuDnloadIdle();
 				address += chunkSize;
 			} catch (error) {
 				throw new Error('Error during DfuSe download: ' + error);
@@ -346,14 +341,14 @@ class Dfu {
 	 * @param {Buffer} req The request data buffer to be sent to the device.
 	 * @param {number} wValue The value to be sent as part of the request.
 	 */
-	async _sendDnloadRequest(req, wValue) {
+	async _sendDnloadRequest(data, wValue) {
 		const setup = {
 			bmRequestType: DfuBmRequestType.HOST_TO_DEVICE,
 			bRequest: DfuRequestType.DFU_DNLOAD,
 			wIndex: this._interface,
 			wValue: wValue
 		};
-		return this._dev.transferOut(setup, req);
+		return this._dev.transferOut(setup, data);
 	}
 
 	/**
@@ -379,10 +374,6 @@ class Dfu {
 		const bStatus = (bStatusWithPollTimeout & 0xff);
 		bStatusWithPollTimeout &= ~(0xff);
 		const bState = data.readUInt8(4);
-
-		if (!bState) {
-			throw new DfuError('Could not parse DFU result or state');
-		}
 
 		return {
 			status: bStatus,
@@ -413,13 +404,6 @@ class Dfu {
 		}
 
 		return dfuStatus;
-	}
-
-	/**
-	 * Polls until the dfu state is dfuDNLOAD_IDLE
-	 */
-	_pollUntilIdle(idleState) {
-		return this._pollUntil(state => (state === idleState));
 	}
 
 	/**
@@ -493,10 +477,9 @@ class Dfu {
 	 * @param {number} len - Optional. The length of the command payload.
 	 * @return {Promise}
 	 */
-	async _dfuseCommand(command, param, len) {
-		if (typeof param === 'undefined' && typeof len === 'undefined') {
+	async _dfuseCommand(command, param) {
+		if (typeof param === 'undefined') {
 			param = 0x00;
-			len = 1;
 		}
 
 		const commandNames = {
@@ -506,18 +489,15 @@ class Dfu {
 		};
 
 		const payload = Buffer.alloc(5);
-		payload[0] = command;
-		payload[1] = param & 0xff;
-		payload[2] = (param >> 8) & 0xff;
-		payload[3] = (param >> 16) & 0xff;
-		payload[4] = (param >> 24) & 0xff;
+		payload.writeUInt8(command, 0);
+		payload.writeUInt32LE(param, 1);
 
 		for (let triesLeft = 4; triesLeft >= 0; triesLeft--) {
 			try {
 				await this._sendDnloadRequest(payload, 0);
 				break;
 			} catch (error) {
-				if (triesLeft === 0 || error.message !== 'LIBUSB_TRANSFER_STALL') {
+				if (triesLeft === 0 || !(error instanceof UsbStallError)) {
 					throw new Error('Error during special DfuSe command ' + commandNames[command] + ':' + error);
 				}
 				this._log.trace('dfuse error, retrying', error);
@@ -622,7 +602,7 @@ class Dfu {
 			const sectorIndex = Math.floor((addr - segment.start) / segment.sectorSize);
 			const sectorAddr = segment.start + sectorIndex * segment.sectorSize;
 			this._log.trace(`Erasing ${segment.sectorSize}B at 0x${sectorAddr.toString(16)}`);
-			await this._dfuseCommand(DfuseCommand.DFUSE_COMMAND_ERASE, sectorAddr, 4);
+			await this._dfuseCommand(DfuseCommand.DFUSE_COMMAND_ERASE, sectorAddr);
 			addr = sectorAddr + segment.sectorSize;
 			bytesErased += segment.sectorSize;
 		}
@@ -631,7 +611,7 @@ class Dfu {
 	async _getStringDescriptor(index) {
 		// Read the size of the descriptor
 		let d = await this._dev.transferIn({
-			bmRequestType: DfuBmRequestType.DEVICE_TO_HOST_STANDARD,
+			bmRequestType: 0x80, // Direction: device-to-host; type: standard; recipient: device
 			bRequest: 0x06, // GET_DESCRIPTOR
 			wValue: (0x03 /* STRING */ << 8) | (index & 0xff),
 			wIndex: 0x0409, // English (US)
@@ -640,7 +620,7 @@ class Dfu {
 		const len = d.readUInt8(0); // bLength
 		// Read the descriptor
 		d = await this._dev.transferIn({
-			bmRequestType: DfuBmRequestType.DEVICE_TO_HOST_STANDARD,
+			bmRequestType: 0x80, // Direction: device-to-host; type: standard; recipient: device
 			bRequest: 0x06,
 			wValue: (0x03 << 8) | (index & 0xff),
 			wIndex: 0x0409,
@@ -659,7 +639,7 @@ class Dfu {
 	async _getConfigDescriptor(index) {
 		// Read the total size of the descriptors
 		const d = await this._dev.transferIn({
-			bmRequestType: DfuBmRequestType.DEVICE_TO_HOST_STANDARD,
+			bmRequestType: 0x80, // Direction: device-to-host; type: standard; recipient: device
 			bRequest: 0x06, // GET_DESCRIPTOR
 			wValue: (0x02 /* CONFIGURATION */ << 8) | (index & 0xff),
 			wIndex: 0,
@@ -668,7 +648,7 @@ class Dfu {
 		const len = d.readUInt16LE(2); // wTotalLength
 		// Read the descriptors
 		return await this._dev.transferIn({
-			bmRequestType: DfuBmRequestType.DEVICE_TO_HOST_STANDARD,
+			bmRequestType: 0x80, // Direction: device-to-host; type: standard; recipient: device
 			bRequest: 0x06,
 			wValue: (0x02 << 8) | (index & 0xff),
 			wIndex: 0,
