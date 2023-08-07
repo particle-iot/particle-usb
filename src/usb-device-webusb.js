@@ -62,48 +62,49 @@ class UsbDevice {
 			throw new UsbError('Unable to close USB device', { cause: err });
 		}
 	}
-
 	async transferIn(setup) {
+		let res;
 		try {
-			const res = await this._dev.controlTransferIn({
+			res = await this._dev.controlTransferIn({
 				requestType: bmRequestTypeToString(setup.bmRequestType),
 				recipient: bmRequestTypeToRecipientString(setup.bmRequestType),
 				request: setup.bRequest,
 				value: setup.wValue,
 				index: setup.wIndex
 			}, setup.wLength);
-			if (res.status !== 'ok') {
-				if (res.status === 'stall') {
-					throw new UsbStallError(`Status: ${res.status}`);
-				}
-				throw new Error(`Status: ${res.status}`);
-			}
-			return Buffer.from(res.data.buffer);
 		} catch (err) {
 			throw new UsbError('IN control transfer failed', { cause: err });
 		}
+		if (res.status !== 'ok') {
+			if (res.status === 'stall') {
+				throw new UsbStallError('Transfer stalled');
+			}
+			throw new Error(`Status: ${res.status}`);
+		}
+		return Buffer.from(res.data.buffer);
 	}
 
 	async transferOut(setup, data) {
+		let res;
 		try {
 			if (!data && this._quirks.controlOutTransfersRequireDataStage) {
 				data = Buffer.alloc(1);
 			}
-			const res = await this._dev.controlTransferOut({
+			res = await this._dev.controlTransferOut({
 				requestType: bmRequestTypeToString(setup.bmRequestType),
 				recipient: bmRequestTypeToRecipientString(setup.bmRequestType),
 				request: setup.bRequest,
 				value: setup.wValue,
 				index: setup.wIndex
 			}, data); // data is optional
-			if (res.status !== 'ok') {
-				if (res.status === 'stall') {
-					throw new UsbStallError(`Status: ${res.status}`);
-				}
-				throw new Error(`Status: ${res.status}`);
-			}
 		} catch (err) {
 			throw new UsbError('OUT control transfer failed', { cause: err });
+		}
+		if (res.status !== 'ok') {
+			if (res.status === 'stall') {
+				throw new UsbStallError('Transfer stalled');
+			}
+			throw new Error(`Status: ${res.status}`);
 		}
 	}
 
