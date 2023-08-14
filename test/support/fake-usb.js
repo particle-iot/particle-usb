@@ -345,22 +345,68 @@ class DfuClass {
 	}
 
 	deviceToHostRequest(setup) {
-		// Implements DFU_GETSTATUS only
-		if (setup.bmRequestType !== dfu.DfuBmRequestType.DEVICE_TO_HOST) {
-			throw new UsbError('Unknown bmRequestType');
-		}
+		switch (setup.bmRequestType) {
+			case dfu.DfuBmRequestType.DEVICE_TO_HOST: {
+				// Implements DFU_GETSTATUS only
+				if (!(setup.wIndex in this._claimed)) {
+					throw new UsbError('Interface is not claimed');
+				}
+				switch (setup.bRequest) {
+					case dfu.DfuRequestType.DFU_GETSTATUS: {
+						return this._getStatus(setup);
+					}
+					default: {
+						throw new UsbError('Unknown bRequest');
+					}
+				}
+				break; // eslint-disable-line
+			}
 
-		if (!(setup.wIndex in this._claimed)) {
-			throw new UsbError('Interface is not claimed');
-		}
-
-		switch (setup.bRequest) {
-			case dfu.DfuRequestType.DFU_GETSTATUS: {
-				return this._getStatus(setup);
+			case 0x80: { // Direction: device-to-host; type: standard; recipient: device
+				switch (setup.bRequest) {
+					case 0x06: { // GET_DESCRIPTOR
+						const type = setup.wValue >> 8;
+						const index = setup.wValue & 0xff;
+						switch (type) {
+							case 0x02: { // CONFIGURATION
+								// Below is the configuration descriptor of a Boron in DFU mode
+								return Buffer.from('09022d00010104c0320904000000fe0102060904000100fe0102070904000200fe01020809210bff0000101a01', 'hex');
+							}
+							case 0x03: { // STRING
+								switch (index) {
+									case 6: {
+										// @Internal Flash   /0x00000000/1*004Ka,47*004Kg,192*004Kg,4*004Kg,4*004Kg,8*004Ka
+										return Buffer.from('a203400049006e007400650072006e0061006c00200046006c006100730068002000200020002f0030007800300030003000300030003000300030002f0031002a003000300034004b0061002c00340037002a003000300034004b0067002c003100390032002a003000300034004b0067002c0034002a003000300034004b0067002c0034002a003000300034004b0067002c0038002a003000300034004b006100', 'hex');
+									}
+									case 7: {
+										// @DCT Flash   /0x00000000/1*016Ke
+										return Buffer.from('42034000440043005400200046006c006100730068002000200020002f0030007800300030003000300030003000300030002f0031002a003000310036004b006500', 'hex');
+									}
+									case 8: {
+										// @External Flash   /0x80000000/1024*004Kg
+										return Buffer.from('52034000450078007400650072006e0061006c00200046006c006100730068002000200020002f0030007800380030003000300030003000300030002f0031003000320034002a003000300034004b006700', 'hex');
+									}
+									default: {
+										throw new UsbError('Unknown index of string descriptor');
+									}
+								}
+								break; // eslint-disable-line
+							}
+							default: {
+								throw new UsbError('Unknown descriptor type');
+							}
+						}
+						break; // eslint-disable-line
+					}
+					default: {
+						throw new UsbError('Unknown bRequest');
+					}
+				}
+				break; // eslint-disable-line
 			}
 
 			default: {
-				throw new UsbError('Unknown bRequest');
+				throw new UsbError('Unknown bmRequestType');
 			}
 		}
 	}
@@ -461,12 +507,7 @@ class DfuClass {
 		}
 	}
 
-	_dnload(setup, data) {
-		// Handle only leave request
-		if (data && data.length > 0) {
-			throw new UsbError('Unsupport DFU_DNLOAD request');
-		}
-
+	_dnload() {
 		switch (this._state.state) {
 			case dfu.DfuDeviceState.dfuIDLE:
 			case dfu.DfuDeviceState.dfuDNLOAD_IDLE: {
@@ -474,7 +515,6 @@ class DfuClass {
 				this._setState(dfu.DfuDeviceState.dfuMANIFEST_SYNC);
 				break;
 			}
-
 			default: {
 				this._setError(dfu.DfuDeviceStatus.errUNKNOWN);
 				throw new UsbError('Invalid state (endpoint stalled)');
@@ -597,7 +637,6 @@ class Device {
 		if (!this.options.dfu) {
 			throw new UsbError('Unsupported command');
 		}
-
 		return this._dfu.setAltSetting(iface, setting);
 	}
 

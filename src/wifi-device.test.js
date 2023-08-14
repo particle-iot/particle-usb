@@ -31,7 +31,8 @@ describe('WifiDevice', () => {
 	});
 
 	describe('behaviors', () => {
-		const fakeUSBDevice = { type: 'p2' };
+		// TODO: Add helper functions for easily creating device instances in tests
+		const fakeUSBDevice = { type: 'p2', _info : { dfu : false } };
 		let wifiDevice;
 
 		beforeEach(async () => {

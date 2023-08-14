@@ -1,4 +1,4 @@
-const { UsbError, NotAllowedError } = require('./error');
+const { UsbError, NotAllowedError, UsbStallError } = require('./error');
 const { globalOptions } = require('./config');
 
 let usb = null;
@@ -18,6 +18,9 @@ const MAX_CONTROL_TRANSFER_DATA_SIZE = 4096;
 function wrapUsbError(err, message) {
 	if (err.message === 'LIBUSB_ERROR_ACCESS') {
 		return new NotAllowedError(message, { cause: err });
+	}
+	if (err.message === 'LIBUSB_TRANSFER_STALL') {
+		return new UsbStallError(message, { cause: err });
 	}
 	return new UsbError(message, { cause: err });
 }

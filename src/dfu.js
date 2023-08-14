@@ -1,4 +1,24 @@
-const { DeviceError } = require('./error');
+/*
+ * dfu.js
+ * Copyright (c) 2023, Particle
+ *
+ * Some functions are extracted from the web-dfu project:
+ * Copyright (c) 2016, Devan Lai
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+const { DeviceError, UsbStallError } = require('./error');
 
 /**
  * A generic DFU error.
@@ -101,7 +121,6 @@ const DfuDeviceStateMap = Object.keys(DfuDeviceState).reduce((obj, key) => {
 	return obj;
 }, {});
 
-
 /**
  * DFU with ST Microsystems extensions.
  *
@@ -125,6 +144,8 @@ const DFU_STATUS_SIZE = 6;
 const DEFAULT_INTERFACE = 0;
 const DEFAULT_ALTERNATE = 0;
 
+const DEFAULT_TRANSFER_SIZE = 1024;
+
 class Dfu {
 	constructor(dev, logger) {
 		this._dev = dev;
@@ -132,6 +153,9 @@ class Dfu {
 		this._interface = DEFAULT_INTERFACE;
 		this._alternate = DEFAULT_ALTERNATE;
 		this._claimed = false;
+		this._memoryInfo = null;
+		this._transferSize = DEFAULT_TRANSFER_SIZE;
+		this._allInterfaces = [];
 	}
 
 	/**
@@ -141,8 +165,11 @@ class Dfu {
 	 */
 	async open() {
 		await this._dev.claimInterface(this._interface);
-		await this._dev.setAltSetting(this._interface, this._alternate);
 		this._claimed = true;
+		await this._dev.setAltSetting(this._interface, this._alternate);
+		let desc = await this._getConfigDescriptor(0); // Use the default config
+		desc = this._parseConfigDescriptor(desc);
+		this._allInterfaces = desc.interfaces;
 	}
 
 	/**
@@ -164,36 +191,131 @@ class Dfu {
 	async leave() {
 		await this._goIntoDfuIdleOrDfuDnloadIdle();
 
-		await this._sendDnloadRequest({
-			// Dummy non-zero block number
-			blockNum: 1
-			// No data
-		});
+		await this._sendDnloadRequest(Buffer.alloc(0), 2);
 
-		// Check if the leave command was executed without an error
-		const state = await this._getStatus();
-		if (state.state !== 'dfuMANIFEST') {
+		await this._pollUntil(
+			// Wait for dfuDNLOAD_IDLE in case of Gen2 and for dfuMANIFEST in case of Gen3 and above.
 			// This is a workaround for Gen 2 DFU implementation where in order to please dfu-util
 			// for some reason we are going off-standard and instead of reporting the actual dfuMANIFEST state
 			// report dfuDNLOAD_IDLE :|
-			if (state.status === 'OK' && state.state !== 'dfuDNLOAD_IDLE') {
-				throw new DfuError('Invalid DFU state');
+			state => (state === DfuDeviceState.dfuMANIFEST || state === DfuDeviceState.dfuDNLOAD_IDLE));
+	}
+
+	/**
+	 * Set the alternate interface for DFU and initialize memory information.
+	 *
+	 * @param {number} setting - The alternate interface index to set.
+	 * @return {Promise}
+	 */
+	async setAltSetting(setting) {
+		let iface = null;
+		let xferSize = null;
+		for (const i of this._allInterfaces) {
+			if (i.bInterfaceNumber === this._interface) {
+				if (!iface && i.bAlternateSetting === setting) {
+					iface = i;
+					if (i.dfuFunctional) {
+						xferSize = i.dfuFunctional.wTransferSize;
+					}
+					if (xferSize) {
+						break;
+					}
+				}
+				// DFU_FUNCTIONAL descriptor may not be available for each interface with the given number
+				if (!xferSize && i.dfuFunctional) {
+					xferSize = i.dfuFunctional.wTransferSize;
+					if (iface) {
+						break;
+					}
+				}
 			}
 		}
+		if (!iface) {
+			throw new Error('Invalid alternate setting');
+		}
+		if (!iface.iInterface) {
+			throw new Error('Missing string descriptor');
+		}
+		const ifaceName = await this._getStringDescriptor(iface.iInterface);
+		const memInfo = this._parseMemoryDescriptor(ifaceName);
+		await this._dev.setAltSetting(this._interface, setting);
+		this._transferSize = xferSize || DEFAULT_TRANSFER_SIZE;
+		this._memoryInfo = memInfo;
+		this._alternate = setting;
+	}
 
-		// After this, the device will go into dfuMANIFSET_WAIT_RESET state
-		// and eventually should reset
+	/**
+	 * Perform DFU download of binary data to the device.
+	 *
+	 * @param {number} startAddr - The starting address to write the data.
+	 * @param {Buffer} data - The binary data to write.
+	 * @param {object} options - Options for the download process.
+	 * @return {Promise}
+	 */
+	async doDownload(startAddr, data, options = { noErase: false, leave: false }) {
+		if (!this._memoryInfo || !this._memoryInfo.segments) {
+			throw new Error('No memory map available');
+		}
+
+		const startAddress = startAddr;
+		if (this._getSegment(startAddress) === null) {
+			this._log.error(`Start address 0x${startAddress.toString(16)} outside of memory map bounds`);
+		}
+		const expectedSize = data.byteLength;
+
+		if (!options.noErase) {
+			this._log.info('Erasing DFU device memory');
+			await this._erase(startAddress, expectedSize);
+		}
+
+		this._log.info('Copying binary data to DFU device startAddress=' + startAddress + ' total_expected_size=' + expectedSize);
+
+		let bytesSent = 0;
+		let address = startAddress;
+		while (bytesSent < expectedSize) {
+			const bytesLeft = expectedSize - bytesSent;
+			const chunkSize = Math.min(bytesLeft, this._transferSize);
+
+			let dfuStatus;
+			try {
+				await this._dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, address);
+				this._log.trace(`Set address to 0x${address.toString(16)}`);
+				await this._sendDnloadRequest(data.slice(bytesSent, bytesSent + chunkSize), 2);
+				dfuStatus = await this._pollUntil(state => (state === DfuDeviceState.dfuDNLOAD_IDLE));
+				this._log.trace('Sent ' + chunkSize + ' bytes');
+				address += chunkSize;
+			} catch (error) {
+				throw new Error('Error during DfuSe download: ' + error);
+			}
+
+			if (dfuStatus.status !== DfuDeviceStatus.OK) {
+				throw new Error(`DFU DOWNLOAD failed state=${dfuStatus.state}, status=${dfuStatus.status}`);
+			}
+
+			this._log.trace('Wrote ' + chunkSize + ' bytes');
+			bytesSent += chunkSize;
+		}
+		this._log.info(`Wrote ${bytesSent} bytes total`);
+
+		if (options.leave) {
+			this._log.info('Manifesting new firmware');
+			try {
+				await this.leave();
+			} catch (error) {
+				throw new Error('Error during Dfu manifestation: ' + error);
+			}
+		}
 	}
 
 	async _goIntoDfuIdleOrDfuDnloadIdle() {
 		try {
 			const state = await this._getStatus();
-			if (state.state === 'dfuERROR') {
+			if (state.state === DfuDeviceState.dfuERROR) {
 				// If we are in dfuERROR state, simply issue DFU_CLRSTATUS and we'll go into dfuIDLE
 				await this._clearStatus();
 			}
 
-			if (state.state !== 'dfuIDLE' && state.state !== 'dfuDNLOAD_IDLE') {
+			if (state.state !== DfuDeviceState.dfuIDLE && state.state !== DfuDeviceState.dfuDNLOAD_IDLE) {
 				// If we are in some kind of an unknown state, issue DFU_CLRSTATUS, which may fail,
 				// but the device will go into dfuERROR state, so a subsequent DFU_CLRSTATUS will get us
 				// into dfuIDLE
@@ -206,26 +328,35 @@ class Dfu {
 
 		// Confirm we are in dfuIDLE or dfuDNLOAD_IDLE
 		const state = await this._getStatus();
-		if (state.state !== 'dfuIDLE' && state.state !== 'dfuDNLOAD_IDLE') {
+		if (state.state !== DfuDeviceState.dfuIDLE && state.state !== DfuDeviceState.dfuDNLOAD_IDLE) {
 			throw new DfuError('Invalid state');
 		}
+		return state;
 	}
 
-	async _sendDnloadRequest(req) {
-		if ((!req.cmd || req.cmd === DfuseCommand.DFUSE_COMMAND_NONE) && req.blockNum) {
-			// Send data
-			const setup = {
-				bmRequestType: DfuBmRequestType.HOST_TO_DEVICE,
-				bRequest: DfuRequestType.DFU_DNLOAD,
-				wIndex: this._interface,
-				wValue: req.blockNum
-			};
-			return this._dev.transferOut(setup, req.data ? req.data : Buffer.alloc(0));
-		}
-
-		throw new DfuError('Unknown DFU_DNLOAD command');
+	/**
+	 * Sends a download request to the DFU device with the specified request and value.
+	 * This request is sent via nodeusb or webusb
+	 *
+	 * @param {Buffer} req The request data buffer to be sent to the device.
+	 * @param {number} wValue The value to be sent as part of the request.
+	 */
+	async _sendDnloadRequest(data, wValue) {
+		const setup = {
+			bmRequestType: DfuBmRequestType.HOST_TO_DEVICE,
+			bRequest: DfuRequestType.DFU_DNLOAD,
+			wIndex: this._interface,
+			wValue: wValue
+		};
+		return this._dev.transferOut(setup, data);
 	}
 
+	/**
+	 * Retrieves the status from the DFU (Device Firmware Upgrade) device.
+	 *
+	 * @returns {Promise<object>} A Promise that resolves with the status object containing status, pollTimeout, and state.
+	 * @throws {DfuError} If parsing the DFU_GETSTATUS response fails or the status/state is invalid.
+	 */
 	async _getStatus() {
 		const setup = {
 			bmRequestType: DfuBmRequestType.DEVICE_TO_HOST,
@@ -238,15 +369,11 @@ class Dfu {
 		if (!data || data.length !== DFU_STATUS_SIZE) {
 			throw new DfuError('Could not parse DFU_GETSTATUS response');
 		}
-
 		let bStatusWithPollTimeout = data.readUInt32LE(0);
-		const bStatus = DfuDeviceStatusMap[(bStatusWithPollTimeout & 0xff)];
-		bStatusWithPollTimeout &= ~(0xff);
-		const bState = DfuDeviceStateMap[data.readUInt8(4)];
 
-		if (!bStatus || !bState) {
-			throw new DfuError('Could not parse DFU result or state');
-		}
+		const bStatus = (bStatusWithPollTimeout & 0xff);
+		bStatusWithPollTimeout >>= 8;
+		const bState = data.readUInt8(4);
 
 		return {
 			status: bStatus,
@@ -255,6 +382,33 @@ class Dfu {
 		};
 	}
 
+	/**
+	 * Poll until the given statePredicate is true or the device goes into dfuERROR state.
+	 *
+	 * @param {function} statePredicate - The function to check the device state.
+	 * @return {object} - The DFU status object after polling.
+	 */
+	async _pollUntil(statePredicate) {
+		let dfuStatus = await this._getStatus();
+
+		function asyncSleep(durationMs) {
+			return new Promise((resolve) => {
+				// this._log.trace('Sleeping for ' + durationMs + 'ms');
+				setTimeout(resolve, durationMs);
+			});
+		}
+
+		while (!statePredicate(dfuStatus.state) && dfuStatus.state !== DfuDeviceState.dfuERROR) {
+			await asyncSleep(dfuStatus.pollTimeout);
+			dfuStatus = await this._getStatus();
+		}
+
+		return dfuStatus;
+	}
+
+	/**
+	 * Sends the DFU_CLRSTATUS request to the DFU device to clear any error status.
+	 */
 	async _clearStatus() {
 		const setup = {
 			bmRequestType: DfuBmRequestType.HOST_TO_DEVICE,
@@ -263,6 +417,302 @@ class Dfu {
 			wValue: 0
 		};
 		return this._dev.transferOut(setup, Buffer.alloc(0));
+	}
+
+	/**
+	 * Parse the memory descriptor string and create a memory map.
+	 *
+	 * @param {string} desc - The memory descriptor string.
+	 * @return {object} - Memory map information.
+	 */
+	_parseMemoryDescriptor(desc) {
+		const nameEndIndex = desc.indexOf('/');
+		if (!desc.startsWith('@') || nameEndIndex === -1) {
+			throw new Error(`Not a DfuSe memory descriptor: "${desc}"`);
+		}
+
+		const name = desc.substring(1, nameEndIndex).trim();
+		const segmentString = desc.substring(nameEndIndex);
+
+		const segments = [];
+
+		const sectorMultipliers = {
+			' ': 1,
+			'B': 1,
+			'K': 1024,
+			'M': 1048576
+		};
+
+		const rgx = /\/\s*(0x[0-9a-fA-F]{1,8})\s*\/(\s*[0-9]+\s*\*\s*[0-9]+\s?[ BKM]\s*[abcdefg]\s*,?\s*)+/g;
+		let contiguousSegmentMatch;
+		while ((contiguousSegmentMatch = rgx.exec(segmentString)) !== null) {
+			const segmentRegex = /([0-9]+)\s*\*\s*([0-9]+)\s?([ BKM])\s*([abcdefg])\s*,?\s*/g;
+			let startAddress = parseInt(contiguousSegmentMatch[1], 16);
+			let segmentMatch;
+			while ((segmentMatch = segmentRegex.exec(contiguousSegmentMatch[0])) !== null) {
+				const segment = {};
+				const sectorCount = parseInt(segmentMatch[1], 10);
+				const sectorSize = parseInt(segmentMatch[2]) * sectorMultipliers[segmentMatch[3]];
+				const properties = segmentMatch[4].charCodeAt(0) - 'a'.charCodeAt(0) + 1;
+				segment.start = startAddress;
+				segment.sectorSize = sectorSize;
+				segment.end = startAddress + sectorSize * sectorCount;
+				segment.readable = (properties & 0x1) !== 0;
+				segment.erasable = (properties & 0x2) !== 0;
+				segment.writable = (properties & 0x4) !== 0;
+				segments.push(segment);
+
+				startAddress += sectorSize * sectorCount;
+			}
+		}
+
+		return { 'name': name, 'segments': segments };
+	}
+
+	/**
+	 * Send a DfuSe command to the DFU device.
+	 *
+	 * @param {number} command - The DfuSe command to send.
+	 * @param {number} param - Optional. The parameter for the command.
+	 * @param {number} len - Optional. The length of the command payload.
+	 * @return {Promise}
+	 */
+	async _dfuseCommand(command, param) {
+		if (typeof param === 'undefined') {
+			param = 0x00;
+		}
+
+		const commandNames = {
+			0x00: 'GET_COMMANDS',
+			0x21: 'SET_ADDRESS',
+			0x41: 'ERASE_SECTOR'
+		};
+
+		const payload = Buffer.alloc(5);
+		payload.writeUInt8(command, 0);
+		payload.writeUInt32LE(param, 1);
+
+		for (let triesLeft = 4; triesLeft >= 0; triesLeft--) {
+			try {
+				await this._sendDnloadRequest(payload, 0);
+				break;
+			} catch (error) {
+				if (triesLeft === 0 || !(error instanceof UsbStallError)) {
+					throw new Error('Error during special DfuSe command ' + commandNames[command] + ':' + error);
+				}
+				this._log.trace('dfuse error, retrying', error);
+
+				await new Promise(resolve => setTimeout(resolve, 1000));
+
+			}
+		}
+
+		const status = await this._pollUntil(state => (state !== DfuDeviceState.dfuDNBUSY));
+		if (status.status !== DfuDeviceStatus.OK) {
+			throw new Error('Special DfuSe command failed');
+		}
+	}
+
+	/**
+	 * Get the memory segment that contains the given address.
+	 *
+	 * @param {number} addr - The address to find the corresponding memory segment.
+	 * @return {object|null} - The memory segment containing the address, or null if not found.
+	 */
+	_getSegment(addr) {
+		if (!this._memoryInfo || !this._memoryInfo.segments) {
+			throw new Error('No memory map information available');
+		}
+
+		for (const segment of this._memoryInfo.segments) {
+			if (segment.start <= addr && addr < segment.end) {
+				return segment;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get the start address of the sector containing the given address.
+	 *
+	 * @param {number} addr - The address to find the corresponding sector start address.
+	 * @param {object} segment - Optional. The memory segment containing the address. If not provided, it will be looked up.
+	 * @return {number} - The start address of the sector.
+	 */
+	_getSectorStart(addr, segment) {
+		if (typeof segment === 'undefined') {
+			segment = this._getSegment(addr);
+		}
+
+		if (!segment) {
+			throw new Error(`Address ${addr.toString(16)} outside of memory map`);
+		}
+
+		const sectorIndex = Math.floor((addr - segment.start) / segment.sectorSize);
+		return segment.start + sectorIndex * segment.sectorSize;
+	}
+
+	/**
+	 * Get the end address of the sector containing the given address.
+	 *
+	 * @param {number} addr - The address to find the corresponding sector end address.
+	 * @param {object} segment - Optional. The memory segment containing the address. If not provided, it will be looked up.
+	 * @return {number} - The end address of the sector.
+	 */
+	_getSectorEnd(addr, segment) {
+		if (typeof segment === 'undefined') {
+			segment = this._getSegment(addr);
+		}
+
+		if (!segment) {
+			throw new Error(`Address ${addr.toString(16)} outside of memory map`);
+		}
+
+		const sectorIndex = Math.floor((addr - segment.start) / segment.sectorSize);
+		return segment.start + (sectorIndex + 1) * segment.sectorSize;
+	}
+
+	/**
+	 * Erases the memory of the DFU device starting from the specified address and for the given length.
+	 * This method erases memory sectors that are marked as erasable in the memory map.
+	 *
+	 * @param {number} startAddr The starting address of the memory range to be erased.
+	 * @param {number} length The length of the memory range to be erased in bytes.
+	 * @throws {Error} If the start address or the length is outside the memory map bounds, or if erasing fails.
+	 */
+	async _erase(startAddr, length) {
+		let segment = this._getSegment(startAddr);
+		let addr = this._getSectorStart(startAddr, segment);
+		const endAddr = this._getSectorEnd(startAddr + length - 1);
+
+		let bytesErased = 0;
+		const bytesToErase = endAddr - addr;
+
+		while (addr < endAddr) {
+			if (segment.end <= addr) {
+				segment = this._getSegment(addr);
+			}
+			if (!segment.erasable) {
+				// Skip over the non-erasable section
+				bytesErased = Math.min(bytesErased + segment.end - addr, bytesToErase);
+				addr = segment.end;
+				continue;
+			}
+			const sectorIndex = Math.floor((addr - segment.start) / segment.sectorSize);
+			const sectorAddr = segment.start + sectorIndex * segment.sectorSize;
+			this._log.trace(`Erasing ${segment.sectorSize}B at 0x${sectorAddr.toString(16)}`);
+			await this._dfuseCommand(DfuseCommand.DFUSE_COMMAND_ERASE, sectorAddr);
+			addr = sectorAddr + segment.sectorSize;
+			bytesErased += segment.sectorSize;
+		}
+	}
+
+	async _getStringDescriptor(index) {
+		// Read the size of the descriptor
+		let d = await this._dev.transferIn({
+			bmRequestType: 0x80, // Direction: device-to-host; type: standard; recipient: device
+			bRequest: 0x06, // GET_DESCRIPTOR
+			wValue: (0x03 /* STRING */ << 8) | (index & 0xff),
+			wIndex: 0x0409, // English (US)
+			wLength: 1
+		});
+		const len = d.readUInt8(0); // bLength
+		// Read the descriptor
+		d = await this._dev.transferIn({
+			bmRequestType: 0x80, // Direction: device-to-host; type: standard; recipient: device
+			bRequest: 0x06,
+			wValue: (0x03 << 8) | (index & 0xff),
+			wIndex: 0x0409,
+			wLength: len
+		});
+		// Decode the UTF-16 data
+		const utf16 = [];
+		let offs = 2; // Skip bLength and bDescriptorType
+		while (offs < d.length) {
+			utf16.push(d.readUInt16LE(offs));
+			offs += 2;
+		}
+		return String.fromCharCode(...utf16);
+	}
+
+	async _getConfigDescriptor(index) {
+		// Read the total size of the descriptors
+		const d = await this._dev.transferIn({
+			bmRequestType: 0x80, // Direction: device-to-host; type: standard; recipient: device
+			bRequest: 0x06, // GET_DESCRIPTOR
+			wValue: (0x02 /* CONFIGURATION */ << 8) | (index & 0xff),
+			wIndex: 0,
+			wLength: 4
+		});
+		const len = d.readUInt16LE(2); // wTotalLength
+		// Read the descriptors
+		return await this._dev.transferIn({
+			bmRequestType: 0x80, // Direction: device-to-host; type: standard; recipient: device
+			bRequest: 0x06,
+			wValue: (0x02 << 8) | (index & 0xff),
+			wIndex: 0,
+			wLength: len
+		});
+	}
+
+	_parseConfigDescriptor(data) {
+		// https://www.beyondlogic.org/usbnutshell/usb5.shtml#ConfigurationDescriptors
+		if (data.length < 9) {
+			throw new Error('Invalid descriptor size');
+		}
+		const type = data.readUInt8(1); // bDescriptorType
+		if (type !== 0x02) { // CONFIGURATION
+			throw new Error('Invalid descriptor type');
+		}
+		const desc = {
+			interfaces: []
+		};
+		let curIface = null;
+		let dfuExpected = false;
+		let offs = 9;
+		while (offs < data.length) {
+			const len = data.readUInt8(offs); // bLength
+			const type = data.readUInt8(offs + 1); // bDescriptorType
+			// Only parse the interface descriptors for now
+			switch (type) {
+				case 0x04: { // INTERFACE
+					const cls = data.readUInt8(offs + 5); // bInterfaceClass
+					const subclass = data.readUInt8(offs + 6); // bInterfaceSubClass
+					curIface = {
+						bLength: len,
+						bDescriptorType: type,
+						bInterfaceNumber: data.readUInt8(offs + 2),
+						bAlternateSetting: data.readUInt8(offs + 3),
+						bNumEndpoints: data.readUInt8(offs + 4),
+						bInterfaceClass: cls,
+						bInterfaceSubClass: subclass,
+						bInterfaceProtocol: data.readUInt8(offs + 7),
+						iInterface: data.readUInt8(offs + 8)
+					};
+					desc.interfaces.push(curIface);
+					dfuExpected = cls === 0xfe && subclass === 0x01; // 4.1.2 Run-Time DFU Interface Descriptor
+					break;
+				}
+				case 0x21: { // DFU_FUNCTIONAL
+					if (!dfuExpected) {
+						throw new Error('Unexpected descriptor');
+					}
+					curIface.dfuFunctional = {
+						bLength: len,
+						bDescriptorType: type,
+						bmAttributes: data.readUInt8(offs + 2),
+						wDetachTimeOut: data.readUInt16LE(offs + 3),
+						wTransferSize: data.readUInt16LE(offs + 5),
+						bcdDFUVersion: data.readUInt16LE(offs + 7)
+					};
+					dfuExpected = false; // 4.1 Run-Time Descriptor Set
+					break;
+				}
+			}
+			offs += len;
+		}
+		return desc;
 	}
 }
 
