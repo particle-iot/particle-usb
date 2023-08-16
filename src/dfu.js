@@ -249,7 +249,8 @@ class Dfu {
 	 *
 	 * @param {number} startAddr - The starting address to write the data.
 	 * @param {Buffer} data - The binary data to write.
-	 * @param {object} options - Options for the download process.
+	 * @param {object} options - Options for the download process. (noErase, leave)
+	 * @param {function} progress - Callback function used to log progress.
 	 * @return {Promise}
 	 */
 	async doDownload(startAddr, data, options = { noErase: false, leave: false }, progress) {
