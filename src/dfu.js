@@ -625,9 +625,6 @@ class Dfu {
 				progress({ event: 'erased', bytes: segment.sectorSize });
 			}
 		}
-		if (progress) {
-			progress({ event: 'complete-erase', bytes: bytesErased });
-		}
 	}
 
 	async _getStringDescriptor(index) {

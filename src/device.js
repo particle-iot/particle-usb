@@ -376,7 +376,7 @@ class Device extends DeviceBase {
 			}
 			const { chunkSize } = await s.sendRequest(Request.START_FIRMWARE_UPDATE, { size: data.length });
 			if (progress) {
-				progress({ event: 'complete-erase', bytes: data.length });
+				progress({ event: 'erased', bytes: data.length });
 				progress({ event: 'start-download', bytes: data.length });
 			}
 			let offs = 0;
