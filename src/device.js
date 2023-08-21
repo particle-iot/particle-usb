@@ -364,21 +364,35 @@ class Device extends DeviceBase {
 	 * @param {Buffer} data Firmware data.
 	 * @param {Object} [options] Options.
 	 * @param {Number} [options.timeout] Timeout (milliseconds).
+	 * @param {Function} [options.progress] User's callback function to log progress of the flashing process.
 	 * @return {Promise}
 	 */
-	async updateFirmware(data, { timeout = DEFAULT_FIRMWARE_UPDATE_TIMEOUT } = {}) {
+	async updateFirmware(data, { timeout = DEFAULT_FIRMWARE_UPDATE_TIMEOUT, progress } = {}) {
 		if (!data.length) {
 			throw new RangeError('Invalid firmware size');
 		}
 		return this.timeout(timeout, async (s) => {
+			if (progress) {
+				progress({ event: 'start-erase', bytes: data.length });
+			}
 			const { chunkSize } = await s.sendRequest(Request.START_FIRMWARE_UPDATE, { size: data.length });
+			if (progress) {
+				progress({ event: 'erased', bytes: data.length });
+				progress({ event: 'start-download', bytes: data.length });
+			}
 			let offs = 0;
 			while (offs < data.length) {
 				const n = Math.min(chunkSize, data.length - offs);
 				await s.sendRequest(Request.FIRMWARE_UPDATE_DATA, { data: data.slice(offs, offs + n) });
+				if (progress) {
+					progress({ event: 'downloaded', bytes: n });
+				}
 				offs += n;
 			}
 			await s.sendRequest(Request.FINISH_FIRMWARE_UPDATE, { validateOnly: false });
+			if (progress) {
+				progress({ event: 'complete-download', bytes: data.length });
+			}
 		});
 	}
 

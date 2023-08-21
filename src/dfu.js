@@ -247,12 +247,15 @@ class Dfu {
 	/**
 	 * Perform DFU download of binary data to the device.
 	 *
-	 * @param {number} startAddr - The starting address to write the data.
-	 * @param {Buffer} data - The binary data to write.
-	 * @param {object} options - Options for the download process.
+	 * @param {Object} options Options.
+	 * @param {number} options.startAddr - The starting address to write the data.
+	 * @param {Buffer} options.data - The binary data to write.
+	 * @param {boolean} [options.noErase] - Skip erasing the device memory.
+	 * @param {boolean} [options.leave] - Leave DFU mode after download.
+	 * @param {function} [options.progress] - Callback function used to log progress.
 	 * @return {Promise}
 	 */
-	async doDownload(startAddr, data, options = { noErase: false, leave: false }) {
+	async doDownload({ startAddr, data, noErase, leave, progress }) {
 		if (!this._memoryInfo || !this._memoryInfo.segments) {
 			throw new Error('No memory map available');
 		}
@@ -263,13 +266,16 @@ class Dfu {
 		}
 		const expectedSize = data.byteLength;
 
-		if (!options.noErase) {
+		if (!noErase) {
 			this._log.info('Erasing DFU device memory');
-			await this._erase(startAddress, expectedSize);
+			await this._erase(startAddress, expectedSize, progress);
 		}
 
 		this._log.info('Copying binary data to DFU device startAddress=' + startAddress + ' total_expected_size=' + expectedSize);
 
+		if (progress) {
+			progress({ event: 'start-download', bytes: expectedSize });
+		}
 		let bytesSent = 0;
 		let address = startAddress;
 		while (bytesSent < expectedSize) {
@@ -289,15 +295,24 @@ class Dfu {
 			}
 
 			if (dfuStatus.status !== DfuDeviceStatus.OK) {
+				if (progress) {
+					progress({ event: 'failed-download' });
+				}
 				throw new Error(`DFU DOWNLOAD failed state=${dfuStatus.state}, status=${dfuStatus.status}`);
 			}
 
 			this._log.trace('Wrote ' + chunkSize + ' bytes');
 			bytesSent += chunkSize;
+			if (progress) {
+				progress({ event: 'downloaded', bytes: chunkSize });
+			}
 		}
 		this._log.info(`Wrote ${bytesSent} bytes total`);
+		if (progress) {
+			progress({ event: 'complete-download', bytes: bytesSent });
+		}
 
-		if (options.leave) {
+		if (leave) {
 			this._log.info('Manifesting new firmware');
 			try {
 				await this.leave();
@@ -581,7 +596,7 @@ class Dfu {
 	 * @param {number} length The length of the memory range to be erased in bytes.
 	 * @throws {Error} If the start address or the length is outside the memory map bounds, or if erasing fails.
 	 */
-	async _erase(startAddr, length) {
+	async _erase(startAddr, length, progress) {
 		let segment = this._getSegment(startAddr);
 		let addr = this._getSectorStart(startAddr, segment);
 		const endAddr = this._getSectorEnd(startAddr + length - 1);
@@ -589,6 +604,9 @@ class Dfu {
 		let bytesErased = 0;
 		const bytesToErase = endAddr - addr;
 
+		if (progress) {
+			progress({ event: 'start-erase', bytes: bytesToErase });
+		}
 		while (addr < endAddr) {
 			if (segment.end <= addr) {
 				segment = this._getSegment(addr);
@@ -596,6 +614,10 @@ class Dfu {
 			if (!segment.erasable) {
 				// Skip over the non-erasable section
 				bytesErased = Math.min(bytesErased + segment.end - addr, bytesToErase);
+				if (progress) {
+					// include a progress event for the skipped section to ensure total matches
+					progress({ event: 'erased', bytes: segment.end - addr });
+				}
 				addr = segment.end;
 				continue;
 			}
@@ -605,6 +627,9 @@ class Dfu {
 			await this._dfuseCommand(DfuseCommand.DFUSE_COMMAND_ERASE, sectorAddr);
 			addr = sectorAddr + segment.sectorSize;
 			bytesErased += segment.sectorSize;
+			if (progress) {
+				progress({ event: 'erased', bytes: segment.sectorSize });
+			}
 		}
 	}
 
