@@ -247,13 +247,15 @@ class Dfu {
 	/**
 	 * Perform DFU download of binary data to the device.
 	 *
-	 * @param {number} startAddr - The starting address to write the data.
-	 * @param {Buffer} data - The binary data to write.
-	 * @param {object} options - Options for the download process. (noErase, leave)
-	 * @param {function} progress - Callback function used to log progress.
+	 * @param {Object} options Options.
+	 * @param {number} options.startAddr - The starting address to write the data.
+	 * @param {Buffer} options.data - The binary data to write.
+	 * @param {boolean} [options.noErase] - Skip erasing the device memory.
+	 * @param {boolean} [options.leave] - Leave DFU mode after download.
+	 * @param {function} [options.progress] - Callback function used to log progress.
 	 * @return {Promise}
 	 */
-	async doDownload(startAddr, data, options = { noErase: false, leave: false }, progress) {
+	async doDownload({ startAddr, data, noErase, leave, progress }) {
 		if (!this._memoryInfo || !this._memoryInfo.segments) {
 			throw new Error('No memory map available');
 		}
@@ -264,7 +266,7 @@ class Dfu {
 		}
 		const expectedSize = data.byteLength;
 
-		if (!options.noErase) {
+		if (!noErase) {
 			this._log.info('Erasing DFU device memory');
 			await this._erase(startAddress, expectedSize, progress);
 		}
@@ -310,7 +312,7 @@ class Dfu {
 			progress({ event: 'complete-download', bytes: bytesSent });
 		}
 
-		if (options.leave) {
+		if (leave) {
 			this._log.info('Manifesting new firmware');
 			try {
 				await this.leave();
@@ -612,6 +614,10 @@ class Dfu {
 			if (!segment.erasable) {
 				// Skip over the non-erasable section
 				bytesErased = Math.min(bytesErased + segment.end - addr, bytesToErase);
+				if (progress) {
+					// include a progress event for the skipped section to ensure total matches
+					progress({ event: 'erased', bytes: segment.end - addr });
+				}
 				addr = segment.end;
 				continue;
 			}

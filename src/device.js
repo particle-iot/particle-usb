@@ -364,9 +364,10 @@ class Device extends DeviceBase {
 	 * @param {Buffer} data Firmware data.
 	 * @param {Object} [options] Options.
 	 * @param {Number} [options.timeout] Timeout (milliseconds).
+	 * @param {Function} [options.progress] User's callback function to log progress of the flashing process.
 	 * @return {Promise}
 	 */
-	async updateFirmware(data, { timeout = DEFAULT_FIRMWARE_UPDATE_TIMEOUT } = {}, progress) {
+	async updateFirmware(data, { timeout = DEFAULT_FIRMWARE_UPDATE_TIMEOUT, progress } = {}) {
 		if (!data.length) {
 			throw new RangeError('Invalid firmware size');
 		}
