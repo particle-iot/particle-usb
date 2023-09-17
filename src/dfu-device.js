@@ -15,6 +15,12 @@ const DfuDevice = (base) => class extends base {
 		await this._dfu.setAltSetting(altSetting);
 		await this._dfu.doDownload({ startAddr, data, noErase, leave, progress });
 	}
+
+	async readOverDfu({ altSetting, startAddr, size, filename, progress }) {
+		await this._dfu.setAltSetting(altSetting);
+		await this._dfu.doUpload({ startAddr, maxSize: size, filename, progress });
+		return filename;
+	}
 };
 
 module.exports = {

@@ -19,6 +19,7 @@
  */
 
 const { DeviceError, UsbStallError } = require('./error');
+const fs = require('fs-extra');
 
 /**
  * A generic DFU error.
@@ -364,6 +365,27 @@ class Dfu {
 			wValue: wValue
 		};
 		return this._dev.transferOut(setup, data);
+	}
+
+	async _sendUploadReqest(length, value) {
+		const setup = {
+			bmRequestType: DfuBmRequestType.DEVICE_TO_HOST,
+			bRequest: DfuRequestType.DFU_UPLOAD,
+			wIndex: this._interface,
+			wValue: value,
+			wLength: length
+		};
+		return this._dev.transferIn(setup);
+	}
+
+	async _sendAbortRequest() {
+		const setup = {
+			bmRequestType: DfuBmRequestType.DEVICE_TO_HOST,
+			bRequest: DfuRequestType.DFU_ABORT,
+			wIndex: this._interface,
+			wValue: 0
+		};
+		return this._dev.transferOut(setup, 1);
 	}
 
 	/**
@@ -738,6 +760,85 @@ class Dfu {
 			offs += len;
 		}
 		return desc;
+	}
+
+	async doUpload({ startAddr, maxSize, filename, progress }) {
+		if (isNaN(startAddr)) {
+			startAddr = this._memoryInfo.segments[0].start;
+			this._log.warn('Using inferred start address 0x' + startAddr.toString(16));
+		} else if (this._getSegment(startAddr) === null) {
+			this._log.warn(`Start address 0x${startAddr.toString(16)} outside of memory map bounds`);
+		}
+
+		this._log.trace(`Reading up to 0x${maxSize.toString(16)} bytes starting at 0x${startAddr.toString(16)}`);
+		const state = await this._getStatus();
+		if (state.state !== DfuDeviceState.dfuIDLE) {
+			await this._clearStatus(); // suggested by dfu-util
+			await this.abortToIdle();
+		}
+		await this._dfuseCommand(DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER, startAddr);
+		await this.abortToIdle();
+
+		// DfuSe encodes the read address based on the transfer size,
+		// the block number - 2, and the SET_ADDRESS pointer.
+		const data = await this._doUploadImpl(maxSize, 2, progress);
+		// current particle implementations only require binary encoding
+		await fs.writeFile(filename, data, 'binary');
+	}
+
+	async _doUploadImpl(maxSize = Infinity, firstBlock = 0, progress) {
+		let transaction = firstBlock;
+		const blocks = [];
+		let bytesRead = 0;
+
+		this._log.trace('Copying data from DFU device to browser');
+		if (progress) {
+			progress({ event: 'start-upload', bytes: maxSize });
+		}
+
+		let result;
+		let bytesToRead;
+		do {
+			bytesToRead = Math.min(this._transferSize, maxSize - bytesRead);
+			result = await this._sendUploadReqest(bytesToRead, transaction++);
+			this._log.traceg('Read ' + result.byteLength + ' bytes');
+			if (result.byteLength > 0) {
+				blocks.push(Buffer.from(result));
+				bytesRead += result.byteLength;
+			}
+			if (Number.isFinite(maxSize)) {
+				if (progress) {
+					progress({ event: 'uploaded', bytes: bytesRead });
+				}
+			} else {
+				if (progress) {
+					progress({ event: 'uploaded', bytes: bytesRead });
+				}
+			}
+		} while ((bytesRead < maxSize) && (result.byteLength === bytesToRead));
+
+		if (bytesRead === maxSize) {
+			await this.abortToIdle();
+		}
+
+		this._log.trace(`Read ${bytesRead} bytes`);
+		if (progress) {
+			progress({ event: 'complete-upload', bytes: bytesRead });
+		}
+
+		return Buffer.concat(blocks);
+	}
+
+	async abortToIdle() {
+		await this._sendAbortRequest();
+		let state = await this._getStatus();
+		if (state.state === DfuDeviceState.dfuERROR) {
+			await this._clearStatus();
+			state = await this._getStatus();
+		}
+		if (state.state !== DfuDeviceState.dfuIDLE) {
+			throw new Error('Failed to return to idle state after abort: state ' + state.state);
+		}
 	}
 }
 
