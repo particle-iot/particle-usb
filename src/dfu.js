@@ -801,19 +801,13 @@ class Dfu {
 		do {
 			bytesToRead = Math.min(this._transferSize, maxSize - bytesRead);
 			result = await this._sendUploadReqest(bytesToRead, transaction++);
-			this._log.traceg('Read ' + result.byteLength + ' bytes');
+			this._log.trace('Read ' + result.byteLength + ' bytes');
 			if (result.byteLength > 0) {
 				blocks.push(Buffer.from(result));
 				bytesRead += result.byteLength;
 			}
-			if (Number.isFinite(maxSize)) {
-				if (progress) {
-					progress({ event: 'uploaded', bytes: bytesRead });
-				}
-			} else {
-				if (progress) {
-					progress({ event: 'uploaded', bytes: bytesRead });
-				}
+			if (progress) {
+				progress({ event: 'uploaded', bytes: bytesRead });
 			}
 		} while ((bytesRead < maxSize) && (result.byteLength === bytesToRead));
 
