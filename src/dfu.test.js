@@ -1,9 +1,5 @@
 const { expect, sinon } = require('../test/support');
 const { DfuDeviceState } = require('../src/dfu');
-const { FIXTURES_DIR } = require('../test/e2e/lib/constants');
-const path = require('path');
-const fs = require('fs-extra');
-
 const { Dfu } = require('./dfu');
 
 describe('dfu', () => {
@@ -221,7 +217,6 @@ describe('dfu', () => {
 		it ('handles startAddr NaN', async () => {
 			const startAddr = NaN;
 			const maxSize = 100;
-			const filename = path.join(FIXTURES_DIR, 'test.bin');
 			const progress = null;
 			const logger = {
 				trace: () => {},
@@ -272,20 +267,15 @@ describe('dfu', () => {
 			sinon.stub(dfu, 'abortToIdle').resolves();
 			sinon.stub(dfu, '_doUploadImpl').resolves(Buffer.alloc(100,0));
 
-			await dfu.doUpload({ startAddr, maxSize, filename, progress });
+			await dfu.doUpload({ startAddr, maxSize, progress });
 
 			expect(dfu._dfuseCommand).to.have.been.calledWith(0x21, 134217728);
 			expect(dfu._doUploadImpl).to.have.been.calledWith(100, 2, null);
-
-			if (await fs.exists(filename)) {
-				await fs.unlink(filename);
-			}
 		});
 
 		it ('sends upload command', async () => {
 			const startAddr = 134217728;
 			const maxSize = 100;
-			const filename = path.join(FIXTURES_DIR, 'test.bin');
 			const progress = null;
 			const logger = {
 				trace: () => {},
@@ -336,14 +326,10 @@ describe('dfu', () => {
 			sinon.stub(dfu, 'abortToIdle').resolves();
 			sinon.stub(dfu, '_doUploadImpl').resolves(Buffer.alloc(100,0));
 
-			await dfu.doUpload({ startAddr, maxSize, filename, progress });
+			await dfu.doUpload({ startAddr, maxSize, progress });
 
 			expect(dfu._dfuseCommand).to.have.been.calledWith(0x21, 134217728);
 			expect(dfu._doUploadImpl).to.have.been.calledWith(100, 2, null);
-
-			if (await fs.exists(filename)) {
-				await fs.unlink(filename);
-			}
 		});
 	});
 

@@ -19,7 +19,6 @@
  */
 
 const { DeviceError, UsbStallError } = require('./error');
-const fs = require('fs-extra');
 
 /**
  * A generic DFU error.
@@ -762,7 +761,7 @@ class Dfu {
 		return desc;
 	}
 
-	async doUpload({ startAddr, maxSize, filename, progress }) {
+	async doUpload({ startAddr, maxSize, progress }) {
 		if (isNaN(startAddr)) {
 			startAddr = this._memoryInfo.segments[0].start;
 			this._log.warn('Using inferred start address 0x' + startAddr.toString(16));
@@ -782,8 +781,7 @@ class Dfu {
 		// DfuSe encodes the read address based on the transfer size,
 		// the block number - 2, and the SET_ADDRESS pointer.
 		const data = await this._doUploadImpl(maxSize, 2, progress);
-		// current particle implementations only require binary encoding
-		await fs.writeFile(filename, data, 'binary');
+		return data;
 	}
 
 	async _doUploadImpl(maxSize = Infinity, firstBlock = 0, progress) {
