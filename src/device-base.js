@@ -127,7 +127,9 @@ class DeviceBase extends EventEmitter {
 		// Open USB device
 		this._log.trace('Opening device');
 		this._state = DeviceState.OPENING;
+		let devOpen = false;
 		return this._dev.open().then(() => {
+			devOpen = true;
 			// Normalize the device ID string
 			this._id = this._dev.serialNumber.replace(/[^\x20-\x7e]/g, '').toLowerCase();
 			this._log.trace(`Device ID: ${this._id}`);
@@ -157,6 +159,9 @@ class DeviceBase extends EventEmitter {
 			this.emit('open');
 			this._process();
 		}).catch(err => {
+			if (!devOpen) {
+				throw err;
+			}
 			return this._close(err).catch(ignore).then(() => {
 				throw err;
 			});
