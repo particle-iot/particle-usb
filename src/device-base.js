@@ -380,6 +380,8 @@ class DeviceBase extends EventEmitter {
 		}
 		if (this._state === DeviceState.CLOSING && this._activeReqs === 0) {
 			this._close();
+			// Prevent the underlying device handle from being closed concurrently
+			this._busy = true;
 		}
 	}
 
@@ -637,6 +639,7 @@ class DeviceBase extends EventEmitter {
 			const emitEvent = (this._state === DeviceState.CLOSING);
 			this._state = DeviceState.CLOSED;
 			this._wantClose = false;
+			this._busy = false;
 			this._maxActiveReqs = null;
 			this._dfu = null;
 			this._fwVer = null;
