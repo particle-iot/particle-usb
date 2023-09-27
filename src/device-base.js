@@ -715,7 +715,9 @@ class DeviceBase extends EventEmitter {
 			wLength: proto.MIN_WLENGTH
 		};
 		return this._dev.transferIn(setup).then(data => {
-			return data.toString();
+			// filter out null bytes
+			const nullPos = data.indexOf(0);
+			return (nullPos === -1 ? data : data.slice(0, nullPos)).toString();
 		});
 	}
 

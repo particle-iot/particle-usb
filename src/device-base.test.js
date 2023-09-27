@@ -267,6 +267,12 @@ describe('device-base', () => {
 					expect(dev.firmwareVersion).to.equal('1.0.0');
 				});
 
+				it('filters out null characters from the firmware version string', async () => {
+					usbDev.options.firmwareVersion = '1.0.0\x00';
+					await dev.open();
+					expect(dev.firmwareVersion).to.equal('1.0.0');
+				});
+
 				it('filters out non-printable ASCII characters from the device ID string', async () => {
 					usbDev.options.serialNumber = '222222222222222222222222\x00';
 					await dev.open();
