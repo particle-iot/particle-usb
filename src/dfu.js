@@ -379,12 +379,12 @@ class Dfu {
 
 	async _sendAbortRequest() {
 		const setup = {
-			bmRequestType: DfuBmRequestType.DEVICE_TO_HOST,
+			bmRequestType: DfuBmRequestType.HOST_TO_DEVICE,
 			bRequest: DfuRequestType.DFU_ABORT,
 			wIndex: this._interface,
 			wValue: 0
 		};
-		return this._dev.transferOut(setup, 1);
+		return this._dev.transferOut(setup, Buffer.alloc(0));
 	}
 
 	/**
