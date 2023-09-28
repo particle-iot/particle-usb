@@ -214,8 +214,8 @@ describe('dfu', () => {
 	});
 
 	describe('doUpload', () => {
-		it ('handles startAddr NaN', async () => {
-			const startAddr = NaN;
+		it ('handles missing startAddr', async () => {
+			const startAddr = null;
 			const maxSize = 100;
 			const progress = null;
 			const logger = {
