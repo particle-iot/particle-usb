@@ -762,7 +762,7 @@ class Dfu {
 	}
 
 	async doUpload({ startAddr, maxSize, progress }) {
-		if (isNaN(startAddr)) {
+		if (typeof startAddr !== 'number') {
 			startAddr = this._memoryInfo.segments[0].start;
 			this._log.warn('Using inferred start address 0x' + startAddr.toString(16));
 		} else if (this._getSegment(startAddr) === null) {
