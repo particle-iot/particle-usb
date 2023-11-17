@@ -531,7 +531,7 @@ class Device extends DeviceBase {
 
 		return modules.map(module => {
 			const { index, type, dependencies, size, version, assetDependencies, maxSize, store } = module;
-			const failedFlags = module.checkedFlags ^ module.failedFlags;
+			const failedFlags = module.checkedFlags ^ module.passedFlags;
 
 			return {
 				type: FirmwareModule.fromProtobuf(type),
@@ -540,6 +540,7 @@ class Device extends DeviceBase {
 				version,
 				size,
 				maxSize,
+				failedFlags,
 				dependencies: dependencies.map(dependency => {
 					return {
 						index: dependency.index,
