@@ -10,12 +10,7 @@ const proto = require('./protocol');
 
 const DeviceOSProtobuf = require('@particle/device-os-protobuf');
 
-/**
- * Firmware module types.
- *
- * @enum {String}
- */
-const FirmwareModule = fromProtobufEnum(DeviceOSProtobuf.definitions.FirmwareModuleType, {
+const FirmwareModuleDeprecated = fromProtobufEnum(DeviceOSProtobuf.definitions.FirmwareModuleType, {
 	/** Bootloader module. */
 	BOOTLOADER: 'BOOTLOADER',
 	/** System part module. */
@@ -31,17 +26,51 @@ const FirmwareModule = fromProtobufEnum(DeviceOSProtobuf.definitions.FirmwareMod
 });
 
 /**
+ * Firmware module types.
+ *
+ * @enum {String}
+ */
+const FirmwareModule = fromProtobufEnum(DeviceOSProtobuf.cloudDefinitions.FirmwareModuleType, {
+	INVALID: 'INVALID_MODULE',
+	RESOURCE: 'RESOURCE_MODULE',
+	BOOTLOADER: 'BOOTLOADER_MODULE',
+	MONO_FIRMWARE: 'MONO_FIRMWARE_MODULE',
+	SYSTEM_PART: 'SYSTEM_PART_MODULE',
+	USER_PART: 'USER_PART_MODULE',
+	SETTINGS: 'SETTINGS_MODULE',
+	NCP_FIRMWARE: 'NCP_FIRMWARE_MODULE',
+	RADIO_STACK: 'RADIO_STACK_MODULE',
+	ASSET: 'ASSET_MODULE',
+});
+
+/**
+ * Firmware module store.
+ *
+ * @enum {String}
+ */
+const FirmwareModuleStore = fromProtobufEnum(DeviceOSProtobuf.cloudDefinitions.FirmwareModuleStore, {
+	MAIN: 'MAIN_MODULE_STORE',
+	FACTORY: 'FACTORY_MODULE_STORE',
+	BACKUP: 'BACKUP_MODULE_STORE',
+	SCRATCHPAD: 'SCRATCHPAD_MODULE_STORE',
+});
+
+/**
  * Firmware module readable names
  *
  * @enum {String}
  */
 const FirmwareModuleDisplayNames = {
-	[FirmwareModule.BOOTLOADER]: 'Bootloader',
-	[FirmwareModule.SYSTEM_PART]: 'System Part',
-	[FirmwareModule.USER_PART]: 'User Part',
-	[FirmwareModule.MONO_FIRMWARE]: 'Monolithic Firmware',
-	[FirmwareModule.NCP_FIRMWARE]: 'Network Co-processor Firmware',
-	[FirmwareModule.RADIO_STACK]: 'Radio Stack Module'
+	[FirmwareModule.INVALID_MODULE]: 'Invalid',
+	[FirmwareModule.RESOURCE_MODULE]: 'Resource',
+	[FirmwareModule.BOOTLOADER_MODULE]: 'Bootloader',
+	[FirmwareModule.MONO_FIRMWARE_MODULE]: 'Monolithic Firmware',
+	[FirmwareModule.SYSTEM_PART_MODULE]: 'System Part',
+	[FirmwareModule.USER_PART_MODULE]: 'User Part',
+	[FirmwareModule.SETTINGS_MODULE]: 'Settings',
+	[FirmwareModule.NCP_FIRMWARE_MODULE]: 'Network Co-processor Firmware',
+	[FirmwareModule.RADIO_STACK_MODULE]: 'Radio Stack Module',
+	[FirmwareModule.ASSET_MODULE]: 'Asset'
 };
 
 /**
@@ -426,12 +455,49 @@ class Device extends DeviceBase {
 	}
 
 	/**
+	 * Get asset info.
+	 *
+	 *
+	 * Supported platforms:
+	 * - Gen 3+ (since Device OS 5.6.0)
+	 *
+	 * @return {Promise<Array>} List of asssets available on the device.
+	 */
+	async getAssetInfo() {
+		if (this.isInDfuMode) {
+			throw new StateError('Cannot get information when the device is in DFU mode');
+		}
+
+		const assetInfoResponse = await this.sendProtobufRequest('GetAssetInfoRequest', null);
+		const available = assetInfoResponse.available.map(asset => {
+			const { name, size, storageSize } = asset;
+			const hash = asset.hash.toString('hex');
+			return {
+				name,
+				hash,
+				size,
+				storageSize
+			};
+		});
+		const required = assetInfoResponse.required.map(asset => {
+			const { name } = asset;
+			const hash = asset.hash.toString('hex');
+			return {
+				name,
+				hash,
+			};
+		});
+		return { available, required };
+	}
+
+	/**
 	 * Get firmware module info.
 	 *
 	 *
 	 * Supported platforms:
 	 * - Gen 3 (since Device OS 0.9.0)
 	 * - Gen 2 (since Device OS 0.8.0)
+	 * - New format since 5.6.0 (old format in 'modules_deprecated')
 	 *
 	 * @return {Promise<Array>} List of modules installed into the device and their dependencies
 	 */
@@ -441,16 +507,39 @@ class Device extends DeviceBase {
 		}
 
 		const moduleInfoResponse = await this.sendProtobufRequest('GetModuleInfoRequest', null);
-		const { modules } = moduleInfoResponse;
+		const { modulesDeprecated, modules } = moduleInfoResponse;
+
+		if (modulesDeprecated && modulesDeprecated.length > 0) {
+			return modulesDeprecated.map(module => {
+				const { index, type, dependencies, size, version } = module;
+
+				return {
+					type: FirmwareModuleDeprecated.fromProtobuf(type),
+					index,
+					version,
+					size,
+					dependencies: dependencies.map(dependency => {
+						return {
+							index: dependency.index,
+							version: dependency.version,
+							type: FirmwareModuleDeprecated.fromProtobuf(dependency.type)
+						};
+					}),
+				};
+			});
+		}
 
 		return modules.map(module => {
-			const { index, type, dependencies, size, version } = module;
+			const { index, type, dependencies, size, version, assetDependencies, maxSize, store } = module;
+			const failedFlags = module.checkedFlags ^ module.failedFlags;
 
 			return {
 				type: FirmwareModule.fromProtobuf(type),
+				store: FirmwareModuleStore.fromProtobuf(store),
 				index,
 				version,
 				size,
+				maxSize,
 				dependencies: dependencies.map(dependency => {
 					return {
 						index: dependency.index,
@@ -458,6 +547,12 @@ class Device extends DeviceBase {
 						type: FirmwareModule.fromProtobuf(dependency.type)
 					};
 				}),
+				assetDependencies: assetDependencies.map(asset => {
+					return {
+						name: asset.name,
+						hash: asset.hash.toString('hex')
+					}
+				})
 			};
 		});
 	}
@@ -982,6 +1077,7 @@ class Device extends DeviceBase {
 module.exports = {
 	FirmwareModule,
 	FirmwareModuleDisplayNames,
+	FirmwareModuleStore,
 	DeviceMode,
 	LogLevel,
 	Device

@@ -100,7 +100,7 @@ describe('Device', () => {
 			{ type: 'USER_PART', index: 1, version: 6, size: 28668, dependencies: [{ type: 'SYSTEM_PART', index: 1, version: 5003 }] },
 		];
 
-		sinon.stub(device, 'sendProtobufRequest').resolves({ modules: moduleInfo });
+		sinon.stub(device, 'sendProtobufRequest').resolves({ modulesDeprecated: moduleInfo });
 		sinon.stub(device, 'isInDfuMode').value(false);
 		const result = await device.getFirmwareModuleInfo();
 		expect(device.sendProtobufRequest).to.have.property('callCount', 1);
@@ -116,7 +116,7 @@ describe('Device', () => {
 			{ dependencies:[{ type:2, index:1, version:5003 }],type:3, index:1, version:6, size:28668 }
 		];
 
-		sinon.stub(device, 'sendProtobufRequest').resolves({ modules: moduleInfo });
+		sinon.stub(device, 'sendProtobufRequest').resolves({ modulesDeprecated: moduleInfo });
 		await expect(device.getFirmwareModuleInfo()).to.be.eventually.rejectedWith(StateError, 'Cannot get information when the device is in DFU mode');
 	});
 });
