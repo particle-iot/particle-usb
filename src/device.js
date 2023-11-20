@@ -552,7 +552,7 @@ class Device extends DeviceBase {
 					return {
 						name: asset.name,
 						hash: asset.hash.toString('hex')
-					}
+					};
 				})
 			};
 		});
