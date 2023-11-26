@@ -119,4 +119,75 @@ describe('Device', () => {
 		sinon.stub(device, 'sendProtobufRequest').resolves({ modulesDeprecated: moduleInfo });
 		await expect(device.getFirmwareModuleInfo()).to.be.eventually.rejectedWith(StateError, 'Cannot get information when the device is in DFU mode');
 	});
+
+	it('implements getAssetInfo()', async () => {
+		const expectedAssetInfo =
+		{
+			'available': [
+				{
+					name: 'foo.txt',
+					hash: '0x1234',
+					size: 64,
+					storageSize: 64
+				},
+				{
+					name: 'bar.txt',
+					hash: '0x5678',
+					size: 64,
+					storageSize: 64
+				}
+			],
+			'required': [
+				{
+					name: 'foo.txt',
+					hash: '0x1234'
+				},
+				{
+					name: 'bar.txt',
+					hash: '0x5678'
+				}
+			]
+		};
+		sinon.stub(device, 'sendProtobufRequest').resolves(expectedAssetInfo);
+		sinon.stub(device, 'isInDfuMode').value(false);
+
+		const result = await device.getAssetInfo();
+
+		expect(device.sendProtobufRequest).to.have.property('callCount', 1);
+		expect(result).to.eql(expectedAssetInfo);
+	});
+
+	it('implements getAssetInfo() and returns error if device is in dfu mode', async () => {
+		const expectedAssetInfo =
+		{
+			'available': [
+				{
+					name: 'foo.txt',
+					hash: '0x1234',
+					size: 64,
+					storageSize: 64
+				},
+				{
+					name: 'bar.txt',
+					hash: '0x5678',
+					size: 64,
+					storageSize: 64
+				}
+			],
+			'required': [
+				{
+					name: 'foo.txt',
+					hash: '0x1234'
+				},
+				{
+					name: 'bar.txt',
+					hash: '0x5678'
+				}
+			]
+		};
+		sinon.stub(device, 'sendProtobufRequest').resolves(expectedAssetInfo);
+		sinon.stub(device, 'isInDfuMode').value(true);
+
+		await expect(device.getAssetInfo()).to.be.eventually.rejectedWith(StateError, 'Cannot get information when the device is in DFU mode');		
+	});
 });
