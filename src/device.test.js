@@ -120,6 +120,95 @@ describe('Device', () => {
 		await expect(device.getFirmwareModuleInfo()).to.be.eventually.rejectedWith(StateError, 'Cannot get information when the device is in DFU mode');
 	});
 
+	it('implements getFirmwareModuleInfo() and returns modules for devices >= 5.6.0', async() => {
+		const modulesInfo = [ // arbitrary values
+			{
+				'dependencies': [{ 'type': 2, 'index': 2, 'version': 7 }],
+				'assetDependencies': [],
+				'type': 2,
+				'version': 2300,
+				'maxSize': 65536,
+				'checkedFlags': 30,
+				'passedFlags': 30,
+				'index': undefined,
+				'hash': { 'type': 'Buffer', 'data': [113, 79, 81, 180] },
+				'size': 53420
+			},
+			{
+				'dependencies': [{ 'type': 2, 'version': 2300 }],
+				'assetDependencies': [],
+				'type': 4,
+				'index': 1,
+				'version': 5501,
+				'maxSize': 1572864,
+				'checkedFlags': 30,
+				'passedFlags': 30,
+				'hash': { 'type': 'Buffer', 'data': [223, 27, 59, 243] },
+				'size': 1037320
+			},
+			{
+				'dependencies': [
+					{
+						'type': 4,
+						'index': 1,
+						'version': 5501
+					}
+				],
+				'assetDependencies': [],
+				'type': 5,
+				'index': 1,
+				'version': 6,
+				'maxSize': 1572864,
+				'checkedFlags': 30,
+				'passedFlags': 30,
+				'hash': { 'type': 'Buffer', 'data': [170, 88, 124, 97] },
+				'size': 12288
+			}
+		];
+		const expectedModules = [
+			{
+				'type': 'BOOTLOADER',
+				'store': 'UNKNOWN',
+				'version': 2300,
+				'index': undefined,
+				'size': 53420,
+				'maxSize': 65536,
+				'failedFlags': 0,
+				'dependencies': [{ 'index': 2, 'version': 7, 'type': 'BOOTLOADER' }],
+				'assetDependencies': []
+			},
+			{
+				'type': 'SYSTEM_PART',
+				'store': 'UNKNOWN',
+				'index': 1,
+				'version': 5501,
+				'size': 1037320,
+				'maxSize': 1572864,
+				'failedFlags': 0,
+				'dependencies': [{ 'version': 2300, 'type': 'BOOTLOADER', 'index': undefined }],
+				'assetDependencies': []
+			},
+			{
+				'type': 'USER_PART',
+				'store': 'UNKNOWN',
+				'index': 1,
+				'version': 6,
+				'size': 12288,
+				'maxSize': 1572864,
+				'failedFlags': 0,
+				'dependencies': [{ 'index': 1, 'version': 5501, 'type': 'SYSTEM_PART' }],
+				'assetDependencies': []
+			}
+		];
+		sinon.stub(device, 'sendProtobufRequest').resolves({ modules: modulesInfo });
+		sinon.stub(device, 'isInDfuMode').value(false);
+
+		const result = await device.getFirmwareModuleInfo();
+
+		expect(device.sendProtobufRequest).to.have.property('callCount', 1);
+		expect(result).to.eql(expectedModules);
+	});
+
 	it('implements getAssetInfo()', async () => {
 		const expectedAssetInfo =
 		{
@@ -188,6 +277,6 @@ describe('Device', () => {
 		sinon.stub(device, 'sendProtobufRequest').resolves(expectedAssetInfo);
 		sinon.stub(device, 'isInDfuMode').value(true);
 
-		await expect(device.getAssetInfo()).to.be.eventually.rejectedWith(StateError, 'Cannot get information when the device is in DFU mode');		
+		await expect(device.getAssetInfo()).to.be.eventually.rejectedWith(StateError, 'Cannot get information when the device is in DFU mode');
 	});
 });
