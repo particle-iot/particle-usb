@@ -36,14 +36,14 @@
     "lint:fix": "npm run lint -- --fix",
     "coverage": "nyc --include='src/**/*.js' --temp-dir=./tmp/ --check-coverage npm run test:silent",
     "build": "npm run build:proto && npm run build:web",
-    "build:proto": "mkdirp lib && pbjs proto/control/*.proto -t static-module -o lib/pb-message.js --no-beautify --no-comments --no-delimited --no-convert --no-verify",
+    "build:proto": "mkdirp lib && pbjs proto/control/*.proto proto/cloud/*.proto -t static-module -o lib/pb-message.js --no-beautify --no-comments --no-delimited --no-convert --no-verify",
     "build:web": "webpack-cli",
     "docs": "documentation build src/** -g -f md -o docs/reference.md",
     "clean": "rm -rf ./dist ./lib",
     "reinstall": "npm run clean && rm -rf ./node_modules && npm i"
   },
   "dependencies": {
-    "@particle/device-os-protobuf": "^1.2.1",
+    "@particle/device-os-protobuf": "^2.2.0",
     "protobufjs": "^6.11.3",
     "usb": "^2.11.0"
   },

@@ -15,5 +15,6 @@ module.exports = {
 		mocha: true,
 		worker: true,
 		serviceworker: true
-	}
+	},
+	ignorePatterns: '/proto'
 };
