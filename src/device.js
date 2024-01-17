@@ -1,6 +1,6 @@
 const { DeviceBase, openDeviceById } = require('./device-base');
 const { Request } = require('./request');
-const { Result, messageForResultCode } = require('./result');
+const { Result, errorForRequest } = require('./result');
 const { fromProtobufEnum } = require('./protobuf-util');
 const usbProto = require('./usb-protocol');
 const { RequestError, NotFoundError, TimeoutError, StateError } = require('./error');
@@ -885,7 +885,7 @@ class Device extends DeviceBase {
 		);
 
 		if (rep.result !== Result.OK) {
-			throw new RequestError(rep.result, messageForResultCode(rep.result));
+			throw errorForRequest(rep.result);
 		}
 
 		if (rep.data) {
@@ -913,7 +913,7 @@ class Device extends DeviceBase {
 			if (opts && opts.dontThrow) {
 				r = { result: rep.result };
 			} else if (rep.result !== Result.OK) {
-				throw new RequestError(rep.result, messageForResultCode(rep.result));
+				throw errorForRequest(rep.result);
 			}
 			if (req.reply) {
 				if (rep.data) {

@@ -138,7 +138,16 @@ function messageForResultCode(result) {
 	return (RESULT_CODE_MESSAGES[result] || 'Request error');
 }
 
+function errorForRequest(result) {
+	if (result === Result.DEVICE_PROTECTED) {
+		return new DeviceProtectedError('Device is protected');
+	} else {
+		return new RequestError(rep.result, messageForResultCode(rep.result));
+	}
+}
+
 module.exports = {
 	Result,
-	messageForResultCode
+	messageForResultCode,
+	errorForRequest
 };

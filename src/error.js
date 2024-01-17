@@ -109,6 +109,17 @@ class UsbStallError extends UsbError {
 	}
 }
 
+/**
+ * Device Protection error.
+ */
+class DeviceProtectionError extends DeviceError {
+	constructor(result, ...args) {
+		super(...args);
+		this.name = this.constructor.name;
+		this.result = result;
+	}
+}
+
 function assert(val, msg = null) {
 	if (!val) {
 		throw new InternalError(msg ? msg : 'Assertion failed');
@@ -127,5 +138,6 @@ module.exports = {
 	InternalError,
 	RequestError,
 	UsbStallError,
+	DeviceProtectionError,
 	assert
 };
