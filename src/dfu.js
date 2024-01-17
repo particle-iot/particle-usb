@@ -261,9 +261,15 @@ class Dfu {
 		}
 
 		const startAddress = startAddr;
-		if (this._getSegment(startAddress) === null) {
+		const segment = this._getSegment(startAddr);
+		if (segment === null) {
 			this._log.error(`Start address 0x${startAddress.toString(16)} outside of memory map bounds`);
 		}
+
+		if (!segment.writable) {
+			throw new Error('Segment is not writable');
+		}
+
 		const expectedSize = data.byteLength;
 
 		if (!noErase) {
@@ -410,12 +416,28 @@ class Dfu {
 		const bStatus = (bStatusWithPollTimeout & 0xff);
 		bStatusWithPollTimeout >>= 8;
 		const bState = data.readUInt8(4);
+		const iString = data.readUInt8(5);
 
-		return {
+		const stat = {
 			status: bStatus,
 			pollTimeout: bStatusWithPollTimeout,
 			state: bState
 		};
+		if (iString) {
+			try {
+				const description = await this._getStringDescriptor(iString);
+					if (description && description.length) {
+						stat.description = description;
+					}
+			} catch (e) {
+				// ignore
+			}
+		}
+		// XXX: Just for debugging
+		if (stat.description) {
+			console.log(`Caught iString description DFU status: ${stat.description}`);
+		}
+		return stat;
 	}
 
 	/**
@@ -619,6 +641,9 @@ class Dfu {
 	 */
 	async _erase(startAddr, length, progress) {
 		let segment = this._getSegment(startAddr);
+		if (!segment.erasable) {
+			throw new Error('Segment is not erasable');
+		}
 		let addr = this._getSectorStart(startAddr, segment);
 		const endAddr = this._getSectorEnd(startAddr + length - 1);
 
@@ -762,11 +787,16 @@ class Dfu {
 	}
 
 	async doUpload({ startAddr, maxSize, progress }) {
+		const segment = this._getSegment(startAddr);
 		if (typeof startAddr !== 'number') {
 			startAddr = this._memoryInfo.segments[0].start;
 			this._log.warn('Using inferred start address 0x' + startAddr.toString(16));
-		} else if (this._getSegment(startAddr) === null) {
+		} else if (segment === null) {
 			this._log.warn(`Start address 0x${startAddr.toString(16)} outside of memory map bounds`);
+		}
+
+		if (!segment.readable) {
+			throw new Error('Segment is not readable');
 		}
 
 		this._log.trace(`Reading up to 0x${maxSize.toString(16)} bytes starting at 0x${startAddr.toString(16)}`);
