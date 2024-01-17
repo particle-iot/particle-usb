@@ -424,6 +424,7 @@ class Dfu {
 			state: bState
 		};
 		if (iString) {
+			// decode the vendor specific string descriptor
 			try {
 				const description = await this._getStringDescriptor(iString);
 				if (description && description.length) {
@@ -432,10 +433,6 @@ class Dfu {
 			} catch (e) {
 				// ignore
 			}
-		}
-		// XXX: Just for debugging
-		if (stat.description) {
-			console.log(`Caught iString description DFU status: ${stat.description}`);
 		}
 		return stat;
 	}
