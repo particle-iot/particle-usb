@@ -426,9 +426,9 @@ class Dfu {
 		if (iString) {
 			try {
 				const description = await this._getStringDescriptor(iString);
-					if (description && description.length) {
-						stat.description = description;
-					}
+				if (description && description.length) {
+					stat.description = description;
+				}
 			} catch (e) {
 				// ignore
 			}
