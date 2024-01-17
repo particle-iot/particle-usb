@@ -106,7 +106,7 @@ const RESULT_CODES = [
 		message: 'Out of range'
 	},
 	{
-		id: 'PROTECTED',
+		id: 'DEVICE_PROTECTED',
 		value: -999,	// TODO: Placeholder only. Do not merge.
 		message: 'Device is protected'
 	}
