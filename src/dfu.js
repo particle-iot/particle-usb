@@ -18,7 +18,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-const { DeviceError, UsbStallError } = require('./error');
+const { DeviceError, UsbStallError, DeviceProtectionError } = require('./error');
 
 /**
  * A generic DFU error.
@@ -266,8 +266,8 @@ class Dfu {
 			this._log.error(`Start address 0x${startAddress.toString(16)} outside of memory map bounds`);
 		}
 
-		if (!segment.writable) {
-			throw new Error('Segment is not writable');
+		if (segment && !segment.writable) {
+			throw new DeviceProtectionError('Segment is not writable');
 		}
 
 		const expectedSize = data.byteLength;
@@ -638,8 +638,8 @@ class Dfu {
 	 */
 	async _erase(startAddr, length, progress) {
 		let segment = this._getSegment(startAddr);
-		if (!segment.erasable) {
-			throw new Error('Segment is not erasable');
+		if (segment && !segment.erasable) {
+			throw new DeviceProtectionError('Segment is not erasable');
 		}
 		let addr = this._getSectorStart(startAddr, segment);
 		const endAddr = this._getSectorEnd(startAddr + length - 1);
@@ -789,11 +789,11 @@ class Dfu {
 			startAddr = this._memoryInfo.segments[0].start;
 			this._log.warn('Using inferred start address 0x' + startAddr.toString(16));
 		} else if (segment === null) {
-			this._log.warn(`Start address 0x${startAddr.toString(16)} outside of memory map bounds`);
+			this._log.error(`Start address 0x${startAddr.toString(16)} outside of memory map bounds`);
 		}
 
-		if (!segment.readable) {
-			throw new Error('Segment is not readable');
+		if (segment && !segment.readable) {
+			throw new DeviceProtectionError('Segment is not readable');
 		}
 
 		this._log.trace(`Reading up to 0x${maxSize.toString(16)} bytes starting at 0x${startAddr.toString(16)}`);

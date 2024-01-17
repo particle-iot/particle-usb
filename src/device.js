@@ -908,7 +908,6 @@ class Device extends DeviceBase {
 		}
 		return this.sendControlRequest(req.id, buf, opts).then(rep => {
 			let r = undefined;
-
 			// Note: Nothing depends on opts.dontThrow anymore
 			if (opts && opts.dontThrow) {
 				r = { result: rep.result };

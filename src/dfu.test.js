@@ -273,6 +273,69 @@ describe('dfu', () => {
 			expect(dfu._doUploadImpl).to.have.been.calledWith(100, 2, null);
 		});
 
+		it ('handles unreadable segments', async () => {
+			const startAddr = 134217728;
+			const maxSize = 100;
+			const progress = null;
+			const logger = {
+				trace: () => {},
+				info: () => {},
+				warn: () => {},
+				error: () => {}
+			};
+			const dfu = new Dfu(null, logger);
+			dfu._memoryInfo = {
+				'name': 'Internal Flash',
+				'segments': [
+					{
+						'start': 134217728,
+						'sectorSize': 16384,
+						'end': 134266880,
+						'readable': false,
+						'erasable': false,
+						'writable': false
+					},
+					{
+						'start': 134266880,
+						'sectorSize': 16384,
+						'end': 134283264,
+						'readable': false,
+						'erasable': true,
+						'writable': true
+					},
+					{
+						'start': 134283264,
+						'sectorSize': 65536,
+						'end': 134348800,
+						'readable': false,
+						'erasable': true,
+						'writable': true
+					},
+					{
+						'start': 134348800,
+						'sectorSize': 131072,
+						'end': 135266304,
+						'readable': false,
+						'erasable': true,
+						'writable': true
+					}
+				]
+			};
+			sinon.stub(dfu, '_getStatus').returns({ state: DfuDeviceState.dfuIDLE });
+			sinon.stub(dfu, '_dfuseCommand').resolves();
+			sinon.stub(dfu, 'abortToIdle').resolves();
+			sinon.stub(dfu, '_doUploadImpl').resolves(Buffer.alloc(100,0));
+
+			let error;
+			try {
+				await dfu.doUpload({ startAddr, maxSize, progress });
+			} catch (_e) {
+				error = _e;
+			}
+
+			expect(error).to.be.an.instanceOf(Error);
+		});
+
 		it ('sends upload command', async () => {
 			const startAddr = 134217728;
 			const maxSize = 100;

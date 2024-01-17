@@ -1,3 +1,4 @@
+const { RequestError, DeviceProtectionError } = require('./error');
 // Result codes as defined by the firmware's system_error_t enum
 const RESULT_CODES = [
 	{
@@ -140,9 +141,9 @@ function messageForResultCode(result) {
 
 function errorForRequest(result) {
 	if (result === Result.DEVICE_PROTECTED) {
-		return new DeviceProtectedError('Device is protected');
+		return new DeviceProtectionError('Device is protected');
 	} else {
-		return new RequestError(rep.result, messageForResultCode(rep.result));
+		return new RequestError(result, messageForResultCode(result));
 	}
 }
 
