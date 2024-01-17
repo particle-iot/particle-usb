@@ -789,7 +789,7 @@ class Dfu {
 			startAddr = this._memoryInfo.segments[0].start;
 			this._log.warn('Using inferred start address 0x' + startAddr.toString(16));
 		} else if (segment === null) {
-			this._log.error(`Start address 0x${startAddr.toString(16)} outside of memory map bounds`);
+			this._log.warn(`Start address 0x${startAddr.toString(16)} outside of memory map bounds`);
 		}
 
 		if (segment && !segment.readable) {
