@@ -108,7 +108,7 @@ const RESULT_CODES = [
 	},
 	{
 		id: 'DEVICE_PROTECTED',
-		value: -999,	// TODO: Placeholder only. Do not merge.
+		value: -1801,
 		message: 'Device is protected'
 	}
 ];
