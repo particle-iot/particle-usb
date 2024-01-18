@@ -262,6 +262,10 @@ class Dfu {
 
 		const startAddress = startAddr;
 		const segment = this._getSegment(startAddr);
+
+		if (segment === null) {
+			this._log.error(`Start address 0x${startAddress.toString(16)} outside of memory map bounds`);
+		}
 		if (segment && !segment.writable) {
 			throw new DeviceProtectionError('Segment is not writable');
 		}
