@@ -269,7 +269,7 @@ describe('dfu', () => {
 
 			await dfu.doUpload({ startAddr, maxSize, progress });
 
-			expect(dfu._dfuseCommand).to.have.been.calledWith(0x21, 134217728);
+			expect(dfu._dfuseCommand).to.have.been.calledWith(0x21, null);
 			expect(dfu._doUploadImpl).to.have.been.calledWith(100, 2, null);
 		});
 

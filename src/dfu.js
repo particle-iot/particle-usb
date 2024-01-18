@@ -262,10 +262,6 @@ class Dfu {
 
 		const startAddress = startAddr;
 		const segment = this._getSegment(startAddr);
-		if (segment === null) {
-			this._log.error(`Start address 0x${startAddress.toString(16)} outside of memory map bounds`);
-		}
-
 		if (segment && !segment.writable) {
 			throw new DeviceProtectionError('Segment is not writable');
 		}
@@ -785,18 +781,10 @@ class Dfu {
 
 	async doUpload({ startAddr, maxSize, progress }) {
 		const segment = this._getSegment(startAddr);
-		if (typeof startAddr !== 'number') {
-			startAddr = this._memoryInfo.segments[0].start;
-			this._log.warn('Using inferred start address 0x' + startAddr.toString(16));
-		} else if (segment === null) {
-			this._log.warn(`Start address 0x${startAddr.toString(16)} outside of memory map bounds`);
-		}
-
 		if (segment && !segment.readable) {
 			throw new DeviceProtectionError('Segment is not readable');
 		}
 
-		this._log.trace(`Reading up to 0x${maxSize.toString(16)} bytes starting at 0x${startAddr.toString(16)}`);
 		const state = await this._getStatus();
 		if (state.state !== DfuDeviceState.dfuIDLE) {
 			await this._clearStatus(); // suggested by dfu-util
