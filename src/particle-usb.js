@@ -5,7 +5,7 @@ const { NetworkStatus } = require('./network-device');
 const { WifiAntenna, WifiSecurity, WifiCipher, EapMethod } = require('./wifi-device');
 const { CloudConnectionStatus, ServerProtocol } = require('./cloud-device');
 const { Result } = require('./result');
-const { DeviceError, NotFoundError, NotAllowedError, StateError, TimeoutError, MemoryError, ProtocolError, UsbError, InternalError, RequestError } = require('./error');
+const { DeviceError, NotFoundError, NotAllowedError, StateError, TimeoutError, MemoryError, ProtocolError, UsbError, InternalError, RequestError, DeviceProtectionError } = require('./error');
 const { config } = require('./config');
 const { setDevicePrototype } = require('./set-device-prototype');
 
@@ -66,6 +66,7 @@ module.exports = {
 	UsbError,
 	InternalError,
 	RequestError,
+	DeviceProtectionError,
 	getDevices,
 	openDeviceById,
 	openNativeUsbDevice,

@@ -1,6 +1,7 @@
 const { expect, sinon } = require('../test/support');
 const { DfuDeviceState } = require('../src/dfu');
 const { Dfu } = require('./dfu');
+const { DeviceProtectionError } = require('../src/error');
 
 describe('dfu', () => {
 	describe('_parseMemoryDescriptor', () => {
@@ -214,8 +215,8 @@ describe('dfu', () => {
 	});
 
 	describe('doUpload', () => {
-		it ('handles missing startAddr', async () => {
-			const startAddr = null;
+		it ('handles unreadable segments', async () => {
+			const startAddr = 134217728;
 			const maxSize = 100;
 			const progress = null;
 			const logger = {
@@ -232,7 +233,7 @@ describe('dfu', () => {
 						'start': 134217728,
 						'sectorSize': 16384,
 						'end': 134266880,
-						'readable': true,
+						'readable': false,
 						'erasable': false,
 						'writable': false
 					},
@@ -240,7 +241,7 @@ describe('dfu', () => {
 						'start': 134266880,
 						'sectorSize': 16384,
 						'end': 134283264,
-						'readable': true,
+						'readable': false,
 						'erasable': true,
 						'writable': true
 					},
@@ -248,7 +249,7 @@ describe('dfu', () => {
 						'start': 134283264,
 						'sectorSize': 65536,
 						'end': 134348800,
-						'readable': true,
+						'readable': false,
 						'erasable': true,
 						'writable': true
 					},
@@ -256,7 +257,7 @@ describe('dfu', () => {
 						'start': 134348800,
 						'sectorSize': 131072,
 						'end': 135266304,
-						'readable': true,
+						'readable': false,
 						'erasable': true,
 						'writable': true
 					}
@@ -267,10 +268,14 @@ describe('dfu', () => {
 			sinon.stub(dfu, 'abortToIdle').resolves();
 			sinon.stub(dfu, '_doUploadImpl').resolves(Buffer.alloc(100,0));
 
-			await dfu.doUpload({ startAddr, maxSize, progress });
+			let error;
+			try {
+				await dfu.doUpload({ startAddr, maxSize, progress });
+			} catch (_e) {
+				error = _e;
+			}
 
-			expect(dfu._dfuseCommand).to.have.been.calledWith(0x21, 134217728);
-			expect(dfu._doUploadImpl).to.have.been.calledWith(100, 2, null);
+			expect(error).to.be.an.instanceOf(DeviceProtectionError);
 		});
 
 		it ('sends upload command', async () => {

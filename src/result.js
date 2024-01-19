@@ -1,3 +1,4 @@
+const { RequestError, DeviceProtectionError } = require('./error');
 // Result codes as defined by the firmware's system_error_t enum
 const RESULT_CODES = [
 	{
@@ -104,6 +105,11 @@ const RESULT_CODES = [
 		id: 'OUT_OF_RANGE',
 		value: -290,
 		message: 'Out of range'
+	},
+	{
+		id: 'DEVICE_PROTECTED',
+		value: -1801,
+		message: 'Device is protected'
 	}
 ];
 
@@ -133,7 +139,16 @@ function messageForResultCode(result) {
 	return (RESULT_CODE_MESSAGES[result] || 'Request error');
 }
 
+function errorForRequest(result) {
+	if (result === Result.DEVICE_PROTECTED) {
+		return new DeviceProtectionError('Device is protected');
+	} else {
+		return new RequestError(result, messageForResultCode(result));
+	}
+}
+
 module.exports = {
 	Result,
-	messageForResultCode
+	messageForResultCode,
+	errorForRequest
 };
