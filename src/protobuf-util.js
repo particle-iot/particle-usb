@@ -1,5 +1,13 @@
-// Transforms a Protobuf enum to an API object according to the provided mapping. Resulting object
-// provides functions for a checked conversion between the protocol and API values
+/**
+ * Get an object that maps values from a Protobuf enum value to a string value and vice versa,
+ * using the provided mapping.
+ *
+ * @param {Object} pbEnum Protobuf enum object, imported from @particle/device-os-protobuf
+ * @param {Object} map Object where the keys are application strings and values are Protobuf strings
+ * @param {String} [unknownVal] Value to return when the Protobuf value is unknown. Defaults to UNKNOWN
+ * @returns {Readonly<{fromProtobuf: ((function(*): (*|string))|*), toProtobuf: (function(*): *)}>}
+ * Object with toProtobuf and fromProtobuf functions
+ */
 function fromProtobufEnum(pbEnum, map, unknownVal) {
 	const mapToProtobuf = {};
 	const mapFromProtobuf = {};
@@ -102,6 +110,7 @@ function assignMessagePropertyMaps(obj, ...maps) {
 }
 
 // Returns a function that transforms a Protobuf message to an API object according to the provided mapping
+// DEPRECATED: don't use for new code. It's clearer to write mapping code directly
 function fromProtobufMessage(pbMsg, ...maps) {
 	const map = assignMessagePropertyMaps({}, ...maps);
 	checkFromProtobufMessageMap(pbMsg.prototype, map);
@@ -109,6 +118,7 @@ function fromProtobufMessage(pbMsg, ...maps) {
 }
 
 // Returns a function that transforms an API object to a Protobuf message according to the provided mapping
+// DEPRECATED: don't use for new code. It's clearer to write mapping code directly
 function toProtobufMessage(pbMsg, ...maps) {
 	const map = assignMessagePropertyMaps({}, ...maps);
 	checkToProtobufMessageMap(pbMsg.prototype, map);
