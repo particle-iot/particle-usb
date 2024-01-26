@@ -78,26 +78,29 @@ describe('Device', () => {
 	it('implements getFirmwareModuleInfo() returning all kind of module types and dependencies', async () => {
 		const moduleInfo = [
 			{ dependencies:[
-				{ type:1,index:1,version:2 },
-				{ type:1,index:2,version:3 },
-			], index: 0, type:1, version:2001, size:52568 },
-			{ dependencies:[], type:1, index:1, version:2, size:3996 },
-			{ dependencies:[], type:1, index:2, version:3, size:19592 },
-			{ dependencies:[{ type:1, version:2001, index: 2 }], type:2, index:1, version:5003, size:971242 },
-			{ dependencies:[],type:4, index:0, version:6, size:28668 },
-			{ dependencies:[],type:5, index:0, version:6, size:28668 },
-			{ dependencies:[],type:6, index:0, version:6, size:28668 },
-			{ dependencies:[{ type:2, index:1, version:5003 }],type:3, index:1, version:6, size:28668 },
+				{ type:1,index:1,version:2,validity: 0 },
+				{ type:1,index:2,version:3,validity: 0 },
+			], index: 0, type:1, version:2001, size:52568, validity: 0 },
+			{ dependencies:[], type:1, index:1, version:2, size:3996, validity: 0 },
+			{ dependencies:[], type:1, index:2, version:3, size:19592, validity: 0 },
+			{ dependencies:
+				[{ type:1, version:2001, index: 2 }],
+					type:2, index:1, version:5003, size:971242, validity: 0
+			},
+			{ dependencies:[],type:4, index:0, version:6, size:28668, validity: 0 },
+			{ dependencies:[],type:5, index:0, version:6, size:28668, validity: 0 },
+			{ dependencies:[],type:6, index:0, version:6, size:28668, validity: 0 },
+			{ dependencies:[{ type:2, index:1, version:5003 }],type:3, index:1, version:6, size:28668, validity: 0 },
 		];
 		const expectedModuleInfo = [
-			{ type: 'BOOTLOADER', index: 0, version: 2001, size: 52568, dependencies: [{ type: 'BOOTLOADER', index: 1, version: 2 }, { type: 'BOOTLOADER', index: 2, version: 3 }] },
-			{ type: 'BOOTLOADER', index: 1, version: 2, size: 3996, dependencies: [] },
-			{ type: 'BOOTLOADER', index: 2, version: 3, size: 19592, dependencies: [] },
-			{ type: 'SYSTEM_PART', index: 1, version: 5003, size: 971242, dependencies: [{ type: 'BOOTLOADER', version: 2001, index: 2 }] },
-			{ type: 'MONO_FIRMWARE', index: 0, version: 6, size: 28668, dependencies: [] },
-			{ type: 'NCP_FIRMWARE', index: 0, version: 6, size: 28668, dependencies: [] },
-			{ type: 'RADIO_STACK', index: 0, version: 6, size: 28668, dependencies: [] },
-			{ type: 'USER_PART', index: 1, version: 6, size: 28668, dependencies: [{ type: 'SYSTEM_PART', index: 1, version: 5003 }] },
+			{ type: 'BOOTLOADER', index: 0, version: 2001, size: 52568, validity: 0, dependencies: [{ type: 'BOOTLOADER', index: 1, version: 2 }, { type: 'BOOTLOADER', index: 2, version: 3 }] },
+			{ type: 'BOOTLOADER', index: 1, version: 2, size: 3996, validity: 0, dependencies: [] },
+			{ type: 'BOOTLOADER', index: 2, version: 3, size: 19592, validity: 0, dependencies: [] },
+			{ type: 'SYSTEM_PART', index: 1, version: 5003, size: 971242, validity: 0, dependencies: [{ type: 'BOOTLOADER', version: 2001, index: 2 }] },
+			{ type: 'MONO_FIRMWARE', index: 0, version: 6, size: 28668, validity: 0, dependencies: [] },
+			{ type: 'NCP_FIRMWARE', index: 0, version: 6, size: 28668, validity: 0, dependencies: [] },
+			{ type: 'RADIO_STACK', index: 0, version: 6, size: 28668, validity: 0, dependencies: [] },
+			{ type: 'USER_PART', index: 1, version: 6, size: 28668, validity: 0, dependencies: [{ type: 'SYSTEM_PART', index: 1, version: 5003 }] },
 		];
 
 		sinon.stub(device, 'sendProtobufRequest').resolves({ modulesDeprecated: moduleInfo });
@@ -131,7 +134,7 @@ describe('Device', () => {
 				'checkedFlags': 30,
 				'passedFlags': 30,
 				'index': undefined,
-				'hash': { 'type': 'Buffer', 'data': [113, 79, 81, 180] },
+				'hash': Buffer.from([113, 79, 81, 180]),
 				'size': 53420
 			},
 			{
@@ -143,7 +146,7 @@ describe('Device', () => {
 				'maxSize': 1572864,
 				'checkedFlags': 30,
 				'passedFlags': 30,
-				'hash': { 'type': 'Buffer', 'data': [223, 27, 59, 243] },
+				'hash': Buffer.from([223, 27, 59, 243]),
 				'size': 1037320
 			},
 			{
@@ -161,7 +164,7 @@ describe('Device', () => {
 				'maxSize': 1572864,
 				'checkedFlags': 30,
 				'passedFlags': 30,
-				'hash': { 'type': 'Buffer', 'data': [170, 88, 124, 97] },
+				'hash': Buffer.from([170, 88, 124, 97]),
 				'size': 12288
 			}
 		];
@@ -174,6 +177,7 @@ describe('Device', () => {
 				'size': 53420,
 				'maxSize': 65536,
 				'failedFlags': 0,
+				'hash': '714f51b4',
 				'dependencies': [{ 'index': 2, 'version': 7, 'type': 'BOOTLOADER' }],
 				'assetDependencies': []
 			},
@@ -185,6 +189,7 @@ describe('Device', () => {
 				'size': 1037320,
 				'maxSize': 1572864,
 				'failedFlags': 0,
+				'hash': 'df1b3bf3',
 				'dependencies': [{ 'version': 2300, 'type': 'BOOTLOADER', 'index': undefined }],
 				'assetDependencies': []
 			},
@@ -196,6 +201,7 @@ describe('Device', () => {
 				'size': 12288,
 				'maxSize': 1572864,
 				'failedFlags': 0,
+				'hash': 'aa587c61',
 				'dependencies': [{ 'index': 1, 'version': 5501, 'type': 'SYSTEM_PART' }],
 				'assetDependencies': []
 			}
@@ -278,5 +284,58 @@ describe('Device', () => {
 		sinon.stub(device, 'isInDfuMode').value(true);
 
 		await expect(device.getAssetInfo()).to.be.eventually.rejectedWith(StateError, 'Cannot get information when the device is in DFU mode');
+	});
+
+	describe('Device', () => {
+		let device;
+
+		beforeEach(() => {
+			device = new Device();
+		});
+
+		describe('sendProtobufRequest', () => {
+			it('sends a protobuf encoded request and decodes the response', async () => {
+				const protobufMessageName = 'SomeProtobufMessage';
+				const protobufMessageData = { foo: 'bar' };
+				const encodedProtobufBuffer = Buffer.from('encodedProtobufBuffer');
+				const responseMessage = { baz: 'qux' };
+
+				// Stub the necessary methods
+				sinon.stub(DeviceOSProtobuf, 'getDefinition').returns({ id: 123, replyMessage: 'SomeReplyMessage' });
+				sinon.stub(DeviceOSProtobuf, 'encode').returns(encodedProtobufBuffer);
+				sinon.stub(device, 'sendControlRequest').resolves({ result: Result.OK, data: Buffer.from('responseData') });
+				sinon.stub(DeviceOSProtobuf, 'decode').returns(responseMessage);
+
+				const result = await device.sendProtobufRequest(protobufMessageName, protobufMessageData);
+
+				expect(DeviceOSProtobuf.getDefinition).to.have.been.calledOnceWith(protobufMessageName);
+				expect(DeviceOSProtobuf.encode).to.have.been.calledOnceWith(protobufMessageName, protobufMessageData);
+				expect(device.sendControlRequest).to.have.been.calledOnceWith(123, encodedProtobufBuffer, undefined);
+				expect(DeviceOSProtobuf.decode).to.have.been.calledOnceWith('SomeReplyMessage', Buffer.from('responseData'));
+				expect(result).to.eql(responseMessage);
+			});
+		});
+
+		describe('sendRequest', () => {
+			it('sends a request and decodes the response', async () => {
+				const request = { id: 123, request: { create: sinon.stub(), encode: sinon.stub().returns({ finish: sinon.stub().returns('encodedRequestBuffer') }) }, reply: { create: sinon.stub(), decode: sinon.stub() } };
+				const message = { foo: 'bar' };
+				const response = { baz: 'qux' };
+
+				// Stub the necessary methods
+				sinon.stub(device, 'sendControlRequest').resolves({ result: Result.OK, data: Buffer.from('responseData') });
+				request.request.create.returns(message);
+				request.reply.decode.returns(response);
+
+				const result = await device.sendRequest(request, message);
+
+				expect(device.sendControlRequest).to.have.been.calledOnceWith(123, 'encodedRequestBuffer', undefined);
+				expect(request.request.create).to.have.been.calledOnceWith(message);
+				expect(request.request.encode).to.have.been.calledOnceWith(message);
+				expect(request.request.encode().finish).to.have.been.calledOnce;
+				expect(request.reply.decode).to.have.been.calledOnceWith(Buffer.from('responseData'));
+				expect(result).to.eql(response);
+			});
+		});
 	});
 });
