@@ -90,14 +90,14 @@ describe('NetworkDevice', () => {
 				'hwAddress': '30:ae:a4:e5:53:10',
 				'ipv4Config': {
 					'addresses': ['192.168.86.31/24'],
-					'gateway': null,
-					'peer': null,
+					'gateway': undefined,
+					'peer': undefined,
 					'dns': ['192.168.86.31'],
 					'source': 'UNKNOWN'
 				},
 				'ipv6Config': {
 					'addresses': ['0001:0203:0405:0607:0809:0a0b:0c0d:0e0f/24'],
-					'gateway': null,
+					'gateway': undefined,
 					'dns': ['0002:0104:0306:0508:070a:090c:0b0e:0d0f'],
 					'source': 'UNKNOWN'
 				}

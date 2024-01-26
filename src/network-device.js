@@ -34,39 +34,46 @@ const InterfaceConfigurationSource = fromProtobufEnum(proto.InterfaceConfigurati
 });
 
 /**
-* Converts a given interface IP address object with version into a dotted-decimal format.
+* Converts a given interface IP address into a string
 *
-* @param {object} ifaceAddr
-* @param {string} version 'v4' or 'v6'
-* @returns {string} address in dotted-decimal format
+* @param {object} ifaceAddr Object with address and prefixLength keys
+* @returns {string} address in ${ip}/${prefixLength} format
 */
-function convertInterfaceAddress(ifaceAddr, version) {
-	let res = null;
-	let prefixLength = null;
-	if (ifaceAddr && ifaceAddr.address && ifaceAddr.address[version]) {
-		const addrObj = ifaceAddr.address[version];
-		res = convertIPAddress(addrObj, version);
+function convertInterfaceAddress(ifaceAddr) {
+	if (!ifaceAddr || !ifaceAddr.address) {
+		return ifaceAddr;
 	}
-	if (ifaceAddr && ifaceAddr.prefixLength) {
-		prefixLength = ifaceAddr.prefixLength;
-	}
-	return res ? `${res}/${prefixLength}` : null;
+
+	const ip = convertIpv4Address(ifaceAddr.address.v4) || convertIpv6Address(ifaceAddr.address.v6);
+	return `${ip}/${ifaceAddr.prefixLength}`;
 }
 
 /**
-* Converts a given IP address object with version into a dotted-decimal address string.
-*
-* @param {object} addr addr.address sent as int32 for 'v4' and as a buffer for 'v6'
-* @param {string} version 'v4' or 'v6'
-* @returns {string} address in dotted-decimal format
-*/
-function convertIPAddress(addr, version) {
-	if (addr && addr.address) {
-		const val = addr.address;
-		const res = version === 'v4' ? Address4.fromInteger(val) : Address6.fromByteArray(val);
-		return res.address;
+ * Converts an IPv4 to a string
+ *
+ * @param {object} addr Object with the IP encoded as int32 in the address key
+ * @returns {string} address in dotted-decimal format
+ */
+function convertIpv4Address(addr) {
+	if (!addr) {
+		return addr;
 	}
-	return null;
+
+	return Address4.fromInteger(addr.address).address;
+}
+
+/**
+ * Converts an IPv6 to a string
+ *
+ * @param {object} addr Object with the IP encoded as a buffer in the address key
+ * @returns {string} address in colon-separated format
+ */
+function convertIpv6Address(addr) {
+	if (!addr) {
+		return addr;
+	}
+
+	return Address6.fromByteArray(addr.address).address;
 }
 
 /**
@@ -177,19 +184,19 @@ const NetworkDevice = base => class extends base {
 
 		if (ipv4Config) {
 			result.ipv4Config = {
-				addresses: ipv4Config.addresses.map((addr) => convertInterfaceAddress(addr, 'v4')),
-				gateway: convertIPAddress(ipv4Config.gateway, 'v4'),
-				peer: convertIPAddress(ipv4Config.peer, 'v4'),
-				dns: ipv4Config.dns.map((addr) => convertIPAddress(addr, 'v4')),
+				addresses: ipv4Config.addresses.map(convertInterfaceAddress),
+				gateway: convertIpv4Address(ipv4Config.gateway),
+				peer: convertIpv4Address(ipv4Config.peer),
+				dns: ipv4Config.dns.map(convertIpv4Address),
 				source: InterfaceConfigurationSource.fromProtobuf(ipv4Config.source)
 			};
 		}
 
 		if (ipv6Config) {
 			result.ipv6Config = {
-				addresses: ipv6Config.addresses.map((addr) => convertInterfaceAddress(addr, 'v6')),
-				gateway: convertIPAddress(ipv6Config.gateway, 'v6'),
-				dns: ipv6Config.dns.map((addr) => convertIPAddress(addr, 'v6')),
+				addresses: ipv6Config.addresses.map(convertInterfaceAddress),
+				gateway: convertIpv6Address(ipv6Config.gateway),
+				dns: ipv6Config.dns.map(convertIpv6Address),
 				source: InterfaceConfigurationSource.fromProtobuf(ipv6Config.source)
 			};
 		}
