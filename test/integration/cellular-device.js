@@ -28,11 +28,25 @@ describe('cellular-device', function desc() {
 	});
 
 	describe('CellularDevice', () => {
-		describe('getIccid()', () => {
-			it('gets ICCID of the active SIM card', async () => {
+		describe('getCellularInfo()', () => {
+			it('gets ICCID and IMEI of the cell radio', async () => {
 				await dev.open();
-				const iccid = await dev.getIccid();
-				expect(iccid).to.have.lengthOf.within(20, 22);
+				const iccidResp = await dev.getCellularInfo();
+
+				expect(iccidResp).to.be.an('string');
+				expect(iccidResp).to.have.lengthOf.within(20, 22);
+			});
+		});
+
+		describe('getIccid()', () => {
+			it('gets ICCID and IMEI of the cell radio', async () => {
+				await dev.open();
+				const iccidResp = await dev.getIccid();
+
+				expect(iccidResp).to.be.an('object');
+				expect(iccidResp).to.have.all.keys('iccid', 'imei');
+				expect(iccidResp.iccid).to.have.lengthOf.within(20, 22);
+				expect(iccidResp.imei).to.have.lengthOf(15);
 			});
 		});
 	});

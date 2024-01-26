@@ -61,16 +61,16 @@ const FirmwareModuleStore = fromProtobufEnum(DeviceOSProtobuf.cloudDefinitions.F
  * @enum {String}
  */
 const FirmwareModuleDisplayNames = {
-	[FirmwareModule.INVALID_MODULE]: 'Invalid',
-	[FirmwareModule.RESOURCE_MODULE]: 'Resource',
-	[FirmwareModule.BOOTLOADER_MODULE]: 'Bootloader',
-	[FirmwareModule.MONO_FIRMWARE_MODULE]: 'Monolithic Firmware',
-	[FirmwareModule.SYSTEM_PART_MODULE]: 'System Part',
-	[FirmwareModule.USER_PART_MODULE]: 'User Part',
-	[FirmwareModule.SETTINGS_MODULE]: 'Settings',
-	[FirmwareModule.NCP_FIRMWARE_MODULE]: 'Network Co-processor Firmware',
-	[FirmwareModule.RADIO_STACK_MODULE]: 'Radio Stack Module',
-	[FirmwareModule.ASSET_MODULE]: 'Asset'
+	[FirmwareModule.INVALID]: 'Invalid',
+	[FirmwareModule.RESOURCE]: 'Resource',
+	[FirmwareModule.BOOTLOADER]: 'Bootloader',
+	[FirmwareModule.MONO_FIRMWARE]: 'Monolithic Firmware',
+	[FirmwareModule.SYSTEM_PART]: 'System Part',
+	[FirmwareModule.USER_PART]: 'User Part',
+	[FirmwareModule.SETTINGS]: 'Settings',
+	[FirmwareModule.NCP_FIRMWARE]: 'Network Co-processor Firmware',
+	[FirmwareModule.RADIO_STACK]: 'Radio Stack Module',
+	[FirmwareModule.ASSET]: 'Asset'
 };
 
 /**
@@ -463,12 +463,12 @@ class Device extends DeviceBase {
 	 *
 	 * @return {Promise<Array>} List of asssets available on the device.
 	 */
-	async getAssetInfo() {
+	async getAssetInfo({ timeout = globalOptions.timeout } = {}) {
 		if (this.isInDfuMode) {
 			throw new StateError('Cannot get information when the device is in DFU mode');
 		}
 
-		const assetInfoResponse = await this.sendProtobufRequest('GetAssetInfoRequest', null);
+		const assetInfoResponse = await this.sendProtobufRequest('GetAssetInfoRequest', null, { timeout });
 		const available = assetInfoResponse.available.map(asset => {
 			const { name, size, storageSize } = asset;
 			const hash = asset.hash.toString('hex');
@@ -498,26 +498,27 @@ class Device extends DeviceBase {
 	 * - Gen 3 (since Device OS 0.9.0)
 	 * - Gen 2 (since Device OS 0.8.0)
 	 * - New format since 5.6.0 (old format in 'modules_deprecated')
-	 *
+	 * @param {Number} [options.timeout] Timeout (milliseconds).
 	 * @return {Promise<Array>} List of modules installed into the device and their dependencies
 	 */
-	async getFirmwareModuleInfo() {
+	async getFirmwareModuleInfo({ timeout = globalOptions.requestTimeout } = {}) {
 		if (this.isInDfuMode) {
 			throw new StateError('Cannot get information when the device is in DFU mode');
 		}
 
-		const moduleInfoResponse = await this.sendProtobufRequest('GetModuleInfoRequest', null);
+		const moduleInfoResponse = await this.sendProtobufRequest('GetModuleInfoRequest', null, { timeout });
 		const { modulesDeprecated, modules } = moduleInfoResponse;
 
 		if (modulesDeprecated && modulesDeprecated.length > 0) {
 			return modulesDeprecated.map(module => {
-				const { index, type, dependencies, size, version } = module;
+				const { index, type, dependencies, size, validity, version } = module;
 
 				return {
 					type: FirmwareModuleDeprecated.fromProtobuf(type),
 					index,
 					version,
 					size,
+					validity,
 					dependencies: dependencies.map(dependency => {
 						return {
 							index: dependency.index,
@@ -530,7 +531,7 @@ class Device extends DeviceBase {
 		}
 
 		return modules.map(module => {
-			const { index, type, dependencies, size, version, assetDependencies, maxSize, store } = module;
+			const { index, type, dependencies, size, version, assetDependencies, maxSize, store, hash } = module;
 			const failedFlags = module.checkedFlags ^ module.passedFlags;
 
 			return {
@@ -540,6 +541,7 @@ class Device extends DeviceBase {
 				version,
 				size,
 				maxSize,
+				hash: hash.toString('hex'),
 				failedFlags,
 				dependencies: dependencies.map(dependency => {
 					return {
