@@ -28,10 +28,10 @@ describe('cellular-device', function desc() {
 	});
 
 	describe('CellularDevice', () => {
-		describe('getIccidAndImei()', () => {
+		describe('getCellularInfo()', () => {
 			it('gets ICCID and IMEI of the cell radio', async () => {
 				await dev.open();
-				const iccidResp = await dev.getIccidAndImei();
+				const iccidResp = await dev.getCellularInfo();
 
 				expect(iccidResp).to.be.an('string');
 				expect(iccidResp).to.have.lengthOf.within(20, 22);

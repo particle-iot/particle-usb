@@ -21,7 +21,7 @@ const CellularDevice = base => class extends base {
 	 * @param {Number} [options.timeout] Timeout (milliseconds).
 	 * @return {Promise<Object>}
 	 */
-	async getIccidAndImei({ timeout = globalOptions.requestTimeout } = {}) {
+	async getCellularInfo({ timeout = globalOptions.requestTimeout } = {}) {
 		const r = await this.sendRequest(Request.CELLULAR_GET_ICCID, null /* msg */, { timeout });
 		return {
 			iccid: r.iccid,
