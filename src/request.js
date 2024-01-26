@@ -222,6 +222,16 @@ const Request = {
 		id: 1102,
 		request: proto.logging.GetLogHandlersRequest,
 		reply: proto.logging.GetLogHandlersReply
+	},
+	NETWORK_GET_INTERFACE_LIST: {
+		id: 400,
+		request: proto.GetInterfaceListRequest,
+		reply: proto.GetInterfaceListReply
+	},
+	NETWORK_GET_INTERFACE: {
+		id: 401,
+		request: proto.GetInterfaceRequest,
+		reply: proto.GetInterfaceReply
 	}
 };
 
