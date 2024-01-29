@@ -1,4 +1,4 @@
-const proto = require('./protocol');
+const { definitions: proto } = require('@particle/device-os-protobuf');
 
 // Mapping of request types to Protobuf messages
 const Request = {

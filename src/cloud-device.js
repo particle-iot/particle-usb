@@ -2,8 +2,7 @@ const { Request } = require('./request');
 const { fromProtobufEnum } = require('./protobuf-util');
 const usbProto = require('./usb-protocol');
 const { globalOptions } = require('./config');
-
-const proto = require('./protocol');
+const { definitions: proto } = require('@particle/device-os-protobuf');
 
 /**
  * Cloud connection status.

@@ -5,8 +5,7 @@
  */
 const { Request } = require('./request');
 const { fromProtobufEnum, fromProtobufMessage, toProtobufMessage } = require('./protobuf-util');
-
-const proto = require('./protocol');
+const { definitions: proto } = require('@particle/device-os-protobuf');
 
 /**
  * WiFi antenna types.
