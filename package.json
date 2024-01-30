@@ -39,7 +39,7 @@
     "build:web": "webpack-cli",
     "docs": "documentation build src/** -g -f md -o docs/reference.md",
     "clean": "rm -rf ./dist ./lib",
-    "reinstall": "npm run clean && rm -rf ./node_modules && rm -rf proto/ && npm i"
+    "reinstall": "npm run clean && rm -rf ./node_modules && npm i"
   },
   "dependencies": {
     "@particle/device-os-protobuf": "^2.4.2",
