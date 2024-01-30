@@ -2,7 +2,7 @@ const { Request } = require('./request');
 const { fromProtobufEnum } = require('./protobuf-util');
 const { convertBufferToMacAddress } = require('./address-util.js');
 const { globalOptions } = require('./config');
-const proto = require('./protocol');
+const { definitions: proto } = require('@particle/device-os-protobuf');
 const { Address4, Address6 } = require('ip-address');
 const { NotFoundError } = require('./error.js');
 

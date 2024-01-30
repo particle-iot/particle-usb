@@ -5,12 +5,10 @@ const { fromProtobufEnum } = require('./protobuf-util');
 const usbProto = require('./usb-protocol');
 const { RequestError, NotFoundError, TimeoutError, StateError } = require('./error');
 const { globalOptions } = require('./config');
-
-const proto = require('./protocol');
-
 const DeviceOSProtobuf = require('@particle/device-os-protobuf');
+const proto = DeviceOSProtobuf.definitions;
 
-const FirmwareModuleDeprecated = fromProtobufEnum(DeviceOSProtobuf.definitions.FirmwareModuleType, {
+const FirmwareModuleDeprecated = fromProtobufEnum(proto.FirmwareModuleType, {
 	/** Bootloader module. */
 	BOOTLOADER: 'BOOTLOADER',
 	/** System part module. */
