@@ -22,5 +22,13 @@ describe('protobuf-util', () => {
 		it('returns several values when several bits are set', () => {
 			expect(extractBits(10, FirmwareModuleValidityFlag)).to.eql(['INTEGRITY_CHECK_FAILED', 'RANGE_CHECK_FAILED']);
 		});
+
+		it('parses known bits and ignores unknown bits', () => {
+			expect(extractBits(3, FirmwareModuleValidityFlag)).to.eql(['INTEGRITY_CHECK_FAILED']);
+		});
+
+		it('ignores bits that are unknown', () => {
+			expect(extractBits(1, FirmwareModuleValidityFlag)).to.eql([]);
+		});
 	});
 });
