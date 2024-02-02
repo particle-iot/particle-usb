@@ -125,8 +125,33 @@ function toProtobufMessage(pbMsg, ...maps) {
 	return msg => transformMessage(msg, map);
 }
 
+/**
+ * Checks for each bit in a value and returns an array of strings for each bit that is set
+ * @param value The value to check
+ * @param mapping A mapping created by fromProtobufEnum
+ * @returns {Array<String>} Array of strings for each bit that is set
+ */
+function extractBits(value, mapping) {
+	const names = [];
+	let bit = 1;
+	while (value) {
+		const hasBit = value & 1;
+		const name = mapping.fromProtobuf(bit);
+		value >>= 1;
+		bit <<= 1;
+		if (!hasBit) {
+			continue;
+		}
+		if (name !== 'UNKNOWN') {
+			names.push(name);
+		}
+	}
+	return names;
+}
+
 module.exports = {
 	fromProtobufEnum,
 	fromProtobufMessage,
-	toProtobufMessage
+	toProtobufMessage,
+	extractBits
 };

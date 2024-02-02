@@ -1,12 +1,12 @@
 const { DeviceBase, openDeviceById } = require('./device-base');
 const { Request } = require('./request');
 const { Result, errorForRequest } = require('./result');
-const { fromProtobufEnum } = require('./protobuf-util');
+const { fromProtobufEnum, extractBits } = require('./protobuf-util');
 const usbProto = require('./usb-protocol');
 const { RequestError, NotFoundError, TimeoutError, StateError } = require('./error');
 const { globalOptions } = require('./config');
 const DeviceOSProtobuf = require('@particle/device-os-protobuf');
-const proto = DeviceOSProtobuf.definitions;
+const { definitions: proto, cloudDefinitions: protoCloud } = DeviceOSProtobuf;
 
 const FirmwareModuleDeprecated = fromProtobufEnum(proto.FirmwareModuleType, {
 	/** Bootloader module. */
@@ -28,7 +28,7 @@ const FirmwareModuleDeprecated = fromProtobufEnum(proto.FirmwareModuleType, {
  *
  * @enum {String}
  */
-const FirmwareModule = fromProtobufEnum(DeviceOSProtobuf.cloudDefinitions.FirmwareModuleType, {
+const FirmwareModule = fromProtobufEnum(protoCloud.FirmwareModuleType, {
 	INVALID: 'INVALID_MODULE',
 	RESOURCE: 'RESOURCE_MODULE',
 	BOOTLOADER: 'BOOTLOADER_MODULE',
@@ -46,11 +46,23 @@ const FirmwareModule = fromProtobufEnum(DeviceOSProtobuf.cloudDefinitions.Firmwa
  *
  * @enum {String}
  */
-const FirmwareModuleStore = fromProtobufEnum(DeviceOSProtobuf.cloudDefinitions.FirmwareModuleStore, {
+const FirmwareModuleStore = fromProtobufEnum(protoCloud.FirmwareModuleStore, {
 	MAIN: 'MAIN_MODULE_STORE',
 	FACTORY: 'FACTORY_MODULE_STORE',
 	BACKUP: 'BACKUP_MODULE_STORE',
 	SCRATCHPAD: 'SCRATCHPAD_MODULE_STORE',
+});
+
+const LegacyFirmwareModuleValidityFlag = fromProtobufEnum(proto.FirmwareModuleValidityFlag, {
+	INTEGRITY_CHECK_FAILED: 'INTEGRITY_CHECK_FAILED',
+	DEPENDENCY_CHECK_FAILED: 'DEPENDENCY_CHECK_FAILED'
+});
+
+const FirmwareModuleValidityFlag = fromProtobufEnum(protoCloud.FirmwareModuleValidityFlag, {
+	INTEGRITY_CHECK_FAILED: 'MODULE_INTEGRITY_VALID_FLAG',
+	DEPENDENCY_CHECK_FAILED: 'MODULE_DEPENDENCIES_VALID_FLAG',
+	RANGE_CHECK_FAILED: 'MODULE_RANGE_VALID_FLAG',
+	PLATFORM_CHECK_FAILED: 'MODULE_PLATFORM_VALID_FLAG'
 });
 
 /**
@@ -510,6 +522,7 @@ class Device extends DeviceBase {
 		if (modulesDeprecated && modulesDeprecated.length > 0) {
 			return modulesDeprecated.map(module => {
 				const { index, type, dependencies, size, validity, version } = module;
+				const validityErrors = extractBits(validity, LegacyFirmwareModuleValidityFlag);
 
 				return {
 					type: FirmwareModuleDeprecated.fromProtobuf(type),
@@ -517,6 +530,7 @@ class Device extends DeviceBase {
 					version,
 					size,
 					validity,
+					validityErrors,
 					dependencies: dependencies.map(dependency => {
 						return {
 							index: dependency.index,
@@ -531,6 +545,7 @@ class Device extends DeviceBase {
 		return modules.map(module => {
 			const { index, type, dependencies, size, version, assetDependencies, maxSize, store, hash } = module;
 			const failedFlags = module.checkedFlags ^ module.passedFlags;
+			const validityErrors = extractBits(failedFlags, FirmwareModuleValidityFlag);
 
 			return {
 				type: FirmwareModule.fromProtobuf(type),
@@ -541,6 +556,7 @@ class Device extends DeviceBase {
 				maxSize,
 				hash: hash.toString('hex'),
 				failedFlags,
+				validityErrors,
 				dependencies: dependencies.map(dependency => {
 					return {
 						index: dependency.index,
