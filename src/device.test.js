@@ -89,18 +89,18 @@ describe('Device', () => {
 			},
 			{ dependencies:[],type:4, index:0, version:6, size:28668, validity: 0 },
 			{ dependencies:[],type:5, index:0, version:6, size:28668, validity: 0 },
-			{ dependencies:[],type:6, index:0, version:6, size:28668, validity: 0 },
+			{ dependencies:[],type:6, index:0, version:6, size:28668, validity: 1 },
 			{ dependencies:[{ type:2, index:1, version:5003 }],type:3, index:1, version:6, size:28668, validity: 0 },
 		];
 		const expectedModuleInfo = [
-			{ type: 'BOOTLOADER', index: 0, version: 2001, size: 52568, validity: 0, dependencies: [{ type: 'BOOTLOADER', index: 1, version: 2 }, { type: 'BOOTLOADER', index: 2, version: 3 }] },
-			{ type: 'BOOTLOADER', index: 1, version: 2, size: 3996, validity: 0, dependencies: [] },
-			{ type: 'BOOTLOADER', index: 2, version: 3, size: 19592, validity: 0, dependencies: [] },
-			{ type: 'SYSTEM_PART', index: 1, version: 5003, size: 971242, validity: 0, dependencies: [{ type: 'BOOTLOADER', version: 2001, index: 2 }] },
-			{ type: 'MONO_FIRMWARE', index: 0, version: 6, size: 28668, validity: 0, dependencies: [] },
-			{ type: 'NCP_FIRMWARE', index: 0, version: 6, size: 28668, validity: 0, dependencies: [] },
-			{ type: 'RADIO_STACK', index: 0, version: 6, size: 28668, validity: 0, dependencies: [] },
-			{ type: 'USER_PART', index: 1, version: 6, size: 28668, validity: 0, dependencies: [{ type: 'SYSTEM_PART', index: 1, version: 5003 }] },
+			{ type: 'BOOTLOADER', index: 0, version: 2001, size: 52568, validity: 0, validityErrors: [], dependencies: [{ type: 'BOOTLOADER', index: 1, version: 2 }, { type: 'BOOTLOADER', index: 2, version: 3 }] },
+			{ type: 'BOOTLOADER', index: 1, version: 2, size: 3996, validity: 0, validityErrors: [], dependencies: [] },
+			{ type: 'BOOTLOADER', index: 2, version: 3, size: 19592, validity: 0, validityErrors: [], dependencies: [] },
+			{ type: 'SYSTEM_PART', index: 1, version: 5003, size: 971242, validity: 0, validityErrors: [], dependencies: [{ type: 'BOOTLOADER', version: 2001, index: 2 }] },
+			{ type: 'MONO_FIRMWARE', index: 0, version: 6, size: 28668, validity: 0, validityErrors: [], dependencies: [] },
+			{ type: 'NCP_FIRMWARE', index: 0, version: 6, size: 28668, validity: 0, validityErrors: [], dependencies: [] },
+			{ type: 'RADIO_STACK', index: 0, version: 6, size: 28668, validity: 1, validityErrors: ['INTEGRITY_CHECK_FAILED'], dependencies: [] },
+			{ type: 'USER_PART', index: 1, version: 6, size: 28668, validity: 0, validityErrors: [], dependencies: [{ type: 'SYSTEM_PART', index: 1, version: 5003 }] },
 		];
 
 		sinon.stub(device, 'sendProtobufRequest').resolves({ modulesDeprecated: moduleInfo });
@@ -163,7 +163,7 @@ describe('Device', () => {
 				'version': 6,
 				'maxSize': 1572864,
 				'checkedFlags': 30,
-				'passedFlags': 30,
+				'passedFlags': 28,
 				'hash': Buffer.from([170, 88, 124, 97]),
 				'size': 12288
 			}
@@ -177,6 +177,7 @@ describe('Device', () => {
 				'size': 53420,
 				'maxSize': 65536,
 				'failedFlags': 0,
+				'validityErrors': [],
 				'hash': '714f51b4',
 				'dependencies': [{ 'index': 2, 'version': 7, 'type': 'BOOTLOADER' }],
 				'assetDependencies': []
@@ -189,6 +190,7 @@ describe('Device', () => {
 				'size': 1037320,
 				'maxSize': 1572864,
 				'failedFlags': 0,
+				'validityErrors': [],
 				'hash': 'df1b3bf3',
 				'dependencies': [{ 'version': 2300, 'type': 'BOOTLOADER', 'index': undefined }],
 				'assetDependencies': []
@@ -200,7 +202,8 @@ describe('Device', () => {
 				'version': 6,
 				'size': 12288,
 				'maxSize': 1572864,
-				'failedFlags': 0,
+				'failedFlags': 2,
+				'validityErrors': ['INTEGRITY_CHECK_FAILED'],
 				'hash': 'aa587c61',
 				'dependencies': [{ 'index': 1, 'version': 5501, 'type': 'SYSTEM_PART' }],
 				'assetDependencies': []
