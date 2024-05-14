@@ -33,6 +33,22 @@ const InterfaceConfigurationSource = fromProtobufEnum(proto.InterfaceConfigurati
 	DHCPV6: 'DHCPV6'
 });
 
+const InterfaceFlag = fromProtobufEnum(proto.InterfaceFlag, {
+	NONE: 'IFF_NONE',
+	UP: 'IFF_UP',
+	BROADCAST: 'IFF_BROADCAST',
+	DEBUG: 'IFF_DEBUG',
+	LOOPBACK: 'IFF_LOOPBACK',
+	POINTOPOINT: 'IFF_POINTTOPOINT',
+	RUNNING : 'IFF_RUNNING',
+	LOWER_UP : 'IFF_LOWER_UP',
+	NOARP : 'IFF_NOARP',
+	PROMISC : 'IFF_PROMISC',
+	ALLMULTI : 'IFF_ALLMULTI',
+	MULTICAST : 'IFF_MULTICAST',
+	NOND6 : 'IFF_NOND6'
+});
+
 /**
 * Converts a given interface IP address into a string
 *
@@ -155,6 +171,17 @@ const NetworkDevice = base => class extends base {
 		}));
 	}
 
+	// Helper function to get active flags of a network interface
+	_getActiveFlags(flags, flagDefinitions) {
+		const activeFlags = [];
+		for (const value of Object.values(flagDefinitions)) {
+			if (value !== 0 && (flags & value)) {
+				activeFlags.push(value);
+			}
+		}
+		return activeFlags;
+	}
+
 	/**
 	 * Gets the network interface and its fields
 	 *
@@ -173,13 +200,34 @@ const NetworkDevice = base => class extends base {
 			throw new NotFoundError();
 		}
 
-		const { index: ifaceIndex, name, type, ipv4Config, ipv6Config, hwAddress } = reply.interface;
+		const {
+			index: ifaceIndex,
+			name,
+			type,
+			flags,
+			extFlags,
+			ipv4Config,
+			ipv6Config,
+			hwAddress,
+			mtu,
+			metric,
+			profile
+		} = reply.interface;
+
+		const activeFlags = this._getActiveFlags(flags, proto.InterfaceFlag);
+		const flagsStrings = activeFlags.map(flag => InterfaceFlag.fromProtobuf(flag));
 
 		const result = {
 			index: ifaceIndex,
 			name,
 			type: InterfaceType.fromProtobuf(type),
-			hwAddress: convertBufferToMacAddress(hwAddress)
+			hwAddress: convertBufferToMacAddress(hwAddress),
+			mtu,
+			flagsVal: flags,
+			extFlags,
+			flagsStrings,
+			metric,
+			profile
 		};
 
 		if (ipv4Config) {
