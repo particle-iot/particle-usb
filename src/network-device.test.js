@@ -109,7 +109,7 @@ describe('NetworkDevice', () => {
 				'mtu': 1500,
 				'flagsVal': 98307,
 				'extFlags': 1048576,
-				'flagsStrings': ['UP', "BROADCAST", 'MULTICAST', 'NOND6'],
+				'flagsStrings': ['UP', 'BROADCAST', 'MULTICAST', 'NOND6'],
 				'metric': 0,
 				'profile': Buffer.from([])
 			};

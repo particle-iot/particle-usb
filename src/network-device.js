@@ -174,7 +174,7 @@ const NetworkDevice = base => class extends base {
 	// Helper function to get active flags of a network interface
 	_getActiveFlags(flags, flagDefinitions) {
 		const activeFlags = [];
-		for (const [key, value] of Object.entries(flagDefinitions)) {
+		for (const value of Object.values(flagDefinitions)) {
 			if (value !== 0 && (flags & value)) {
 				activeFlags.push(value);
 			}
@@ -216,7 +216,7 @@ const NetworkDevice = base => class extends base {
 
 		const activeFlags = this._getActiveFlags(flags, proto.InterfaceFlag);
 		const flagsStrings = activeFlags.map(flag => InterfaceFlag.fromProtobuf(flag));
-		
+
 		const result = {
 			index: ifaceIndex,
 			name,
