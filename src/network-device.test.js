@@ -46,6 +46,8 @@ describe('NetworkDevice', () => {
 				'index': 4,
 				'name': 'wl3',
 				'type': 8,
+				'flags': 98307,
+				'extFlags': 1048576,
 				'ipv4Config': {
 					'dns': [
 						{
@@ -80,7 +82,10 @@ describe('NetworkDevice', () => {
 						}
 					]
 				},
-				'hwAddress': Buffer.from([48,174,164,229,83,16])
+				'hwAddress': Buffer.from([48,174,164,229,83,16]),
+				'mtu': 1500,
+				'metric': 0,
+				'profile': Buffer.from([])
 			};
 
 			const expectedOutput = {
@@ -100,7 +105,13 @@ describe('NetworkDevice', () => {
 					'gateway': undefined,
 					'dns': ['0002:0104:0306:0508:070a:090c:0b0e:0d0f'],
 					'source': 'UNKNOWN'
-				}
+				},
+				'mtu': 1500,
+				'flagsVal': 98307,
+				'extFlags': 1048576,
+				'flagsStrings': ['UP', "BROADCAST", 'MULTICAST', 'NOND6'],
+				'metric': 0,
+				'profile': Buffer.from([])
 			};
 			sinon.stub(dev, 'sendRequest').resolves({ interface: input });
 
