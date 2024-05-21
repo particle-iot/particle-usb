@@ -884,6 +884,87 @@ class Device extends DeviceBase {
 	}
 
 	/**
+	 * @typedef {Object} RequestProtectedStateChangeResult
+	 * @property {Boolean} protected If `true`, device protection is enabled.
+	 * @property {Buffer} [nonce] Client nonce.
+	 * @property {Buffer} [signatute] Client signature.
+	 */
+
+	/**
+	 * Request the device to temporarily disable device protection.
+	 *
+	 * @returns {RequestProtectedStateChangeResult}
+	 */
+	async requestProtectedStateChange() {
+		const req = {
+			action: proto.SetProtectedStateRequest.Action.DISABLE_REQUEST
+		};
+		const rep = await this.sendProtobufRequest('SetProtectedStateRequest', req);
+		if (!rep.clientNonce || !rep.clientSignature) {
+			return { protected: false };
+		}
+		return {
+			nonce: rep.clientNonce,
+			signature: rep.clientSignature,
+			protected: true
+		};
+	}
+
+	/**
+	 * Confirm disabling device protection.
+	 *
+	 * The device will reset to apply the changes.
+	 *
+	 * @param {Object} param Parameters.
+	 * @param {Buffer} param.nonce Server nonce.
+	 * @param {Buffer} param.signature Server signature.
+	 */
+	async confirmProtectedStateChange({ nonce, signature }) {
+		const req = {
+			action: proto.SetProtectedStateRequest.Action.DISABLE_CONFIRM,
+			serverNonce: nonce,
+			serverSignature: signature
+		};
+		await this.sendProtobufRequest('SetProtectedStateRequest', req);
+	}
+
+	/**
+	 * Revert to normal security settings.
+	 *
+	 * The device will reset to apply the changes.
+	 *
+	 * @param {Object} param Parameters.
+	 * @param {Buffer} param.nonce Server nonce.
+	 * @param {Buffer} param.signature Server signature.
+	 */
+	async resetProtectedStateChange() {
+		const req = {
+			action: proto.SetProtectedStateRequest.Action.RESET
+		};
+		await this.sendProtobufRequest('SetProtectedStateRequest', req);
+	}
+
+	/**
+	 * @typedef {Object} GetProtectedStateResult
+	 * @property {Boolean} protected If `true`, device protection is enabled.
+	 * @property {Boolean} overridden If `true`, device protection is disabled temporarily.
+	 */
+
+	/**
+	 * Check if device protection is enabled.
+	 *
+	 * @returns {GetProtectedStateResult}
+	 */
+	async getProtectedState() {
+		const rep = await this.sendProtobufRequest('GetProtectedState');
+		const result = { protected: rep.state };
+		if (rep.overridden) {
+			result.overridden = true;
+		}
+		return result;
+	}
+
+	/**
 	 * Sends a protobuf encoded request to Device and decodes response. Use higher level methods like getSerialNumber() than this if possible.
 	 * @param {String} protobufMessageName - The protobuf message name, see DeviceOSProtobuf.getDefinitions() for valid values.
 	 * @param {Object} protobufMessageData data that will be encoded into the protobuf request before sending to device
