@@ -96,6 +96,85 @@ const WifiDevice = base => class extends base {
 	}
 
 	/**
+	 * Join a known WiFi network for Gen 3+ devices.
+	 *
+	 * Note, there are known bugs with this method/Device OS:
+	 *   - sc-96270: where P2's don't do anything with bssid or security fields; so cannot connect to hidden networks
+	 *   - sc-96826: Connecting to open network without passsword does not work
+	 *
+	 * Supported platforms:
+	 * - Gen 4: Supported on P2 since Device OS 3.x
+	 * - Gen 4: Supported on M-SoM since Device OS 5.x
+	 * @param {string} ssid - SSID of Wifi Network
+	 * @param {string} password - Password of Wifi network, if not set will not use security
+	 * @param {Object} options See sendControlRequest(), same options are here.
+	 * @return {ProtobufInteraction} -
+	 */
+	async joinKnownWifiNetwork({ ssid }, options) {
+		return await this._sendAndHandleProtobufRequest(
+			'wifi.JoinKnownNetworkRequest',
+			{ ssid },
+			options
+		);
+	}
+
+	/**
+	 * Gets the list of networks for Gen 3+ devices.
+	 *
+	 * Note, there are known bugs with this method/Device OS:
+	 *   - sc-96270: where P2's don't do anything with bssid or security fields; so cannot connect to hidden networks
+	 *   - sc-96826: Connecting to open network without passsword does not work
+	 *
+	 * Supported platforms:
+	 * - Gen 4: Supported on P2 since Device OS 3.x
+	 * - Gen 4: Supported on M-SoM since Device OS 5.x
+	 * @param {string} ssid - SSID of Wifi Network
+	 * @param {string} password - Password of Wifi network, if not set will not use security
+	 * @param {Object} options See sendControlRequest(), same options are here.
+	 * @return {ProtobufInteraction} -
+	 */
+	async listWifiNetworks({ ssid }, options) {
+		return await this._sendAndHandleProtobufRequest(
+			'wifi.GetKnownNetworksRequest',
+			options
+		);
+	}
+
+	/**
+	 * Gets the list of networks for Gen 3+ devices.
+	 *
+	 * Note, there are known bugs with this method/Device OS:
+	 *   - sc-96270: where P2's don't do anything with bssid or security fields; so cannot connect to hidden networks
+	 *   - sc-96826: Connecting to open network without passsword does not work
+	 *
+	 * Supported platforms:
+	 * - Gen 4: Supported on P2 since Device OS 3.x
+	 * - Gen 4: Supported on M-SoM since Device OS 5.x
+	 * @param {string} ssid - SSID of Wifi Network
+	 * @param {string} password - Password of Wifi network, if not set will not use security
+	 * @param {Object} options See sendControlRequest(), same options are here.
+	 * @return {ProtobufInteraction} -
+	 */
+	async removeWifiNetwork({ ssid }, options) {
+		const dataPayload = {
+			ssid
+		};
+		return await this._sendAndHandleProtobufRequest(
+			'wifi.RemoveKnownNetworkRequest',
+			dataPayload,
+			options
+		);
+	}
+
+	async getCurrentWifiNetwork(options) {
+		return await this._sendAndHandleProtobufRequest(
+			'wifi.GetCurrentNetworkRequest',
+			{},
+			options
+		);
+	}
+
+	/**
 	 * Set a new WiFi network for Gen 3+ devices.
 	 *
 	 * Note, there are known bugs with this method/Device OS:
@@ -109,7 +188,7 @@ const WifiDevice = base => class extends base {
 	 * @param {Object} options See sendControlRequest(), same options are here.
 	 * @return {ProtobufInteraction} -
 	 */
-	async setWifiCredentials({ ssid, password = null }, options) {
+	async setWifiCredentials({ ssid, security, password = null }, options) {
 		let dataPayload;
 		if (password === null) {
 			dataPayload = {
@@ -122,7 +201,7 @@ const WifiDevice = base => class extends base {
 			dataPayload = {
 				ssid,
 				bssid: null,
-				security: null,
+				security,
 				credentials: {
 					type: 1, // CredentialsType.PASSWORD
 					password
@@ -211,6 +290,9 @@ const WifiDevice = base => class extends base {
 	}
 };
 
+const WifiSecurityEnum = DeviceOSProtobuf.getDefinition('wifi.Security').message;
+
 module.exports = {
-	WifiDevice
+	WifiDevice,
+	WifiSecurityEnum
 };
