@@ -2,7 +2,8 @@ const { getDevices: getUsbDevices, openDeviceById: openUsbDeviceById, openNative
 const { PollingPolicy } = require('./device-base');
 const { FirmwareModule, FirmwareModuleDisplayNames } = require('./device');
 const { NetworkStatus } = require('./network-device');
-const { WifiAntenna, WifiSecurity, WifiCipher, EapMethod } = require('./wifi-device');
+const { WifiAntenna, WifiCipher, EapMethod, WifiSecurityEnum } = require('./wifi-device');
+const { WifiSecurity } = require('./wifi-device-legacy');
 const { CloudConnectionStatus, ServerProtocol } = require('./cloud-device');
 const { Result } = require('./result');
 const { DeviceError, NotFoundError, NotAllowedError, StateError, TimeoutError, MemoryError, ProtocolError, UsbError, InternalError, RequestError, DeviceProtectionError } = require('./error');
@@ -51,6 +52,7 @@ module.exports = {
 	NetworkStatus,
 	WifiAntenna,
 	WifiSecurity,
+	WifiSecurityEnum,
 	WifiCipher,
 	EapMethod,
 	CloudConnectionStatus,
