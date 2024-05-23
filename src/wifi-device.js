@@ -133,7 +133,7 @@ const WifiDevice = base => class extends base {
 	 * @param {Object} options See sendControlRequest(), same options are here.
 	 * @return {ProtobufInteraction} -
 	 */
-	async listWifiNetworks({ ssid }, options) {
+	async listWifiNetworks(options) {
 		return await this._sendAndHandleProtobufRequest(
 			'wifi.GetKnownNetworksRequest',
 			options
