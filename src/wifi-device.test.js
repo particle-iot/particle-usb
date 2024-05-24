@@ -178,7 +178,7 @@ describe('WifiDevice', () => {
 			});
 
 			// sc-96826: Once sc-TODO is fixed, this test should start working with some mods
-			xit('Can Join open Wifi network without security/password', async () => {
+			it('Can Join open Wifi network without security/password', async () => {
 				const fakeReply = {
 					pass: true,
 					replyObject: {
