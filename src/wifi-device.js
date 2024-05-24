@@ -76,7 +76,7 @@ const WifiDevice = base => class extends base {
 				bssid: null,
 				security: 0 // Security.NO_SECURITY
 			};
-			throw new Error('joinNewWifiNetwork() does not currently support connecting to networks without a password/security, sc-TODO');
+			// throw new Error('joinNewWifiNetwork() does not currently support connecting to networks without a password/security, sc-TODO');
 		} else {
 			dataPayload = {
 				ssid,
