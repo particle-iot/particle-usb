@@ -3,6 +3,9 @@
  * However, it can still be used on Paticle Photon devices running
  * Device OS systems firmware from 0.8.0 to pre 2.0.0.
  */
+
+// TODO: Remove the legacy behavior!
+
 const { Request } = require('./request');
 const { fromProtobufEnum, fromProtobufMessage, toProtobufMessage } = require('./protobuf-util');
 const { definitions: proto } = require('@particle/device-os-protobuf');

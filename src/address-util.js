@@ -1,3 +1,4 @@
+// Convert a buffer to a MAC address string
 function convertBufferToMacAddress(buffer) {
 	if (!buffer) {
 		return buffer;
