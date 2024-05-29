@@ -2,6 +2,7 @@ const { sinon, expect } = require('../test/support');
 const { setDevicePrototype } = require('./set-device-prototype');
 const { PLATFORMS } = require('./platforms');
 const { TimeoutError } = require('./error');
+const { convertBufferToMacAddress } = require('./address-util');
 
 describe('WifiDevice', () => {
 	afterEach(() => {
@@ -48,7 +49,7 @@ describe('WifiDevice', () => {
 			// TP-Link N300 Wireless Portable Nano Travel Router
 			// note it does not have an ssid
 			const fakeNetworkWithoutSSID = {
-				'bssid': 'c0c9e376992f',
+				'bssid': Buffer.alloc(6, 'c0c9e376992f', 'hex'),
 				'security': 3,
 				'channel': 1,
 				'rssi': -20
@@ -57,7 +58,7 @@ describe('WifiDevice', () => {
 			// This is the actual 2.4 GHz network in Joe's House
 			const fakeValidNetwork1 = {
 				'ssid': 'how24ghz',
-				'bssid': '382c4a6a9040',
+				'bssid': Buffer.alloc(6, '382c4a6a9040', 'hex'),
 				'security': 3,
 				'channel': 1,
 				'rssi': -58
@@ -66,7 +67,7 @@ describe('WifiDevice', () => {
 			// This is the actual 5 GHz network in Joe's House
 			const fakeValidNetwork2 = {
 				'ssid': 'how5ghz',
-				'bssid': '382c4a6a9044',
+				'bssid': Buffer.alloc(6, '382c4a6a9044', 'hex'),
 				'security': 3,
 				'channel': 157,
 				'rssi': -66
@@ -75,7 +76,7 @@ describe('WifiDevice', () => {
 			// Note; no security field set for Comcast's WiFI
 			const fakeNetworkWithoutSecurity = {
 				'ssid': 'xfinitywifi',
-				'bssid': '1e9ecc0bed24',
+				'bssid': Buffer.alloc(6, '1e9ecc0bed24', 'hex'),
 				'channel': 157,
 				'rssi': -88
 			};
@@ -125,7 +126,7 @@ describe('WifiDevice', () => {
 				];
 				sinon.stub(wifiDevice, 'sendProtobufRequest').resolves({ networks: expectedNetworks });
 				const networks = await wifiDevice.scanWifiNetworks();
-				expect(networks[2].bssid).to.eql(fakeNetworkWithoutSSID.bssid, 'targeting correct fixture');
+				expect(networks[2].bssid).to.eql(convertBufferToMacAddress(fakeNetworkWithoutSSID.bssid));
 				expect(fakeNetworkWithoutSSID).to.not.have.haveOwnProperty('ssid');
 				expect(networks[2].ssid).to.eql(null);
 			});
