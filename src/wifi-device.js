@@ -1,6 +1,7 @@
 const DeviceOSProtobuf = require('@particle/device-os-protobuf');
 const { definitions: proto } = require('@particle/device-os-protobuf');
 const { fromProtobufEnum } = require('./protobuf-util');
+const { convertBufferToMacAddress } = require('./address-util');
 
 /**
  * Wi-Fi security types.
@@ -8,7 +9,7 @@ const { fromProtobufEnum } = require('./protobuf-util');
  * @enum {String}
  */
 const WiFiSecurity = fromProtobufEnum(proto.wifi.Security, {
-	NO_SECURITY : 'NO_SECURITY',
+	NONE : 'NO_SECURITY',
 	WEP : 'WEP',
 	WPA_PSK : 'WPA_PSK',
 	WPA2_PSK : 'WPA2_PSK',
@@ -46,7 +47,7 @@ const WifiDevice = base => class extends base {
 		return result.networks.map((network) => {
 			return {
 				ssid: network.ssid || null, // can be blank for hidden networks
-				bssid: network.bssid.toString('hex'), // convert buffer to hex string
+				bssid: convertBufferToMacAddress(network.bssid), // convert buffer to hex string
 				security: WiFiSecurity.fromProtobuf(network.security),
 				channel: network.channel,
 				rssi: network.rssi
@@ -164,11 +165,14 @@ const WifiDevice = base => class extends base {
 	 * @return {Promise[Object]} - ssid, bssid, channel, rssi. See GetCurrentNetworkReply from https://github.com/particle-iot/device-os-protobuf/blob/main/control/wifi_new.proto
 	 */
 	async getCurrentWifiNetwork(options) {
-		return await this.sendProtobufRequest(
+		const res = await this.sendProtobufRequest(
 			'wifi.GetCurrentNetworkRequest',
 			{},
 			options
 		);
+		const bssidStr = convertBufferToMacAddress(res.bssid);
+		res.bssid = bssidStr;
+		return res;
 	}
 
 	/**
