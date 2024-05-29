@@ -80,22 +80,7 @@ describe('WifiDevice', () => {
 				'rssi': -88
 			};
 
-			let fakeReply;
 			beforeEach(() => {
-				fakeReply = {
-					pass: true,
-					replyObject: {
-						constructor: {
-							name: 'wifi.ScanNetworksReply'
-						},
-						networks: [
-							fakeValidNetwork1,
-							fakeValidNetwork2,
-							fakeNetworkWithoutSSID,
-							fakeNetworkWithoutSecurity
-						]
-					}
-				};
 			});
 
 			it('returns empty when no networks are returned', async () => {
@@ -155,15 +140,13 @@ describe('WifiDevice', () => {
 
 			it('Sends wifi.JoinNewNetworkRequest protobuf message with correct data', async () => {
 				const fakeReply = {
-					pass: true,
-					replyObject: {
-						constructor: {
-							name: 'JoinNewNetworkReply'
-						}
+					constructor: {
+						name: 'JoinNewNetworkReply'
 					}
 				};
 				sinon.stub(wifiDevice, 'sendProtobufRequest').resolves(fakeReply);
 				const result = await wifiDevice.joinNewWifiNetwork({ ssid, password });
+
 				expect(result).to.eql(fakeReply);
 				expect(wifiDevice.sendProtobufRequest).to.have.property('callCount', 1);
 				expect(wifiDevice.sendProtobufRequest.firstCall.args).to.have.lengthOf(3);
@@ -182,14 +165,10 @@ describe('WifiDevice', () => {
 				expect(wifiDevice.sendProtobufRequest.firstCall.args[2]).to.eql(undefined);
 			});
 
-			// sc-96826: Once sc-TODO is fixed, this test should start working with some mods
 			it('Can Join open Wifi network without security/password', async () => {
 				const fakeReply = {
-					pass: true,
-					replyObject: {
-						constructor: {
-							name: 'JoinNewNetworkReply'
-						}
+					constructor: {
+						name: 'JoinNewNetworkReply'
 					}
 				};
 				sinon.stub(wifiDevice, 'sendProtobufRequest').resolves(fakeReply);
@@ -213,11 +192,8 @@ describe('WifiDevice', () => {
 		describe('clearWifiNetworks()', () => {
 			it('Sends wifi.ClearKnownNetworksRequest protobuf message', async () => {
 				const fakeReply = {
-					pass: true,
-					replyObject: {
-						constructor: {
-							name: 'ClearKnownNetworksReply'
-						}
+					constructor: {
+						name: 'ClearKnownNetworksReply'
 					}
 				};
 				sinon.stub(wifiDevice, 'sendProtobufRequest').resolves(fakeReply);
@@ -283,7 +259,7 @@ describe('WifiDevice', () => {
 				} catch (e) {
 					error = e;
 				}
-				
+
 				expect(error).to.be.an.instanceof(TimeoutError);
 			});
 
