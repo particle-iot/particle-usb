@@ -199,7 +199,7 @@ const WifiDevice = base => class extends base {
 			dataPayload = {
 				ssid,
 				bssid: null,
-				security,
+				security : security ? WiFiSecurity.toProtobuf(security) : null,
 				credentials: {
 					type: 1, // CredentialsType.PASSWORD
 					password
