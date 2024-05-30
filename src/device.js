@@ -886,18 +886,21 @@ class Device extends DeviceBase {
 	/**
 	 * @typedef {Object} RequestProtectedStateChangeResult
 	 * @property {Boolean} protected If `true`, device protection is enabled.
-	 * @property {Buffer} [nonce] Client nonce.
-	 * @property {Buffer} [signatute] Client signature.
+	 * @property {Buffer} [nonce] Device nonce.
+	 * @property {Buffer} [signatute] Device signature.
 	 */
 
 	/**
 	 * Request the device to temporarily disable device protection.
 	 *
+	 * @param {Object} param Parameters.
+	 * @param {Buffer} param.nonce Server nonce.
 	 * @returns {RequestProtectedStateChangeResult}
 	 */
-	async requestProtectedStateChange() {
+	async requestProtectedStateChange({ nonce }) {
 		const req = {
-			action: proto.SetProtectedStateRequest.Action.DISABLE_REQUEST
+			action: proto.SetProtectedStateRequest.Action.DISABLE_REQUEST,
+			serverNonce: nonce
 		};
 		const rep = await this.sendProtobufRequest('SetProtectedStateRequest', req);
 		if (!rep.clientNonce || !rep.clientSignature) {
@@ -916,13 +919,11 @@ class Device extends DeviceBase {
 	 * The device will reset to apply the changes.
 	 *
 	 * @param {Object} param Parameters.
-	 * @param {Buffer} param.nonce Server nonce.
 	 * @param {Buffer} param.signature Server signature.
 	 */
 	async confirmProtectedStateChange({ nonce, signature }) {
 		const req = {
 			action: proto.SetProtectedStateRequest.Action.DISABLE_CONFIRM,
-			serverNonce: nonce,
 			serverSignature: signature
 		};
 		await this.sendProtobufRequest('SetProtectedStateRequest', req);
