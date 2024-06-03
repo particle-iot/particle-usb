@@ -215,7 +215,8 @@ const NetworkDevice = base => class extends base {
 		} = reply.interface;
 
 		const activeFlags = this._getActiveFlags(flags, proto.InterfaceFlag);
-		const flagsStrings = activeFlags.map(flag => InterfaceFlag.fromProtobuf(flag));
+		let flagsStrings = activeFlags.map(flag => InterfaceFlag.fromProtobuf(flag));
+		flagsStrings = [...new Set(flagsStrings)];
 
 		const result = {
 			index: ifaceIndex,
