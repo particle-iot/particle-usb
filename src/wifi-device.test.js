@@ -157,6 +157,35 @@ describe('WifiDevice', () => {
 						ssid,
 						bssid: null,
 						security: null,
+						hidden: false,
+						credentials: {
+							type: 1,
+							password
+						},
+					}
+				);
+				expect(wifiDevice.sendProtobufRequest.firstCall.args[2]).to.eql(undefined);
+			});
+
+			it('Sends wifi.JoinNewNetworkRequest protobuf message with correct data for hidden network', async () => {
+				const fakeReply = {
+					constructor: {
+						name: 'JoinNewNetworkReply'
+					}
+				};
+				sinon.stub(wifiDevice, 'sendProtobufRequest').resolves(fakeReply);
+				const result = await wifiDevice.joinNewWifiNetwork({ ssid, password, hidden: true });
+
+				expect(result).to.eql(fakeReply);
+				expect(wifiDevice.sendProtobufRequest).to.have.property('callCount', 1);
+				expect(wifiDevice.sendProtobufRequest.firstCall.args).to.have.lengthOf(3);
+				expect(wifiDevice.sendProtobufRequest.firstCall.args[0]).to.eql('wifi.JoinNewNetworkRequest');
+				expect(wifiDevice.sendProtobufRequest.firstCall.args[1]).to.eql(
+					{
+						ssid,
+						bssid: null,
+						security: null,
+						hidden: true,
 						credentials: {
 							type: 1,
 							password
