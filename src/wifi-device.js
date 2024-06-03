@@ -70,7 +70,7 @@ const WifiDevice = base => class extends base {
 	 * @param {Object} options See sendControlRequest(), same options are here.
 	 * @return {ProtobufInteraction} - empty response
 	 */
-	async joinNewWifiNetwork({ ssid, security, password = null }, options) {
+	async joinNewWifiNetwork({ ssid, security, password = null, hidden }, options) {
 		let dataPayload;
 		if (password === null) {
 			dataPayload = {
@@ -82,6 +82,7 @@ const WifiDevice = base => class extends base {
 			dataPayload = {
 				ssid,
 				bssid: null,
+				hidden: hidden === true,
 				security: security ? WiFiSecurity.toProtobuf(security) : null,
 				credentials: {
 					type: 1, // CredentialsType.PASSWORD
@@ -187,7 +188,7 @@ const WifiDevice = base => class extends base {
 	 * @param {Object} options See sendControlRequest(), same options are here.
 	 * @return {ProtobufInteraction} - empty response
 	 */
-	async setWifiCredentials({ ssid, security, password = null }, options) {
+	async setWifiCredentials({ ssid, security, password = null, hidden }, options) {
 		let dataPayload;
 		if (password === null) {
 			dataPayload = {
@@ -199,6 +200,7 @@ const WifiDevice = base => class extends base {
 			dataPayload = {
 				ssid,
 				bssid: null,
+				hidden: hidden === true,
 				security : security ? WiFiSecurity.toProtobuf(security) : null,
 				credentials: {
 					type: 1, // CredentialsType.PASSWORD
