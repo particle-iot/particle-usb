@@ -884,71 +884,71 @@ class Device extends DeviceBase {
 	}
 
 	/**
-	 * @typedef {Object} RequestProtectedStateChangeResult
+	 * @typedef {Object} UnprotectDeviceResult
 	 * @property {Boolean} protected If `true`, device protection is enabled.
-	 * @property {Buffer} [nonce] Device nonce.
-	 * @property {Buffer} [signatute] Device signature.
+	 * @property {Buffer} [deviceNonce] Device nonce.
+	 * @property {Buffer} [deviceSignatute] Device signature.
 	 */
 
 	/**
 	 * Request the device to temporarily disable device protection.
 	 *
 	 * @param {Object} param Parameters.
-	 * @param {Buffer} param.serverNonce Server nonce.
-	 * @returns {RequestProtectedStateChangeResult}
+	 * @param {String} param.action `prepare`, `confirm` or `reset`.
+	 * @param {Buffer} [param.serverNonce] Server nonce. Mandatory if `action` is `prepare`.
+	 * @param {Buffer} [param.serverSignature] Server signature. Mandatory if `action` is `confirm`.
+	 * @returns {Promise<UnprotectDeviceResult>}
 	 */
-	async unprotectDevicePrepare({ serverNonce }) {
-		const req = {
-			action: proto.SetProtectedStateRequest.Action.DISABLE_REQUEST,
-			serverNonce
-		};
-		const rep = await this.sendProtobufRequest('SetProtectedStateRequest', req);
-		if (!rep.clientNonce || !rep.clientSignature) {
-			return { protected: false };
+	async unprotectDevice({ action, serverNonce, serverSignature }) {
+		let req;
+		switch (action) {
+			case 'prepare': {
+				if (!Buffer.isBuffer(serverNonce)) {
+					throw new Error('Invalid arguments');
+				}
+				req = {
+					action: proto.SetProtectedStateRequest.Action.DISABLE_REQUEST,
+					serverNonce
+				};
+				break;
+			}
+			case 'confirm': {
+				if (!Buffer.isBuffer(serverSignature)) {
+					throw new Error('Invalid arguments');
+				}
+				req = {
+					action: proto.SetProtectedStateRequest.Action.DISABLE_CONFIRM,
+					serverSignature
+				};
+				break;
+			}
+			case 'reset': {
+				req = {
+					action: proto.SetProtectedStateRequest.Action.RESET
+				};
+				break;
+			}
+			default: {
+				throw new Error('Invalid arguments');
+			}
 		}
-		return {
-			deviceNonce: rep.clientNonce,
-			deviceSignature: rep.clientSignature,
-			protected: true
-		};
-	}
-
-	/**
-	 * Confirm disabling device protection.
-	 *
-	 * The device will reset to apply the changes.
-	 *
-	 * @param {Object} param Parameters.
-	 * @param {Buffer} param.serverSignature Server signature.
-	 */
-	async unprotectDeviceConfirm({ serverSignature }) {
-		const req = {
-			action: proto.SetProtectedStateRequest.Action.DISABLE_CONFIRM,
-			serverSignature
-		};
-		await this.sendProtobufRequest('SetProtectedStateRequest', req);
-	}
-
-	/**
-	 * Revert to normal security settings.
-	 *
-	 * The device will reset to apply the changes.
-	 *
-	 * @param {Object} param Parameters.
-	 * @param {Buffer} param.nonce Server nonce.
-	 * @param {Buffer} param.signature Server signature.
-	 */
-	async resetProtectedStateChange() {
-		const req = {
-			action: proto.SetProtectedStateRequest.Action.RESET
-		};
-		await this.sendProtobufRequest('SetProtectedStateRequest', req);
+		const rep = await this.sendProtobufRequest('SetProtectedStateRequest', req);
+		if (action === 'prepare') {
+			if (!rep.clientNonce || !rep.clientSignature) {
+				return { protected: false };
+			}
+			return {
+				deviceNonce: rep.clientNonce,
+				deviceSignature: rep.clientSignature,
+				protected: true
+			};
+		}
 	}
 
 	/**
 	 * @typedef {Object} GetProtectedStateResult
 	 * @property {Boolean} protected If `true`, device protection is enabled.
-	 * @property {Boolean} overridden If `true`, device protection is disabled temporarily.
+	 * @property {Boolean} overridden If `true`, device protection was disabled temporarily.
 	 */
 
 	/**
