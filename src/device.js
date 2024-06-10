@@ -888,6 +888,7 @@ class Device extends DeviceBase {
 	 * @property {Boolean} protected If `true`, device protection is enabled.
 	 * @property {Buffer} [deviceNonce] Device nonce.
 	 * @property {Buffer} [deviceSignatute] Device signature.
+	 * @property {Buffer} [devicePublicKeyFingerprint] Fingerprint of the device public key.
 	 */
 
 	/**
@@ -897,9 +898,10 @@ class Device extends DeviceBase {
 	 * @param {String} param.action `prepare`, `confirm` or `reset`.
 	 * @param {Buffer} [param.serverNonce] Server nonce. Mandatory if `action` is `prepare`.
 	 * @param {Buffer} [param.serverSignature] Server signature. Mandatory if `action` is `confirm`.
+	 * @param {Buffer} [param.serverPublicKeyFingerprint] Fingerprint of the server public key. Mandatory if `action` is `confirm`.
 	 * @returns {Promise<UnprotectDeviceResult>}
 	 */
-	async unprotectDevice({ action, serverNonce, serverSignature }) {
+	async unprotectDevice({ action, serverNonce, serverSignature, serverPublicKeyFingerprint }) {
 		let req;
 		switch (action) {
 			case 'prepare': {
@@ -907,18 +909,18 @@ class Device extends DeviceBase {
 					throw new Error('Invalid arguments');
 				}
 				req = {
-					action: proto.SetProtectedStateRequest.Action.DISABLE_REQUEST,
-					serverNonce
+					action: proto.SetProtectedStateRequest.Action.PREPARE,
+					prepare: { serverNonce }
 				};
 				break;
 			}
 			case 'confirm': {
-				if (!Buffer.isBuffer(serverSignature)) {
+				if (!Buffer.isBuffer(serverSignature) || !Buffer.isBuffer(serverPublicKeyFingerprint)) {
 					throw new Error('Invalid arguments');
 				}
 				req = {
-					action: proto.SetProtectedStateRequest.Action.DISABLE_CONFIRM,
-					serverSignature
+					action: proto.SetProtectedStateRequest.Action.CONFIRM,
+					confirm: { serverSignature, serverPublicKeyFingerprint }
 				};
 				break;
 			}
@@ -934,19 +936,20 @@ class Device extends DeviceBase {
 		}
 		const rep = await this.sendProtobufRequest('SetProtectedStateRequest', req);
 		if (action === 'prepare') {
-			if (!rep.clientNonce || !rep.clientSignature) {
+			if (!rep.prepare) {
 				return { protected: false };
 			}
 			return {
-				deviceNonce: rep.clientNonce,
-				deviceSignature: rep.clientSignature,
+				deviceNonce: rep.prepare.clientNonce,
+				deviceSignature: rep.prepare.clientSignature,
+				devicePublicKeyFingerprint: rep.prepare.devicePublicKeyFingerprint,
 				protected: true
 			};
 		}
 	}
 
 	/**
-	 * @typedef {Object} GetProtectedStateResult
+	 * @typedef {Object} GetProtectionStateResult
 	 * @property {Boolean} protected If `true`, device protection is enabled.
 	 * @property {Boolean} overridden If `true`, device protection was disabled temporarily.
 	 */
@@ -954,9 +957,9 @@ class Device extends DeviceBase {
 	/**
 	 * Check if device protection is enabled.
 	 *
-	 * @returns {GetProtectedStateResult}
+	 * @returns {GetProtectionStateResult}
 	 */
-	async getProtectedState() {
+	async getProtectionState() {
 		const rep = await this.sendProtobufRequest('GetProtectedState');
 		const result = { protected: rep.state };
 		if (rep.overridden) {
