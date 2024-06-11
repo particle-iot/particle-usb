@@ -940,8 +940,8 @@ class Device extends DeviceBase {
 				return { protected: false };
 			}
 			return {
-				deviceNonce: rep.prepare.clientNonce,
-				deviceSignature: rep.prepare.clientSignature,
+				deviceNonce: rep.prepare.deviceNonce,
+				deviceSignature: rep.prepare.deviceSignature,
 				devicePublicKeyFingerprint: rep.prepare.devicePublicKeyFingerprint,
 				protected: true
 			};
