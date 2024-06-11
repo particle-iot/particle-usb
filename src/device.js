@@ -960,7 +960,7 @@ class Device extends DeviceBase {
 	 * @returns {GetProtectionStateResult}
 	 */
 	async getProtectionState() {
-		const rep = await this.sendProtobufRequest('GetProtectedState');
+		const rep = await this.sendProtobufRequest('GetProtectedStateRequest');
 		const result = { protected: rep.state };
 		if (rep.overridden) {
 			result.overridden = true;
