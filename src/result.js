@@ -110,6 +110,16 @@ const RESULT_CODES = [
 		id: 'DEVICE_PROTECTED',
 		value: -1801,
 		message: 'Device is protected'
+	},
+	{
+		id: 'KEY_MISMATCH',
+		value: -1802,
+		message: 'Unrecognized cryptographic key'
+	},
+	{
+		id: 'INVALID_SIGNATURE',
+		value: -1803,
+		message: 'Signature validation failed'
 	}
 ];
 
