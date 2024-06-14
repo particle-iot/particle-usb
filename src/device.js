@@ -884,6 +884,91 @@ class Device extends DeviceBase {
 	}
 
 	/**
+	 * @typedef {Object} UnprotectDeviceResult
+	 * @property {Boolean} protected If `true`, device protection is enabled.
+	 * @property {Buffer} [deviceNonce] Device nonce.
+	 * @property {Buffer} [deviceSignatute] Device signature.
+	 * @property {Buffer} [devicePublicKeyFingerprint] Fingerprint of the device public key.
+	 */
+
+	/**
+	 * Request the device to temporarily disable device protection.
+	 *
+	 * @param {Object} param Parameters.
+	 * @param {String} param.action `prepare`, `confirm` or `reset`.
+	 * @param {Buffer} [param.serverNonce] Server nonce. Mandatory if `action` is `prepare`.
+	 * @param {Buffer} [param.serverSignature] Server signature. Mandatory if `action` is `confirm`.
+	 * @param {Buffer} [param.serverPublicKeyFingerprint] Fingerprint of the server public key. Mandatory if `action` is `confirm`.
+	 * @returns {Promise<UnprotectDeviceResult>}
+	 */
+	async unprotectDevice({ action, serverNonce, serverSignature, serverPublicKeyFingerprint }) {
+		let req;
+		switch (action) {
+			case 'prepare': {
+				if (!Buffer.isBuffer(serverNonce)) {
+					throw new Error('Invalid arguments');
+				}
+				req = {
+					action: proto.SetProtectedStateRequest.Action.PREPARE,
+					prepare: { serverNonce }
+				};
+				break;
+			}
+			case 'confirm': {
+				if (!Buffer.isBuffer(serverSignature) || !Buffer.isBuffer(serverPublicKeyFingerprint)) {
+					throw new Error('Invalid arguments');
+				}
+				req = {
+					action: proto.SetProtectedStateRequest.Action.CONFIRM,
+					confirm: { serverSignature, serverPublicKeyFingerprint }
+				};
+				break;
+			}
+			case 'reset': {
+				req = {
+					action: proto.SetProtectedStateRequest.Action.RESET
+				};
+				break;
+			}
+			default: {
+				throw new Error('Invalid arguments');
+			}
+		}
+		const rep = await this.sendProtobufRequest('SetProtectedStateRequest', req);
+		if (action === 'prepare') {
+			if (!rep.prepare) {
+				return { protected: false };
+			}
+			return {
+				deviceNonce: rep.prepare.deviceNonce,
+				deviceSignature: rep.prepare.deviceSignature,
+				devicePublicKeyFingerprint: rep.prepare.devicePublicKeyFingerprint,
+				protected: true
+			};
+		}
+	}
+
+	/**
+	 * @typedef {Object} GetProtectionStateResult
+	 * @property {Boolean} protected If `true`, device protection is enabled.
+	 * @property {Boolean} overridden If `true`, device protection was disabled temporarily.
+	 */
+
+	/**
+	 * Check if device protection is enabled.
+	 *
+	 * @returns {GetProtectionStateResult}
+	 */
+	async getProtectionState() {
+		const rep = await this.sendProtobufRequest('GetProtectedStateRequest');
+		const result = { protected: rep.state };
+		if (rep.overridden) {
+			result.overridden = true;
+		}
+		return result;
+	}
+
+	/**
 	 * Sends a protobuf encoded request to Device and decodes response. Use higher level methods like getSerialNumber() than this if possible.
 	 * @param {String} protobufMessageName - The protobuf message name, see DeviceOSProtobuf.getDefinitions() for valid values.
 	 * @param {Object} protobufMessageData data that will be encoded into the protobuf request before sending to device
