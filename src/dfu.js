@@ -211,7 +211,7 @@ class Dfu {
 		const data = Buffer.alloc(1);
 		data[0] = 0xfa; // Particle's extension
 		await this._sendDnloadRequest(data, 0 /* wValue */);
-		await this._pollUntil((state) => state === DfuDeviceState.dfuMANIFEST || state === DfuDeviceState.dfuDNLOAD_IDLE); // See leave()
+		await this._pollUntil((state) => state === DfuDeviceState.dfuMANIFEST);
 	}
 
 	/**
