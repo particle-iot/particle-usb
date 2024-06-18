@@ -120,6 +120,16 @@ class DeviceProtectionError extends DeviceError {
 	}
 }
 
+/**
+ * An error reported when the issued DfuSe command is not supported by the device.
+ */
+class UnsupportedDfuseCommandError extends DeviceError {
+	constructor(...args) {
+		super(...args);
+		this.name = this.constructor.name;
+	}
+}
+
 function assert(val, msg = null) {
 	if (!val) {
 		throw new InternalError(msg ? msg : 'Assertion failed');
@@ -139,5 +149,6 @@ module.exports = {
 	RequestError,
 	UsbStallError,
 	DeviceProtectionError,
+	UnsupportedDfuseCommandError,
 	assert
 };
