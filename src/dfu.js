@@ -352,8 +352,9 @@ class Dfu {
 				await this._clearStatus();
 			}
 
-			if (state.state !== DfuDeviceState.dfuIDLE && (!dnloadIdle || state.state !== DfuDeviceState.dfuDNLOAD_IDLE) &&
-					(!uploadIdle || state.state !== DfuDeviceState.dfuUPLOAD_IDLE)) {
+			if (state.state !== DfuDeviceState.dfuIDLE &&
+					!(dnloadIdle && state.state === DfuDeviceState.dfuDNLOAD_IDLE) &&
+					!(uploadIdle && state.state === DfuDeviceState.dfuUPLOAD_IDLE)) {
 				// If we are in some kind of an unknown state, issue DFU_CLRSTATUS, which may fail,
 				// but the device will go into dfuERROR state, so a subsequent DFU_CLRSTATUS will get us
 				// into dfuIDLE
@@ -366,8 +367,9 @@ class Dfu {
 
 		// Confirm we are in dfuIDLE or, optionally, in dfuDNLOAD_IDLE or dfuUPLOAD_IDLE
 		const state = await this._getStatus();
-		if (state.state !== DfuDeviceState.dfuIDLE && (!dnloadIdle || state.state !== DfuDeviceState.dfuDNLOAD_IDLE) &&
-				(!uploadIdle || state.state !== DfuDeviceState.dfuUPLOAD_IDLE)) {
+		if (state.state !== DfuDeviceState.dfuIDLE &&
+				!(dnloadIdle && state.state === DfuDeviceState.dfuDNLOAD_IDLE) &&
+				!(uploadIdle && state.state === DfuDeviceState.dfuUPLOAD_IDLE)) {
 			throw new DfuError('Invalid state');
 		}
 		return state;
