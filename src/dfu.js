@@ -202,6 +202,19 @@ class Dfu {
 	}
 
 	/**
+	 * Enter safe mode.
+	 *
+	 * @returns {Promise}
+	 */
+	async enterSafeMode() {
+		await this._goIntoDfuIdleOrDfuDnloadIdle();
+		const data = Buffer.alloc(1);
+		data[0] = 0xfa; // Particle's extension
+		await this._sendDnloadRequest(data, 0 /* wValue */);
+		await this._pollUntil((state) => state === DfuDeviceState.dfuMANIFEST || state === DfuDeviceState.dfuDNLOAD_IDLE); // See leave()
+	}
+
+	/**
 	 * Set the alternate interface for DFU and initialize memory information.
 	 *
 	 * @param {number} setting - The alternate interface index to set.
