@@ -879,7 +879,7 @@ class Dfu {
 			this._supportedDfuseCommands = [...data];
 		}
 		if (!this._supportedDfuseCommands.includes(cmd)) {
-			throw UnsupportedDfuseCommandError('Unsupported DfuSe command');
+			throw new UnsupportedDfuseCommandError('Unsupported DfuSe command');
 		}
 	}
 }
