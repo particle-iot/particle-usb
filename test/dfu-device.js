@@ -1,7 +1,8 @@
 const { fakeUsb, expect } = require('./support');
 const proxyquire = require('proxyquire');
 const sinon = require('sinon');
-const { DfuDeviceState, DfuseCommand } = require('../src/dfu');
+const { DfuDeviceState, DfuseCommand, DfuRequestType, DfuBmRequestType } = require('../src/dfu');
+const { UnsupportedDfuseCommandError } = require('../src/error');
 
 const { getDevices } = proxyquire('../src/particle-usb', {
 	'./device-base': proxyquire('../src/device-base', {
@@ -93,7 +94,7 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				expect(argonDev.isOpen).to.be.true;
 				let error;
 				try {
-					await argonDev._dfu._goIntoDfuIdleOrDfuDnloadIdle();
+					await argonDev._dfu._goIntoIdleState({ dnloadIdle: true });
 					await argonDev._dfu._dfuseCommand(0x21, 0x08060000);
 				} catch (_error) {
 					error = _error;
@@ -161,6 +162,61 @@ describe('dfu device', () => {	// actually tests src/dfu.js which is the dfu dri
 				await p2Dev._dfu._erase(startAddr, length);
 
 				expect(dfuseCommandStub.callCount).to.equal(247);
+			});
+		});
+
+		describe('enterSafeMode', () => {
+			let dev;
+			let dfuClass;
+
+			function mockDfuClassDevice(dev) {
+				const dfuClass = dev.usbDevice.dfuClass;
+				// DfuSe "Get" command
+				sinon.stub(dfuClass, 'deviceToHostRequest').withArgs(sinon.match({
+					bmRequestType: DfuBmRequestType.DEVICE_TO_HOST,
+					bRequest: DfuRequestType.DFU_UPLOAD,
+					wValue: 0
+				})).returns(Buffer.from([
+					0x00, // Get command
+					0xfa // Enter safe mode (Particle's extension)
+				]));
+				dfuClass.deviceToHostRequest.callThrough();
+				return dfuClass;
+			}
+
+			beforeEach(async () => {
+				fakeUsb.addBoron({ dfu: true });
+				const devs = await getDevices();
+				dev = devs[0];
+				dfuClass = mockDfuClassDevice(dev);
+				await dev.open();
+			});
+
+			afterEach(async () => {
+				if (dev) {
+					await dev.close();
+				}
+			});
+
+			it('sends a DfuSe command to the device', async () => {
+				sinon.spy(dfuClass, 'hostToDeviceRequest');
+				await dev.enterSafeMode();
+				expect(dfuClass.hostToDeviceRequest).to.be.calledWith(sinon.match({
+					bmRequestType: DfuBmRequestType.HOST_TO_DEVICE,
+					bRequest: DfuRequestType.DFU_DNLOAD,
+					wValue: 0
+				}), Buffer.from([0xfa]));
+			});
+
+			it('fails if the required DfuSe command is not supported', async () => {
+				dfuClass.deviceToHostRequest.withArgs(sinon.match({
+					bmRequestType: DfuBmRequestType.DEVICE_TO_HOST,
+					bRequest: DfuRequestType.DFU_UPLOAD,
+					wValue: 0
+				})).returns(Buffer.from([
+					0x00 // Get command
+				]));
+				await expect(dev.enterSafeMode()).to.be.eventually.rejectedWith(UnsupportedDfuseCommandError);
 			});
 		});
 	});

@@ -675,6 +675,10 @@ class Device {
 	get isOpen() {
 		return this._open;
 	}
+
+	get dfuClass() {
+		return this._dfu;
+	}
 }
 
 async function getUsbDevices(filters) {
