@@ -18,7 +18,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-const { DeviceError, UsbStallError, DeviceProtectionError } = require('./error');
+const { DeviceError, UsbStallError, DeviceProtectionError, UnsupportedDfuseCommandError } = require('./error');
 
 /**
  * A generic DFU error.
@@ -131,7 +131,8 @@ const DfuseCommand = {
 	DFUSE_COMMAND_GET_COMMAND: 0x00,
 	DFUSE_COMMAND_SET_ADDRESS_POINTER: 0x21,
 	DFUSE_COMMAND_ERASE: 0x41,
-	DFUSE_COMMAND_READ_UNPROTECT: 0x92
+	DFUSE_COMMAND_READ_UNPROTECT: 0x92,
+	DFUSE_COMMAND_ENTER_SAFE_MODE: 0xfa // Particle's extension
 };
 
 const DfuBmRequestType = {
@@ -170,6 +171,7 @@ class Dfu {
 		let desc = await this._getConfigDescriptor(0); // Use the default config
 		desc = this._parseConfigDescriptor(desc);
 		this._allInterfaces = desc.interfaces;
+		this._supportedDfuseCommands = [];
 	}
 
 	/**
@@ -189,7 +191,7 @@ class Dfu {
 	 * @return {Promise}
 	 */
 	async leave() {
-		await this._goIntoDfuIdleOrDfuDnloadIdle();
+		await this._goIntoIdleState({ dnloadIdle: true });
 
 		await this._sendDnloadRequest(Buffer.alloc(0), 2);
 
@@ -199,6 +201,20 @@ class Dfu {
 			// for some reason we are going off-standard and instead of reporting the actual dfuMANIFEST state
 			// report dfuDNLOAD_IDLE :|
 			state => (state === DfuDeviceState.dfuMANIFEST || state === DfuDeviceState.dfuDNLOAD_IDLE));
+	}
+
+	/**
+	 * Enter safe mode.
+	 *
+	 * @returns {Promise}
+	 */
+	async enterSafeMode() {
+		await this._checkDfuseCommandSupported(DfuseCommand.DFUSE_COMMAND_ENTER_SAFE_MODE);
+		await this._goIntoIdleState({ dnloadIdle: true });
+		const data = Buffer.alloc(1);
+		data[0] = DfuseCommand.DFUSE_COMMAND_ENTER_SAFE_MODE;
+		await this._sendDnloadRequest(data, 0 /* wValue */);
+		await this._pollUntil((state) => state === DfuDeviceState.dfuMANIFEST);
 	}
 
 	/**
@@ -328,7 +344,7 @@ class Dfu {
 		}
 	}
 
-	async _goIntoDfuIdleOrDfuDnloadIdle() {
+	async _goIntoIdleState({ dnloadIdle = false, uploadIdle = false } = {}) {
 		try {
 			const state = await this._getStatus();
 			if (state.state === DfuDeviceState.dfuERROR) {
@@ -336,7 +352,9 @@ class Dfu {
 				await this._clearStatus();
 			}
 
-			if (state.state !== DfuDeviceState.dfuIDLE && state.state !== DfuDeviceState.dfuDNLOAD_IDLE) {
+			if (state.state !== DfuDeviceState.dfuIDLE &&
+					!(dnloadIdle && state.state === DfuDeviceState.dfuDNLOAD_IDLE) &&
+					!(uploadIdle && state.state === DfuDeviceState.dfuUPLOAD_IDLE)) {
 				// If we are in some kind of an unknown state, issue DFU_CLRSTATUS, which may fail,
 				// but the device will go into dfuERROR state, so a subsequent DFU_CLRSTATUS will get us
 				// into dfuIDLE
@@ -347,9 +365,11 @@ class Dfu {
 			await this._clearStatus();
 		}
 
-		// Confirm we are in dfuIDLE or dfuDNLOAD_IDLE
+		// Confirm we are in dfuIDLE or, optionally, in dfuDNLOAD_IDLE or dfuUPLOAD_IDLE
 		const state = await this._getStatus();
-		if (state.state !== DfuDeviceState.dfuIDLE && state.state !== DfuDeviceState.dfuDNLOAD_IDLE) {
+		if (state.state !== DfuDeviceState.dfuIDLE &&
+				!(dnloadIdle && state.state === DfuDeviceState.dfuDNLOAD_IDLE) &&
+				!(uploadIdle && state.state === DfuDeviceState.dfuUPLOAD_IDLE)) {
 			throw new DfuError('Invalid state');
 		}
 		return state;
@@ -538,9 +558,11 @@ class Dfu {
 		}
 
 		const commandNames = {
-			0x00: 'GET_COMMANDS',
-			0x21: 'SET_ADDRESS',
-			0x41: 'ERASE_SECTOR'
+			[DfuseCommand.DFUSE_COMMAND_GET_COMMAND]: 'GET_COMMANDS',
+			[DfuseCommand.DFUSE_COMMAND_SET_ADDRESS_POINTER]: 'SET_ADDRESS',
+			[DfuseCommand.DFUSE_COMMAND_ERASE]: 'ERASE_SECTOR',
+			[DfuseCommand.DFUSE_COMMAND_READ_UNPROTECT]: 'READ_UNPROTECT',
+			[DfuseCommand.DFUSE_COMMAND_ENTER_SAFE_MODE]: 'ENTER_SAFE_MODE',
 		};
 
 		const payload = Buffer.alloc(5);
@@ -849,6 +871,17 @@ class Dfu {
 		}
 		if (state.state !== DfuDeviceState.dfuIDLE) {
 			throw new Error('Failed to return to idle state after abort: state ' + state.state);
+		}
+	}
+
+	async _checkDfuseCommandSupported(cmd) {
+		if (!this._supportedDfuseCommands.length) {
+			await this._goIntoIdleState({ uploadIdle: true });
+			const data = await this._sendUploadReqest(DEFAULT_TRANSFER_SIZE, 0 /* value */); // Get command
+			this._supportedDfuseCommands = [...data];
+		}
+		if (!this._supportedDfuseCommands.includes(cmd)) {
+			throw new UnsupportedDfuseCommandError('Unsupported DfuSe command');
 		}
 	}
 }

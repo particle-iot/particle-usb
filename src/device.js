@@ -292,6 +292,9 @@ class Device extends DeviceBase {
 	 * @return {Promise}
 	 */
 	enterSafeMode({ timeout = globalOptions.requestTimeout } = {}) {
+		if (this.isInDfuMode) {
+			return this._dfu.enterSafeMode();
+		}
 		return this.sendRequest(Request.SAFE_MODE, null /* msg */, { timeout });
 	}
 
