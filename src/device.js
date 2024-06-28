@@ -963,6 +963,10 @@ class Device extends DeviceBase {
 	 * @returns {GetProtectionStateResult}
 	 */
 	async getProtectionState() {
+		if (this.isInDfuMode) {
+			return this._dfu.getProtectionState();
+		}
+
 		const rep = await this.sendProtobufRequest('GetProtectedStateRequest');
 		const result = { protected: rep.state };
 		if (rep.overridden) {

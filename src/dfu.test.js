@@ -340,7 +340,7 @@ describe('dfu', () => {
 
 
 	describe('_doUploadImpl', () => {
-		it('should perform upload with progress', async () => {
+		it('performs upload with progress', async () => {
 			const maxSize = 40960;
 			const firstBlock = 0;
 			const logger = {
@@ -361,6 +361,102 @@ describe('dfu', () => {
 			expect(dfu._sendUploadReqest.callCount).equal(expectedNumCalls);
 			expect(data).to.be.an.instanceof(Buffer);
 			expect(data.length).equal(maxSize);
+		});
+	});
+
+	describe('getProtectionState', () => {
+		it('returns that all segments are protected', async () => {
+			const dfu = new Dfu();
+			sinon.stub(dfu, 'setAltSetting').resolves();
+			const internalFlashDesc = {
+				'name': 'Internal Flash',
+				'segments': [
+					{
+						'start': 134217728,
+						'sectorSize': 16384,
+						'end': 134266880,
+						'readable': false,
+						'erasable': true,
+						'writable': false
+					},
+					{
+						'start': 134266880,
+						'sectorSize': 16384,
+						'end': 134283264,
+						'readable': false,
+						'erasable': true,
+						'writable': false
+					},
+					{
+						'start': 134283264,
+						'sectorSize': 65536,
+						'end': 134348800,
+						'readable': false,
+						'erasable': true,
+						'writable': false
+					},
+					{
+						'start': 134348800,
+						'sectorSize': 131072,
+						'end': 135266304,
+						'readable': false,
+						'erasable': true,
+						'writable': false
+					}
+				]
+			};
+			dfu._memoryInfo = internalFlashDesc;
+
+			const res = await dfu.getProtectionState();
+
+			expect(res.protected).to.eql(true);
+		});
+
+		it('returns that all segments are not protected', async () => {
+			const dfu = new Dfu();
+			sinon.stub(dfu, 'setAltSetting').resolves();
+			const internalFlashDesc = {
+				'name': 'Internal Flash',
+				'segments': [
+					{
+						'start': 134217728,
+						'sectorSize': 16384,
+						'end': 134266880,
+						'readable': true,
+						'erasable': false,
+						'writable': false
+					},
+					{
+						'start': 134266880,
+						'sectorSize': 16384,
+						'end': 134283264,
+						'readable': true,
+						'erasable': true,
+						'writable': true
+					},
+					{
+						'start': 134283264,
+						'sectorSize': 65536,
+						'end': 134348800,
+						'readable': true,
+						'erasable': true,
+						'writable': true
+					},
+					{
+						'start': 134348800,
+						'sectorSize': 131072,
+						'end': 135266304,
+						'readable': true,
+						'erasable': true,
+						'writable': true
+					}
+				]
+			};
+			dfu._memoryInfo = internalFlashDesc;
+
+			const res = await dfu.getProtectionState();
+
+			expect(res.protected).to.eql(false);
 		});
 	});
 });
