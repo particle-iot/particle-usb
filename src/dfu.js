@@ -219,8 +219,15 @@ class Dfu {
 	}
 
 	async getSegmentForInternalFlash() {
+		let allSegmentsProtected = true;
+		// setting 0 is for Internal Flash
 		await this.setAltSetting(0);
-		return this._memoryInfo;
+		this._memoryInfo.segments.forEach(s => {
+			if (!(s.erasable === true && s.writable === false && s.readable === false)) {
+				allSegmentsProtected = false;
+			}
+		});
+		return allSegmentsProtected;
 	}
 
 	/**

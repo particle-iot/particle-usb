@@ -964,13 +964,7 @@ class Device extends DeviceBase {
 	 */
 	async getProtectionState() {
 		if (this.isInDfuMode) {
-			let allSegmentsProtected = true;
-			const memInfo = await this._dfu.getSegmentForInternalFlash();
-			memInfo.segments.forEach(s => {
-				if (!(s.erasable === true && s.writable === false && s.readable === false)) {
-					allSegmentsProtected = false;
-				}
-			});
+			const allSegmentsProtected = await this._dfu.getSegmentForInternalFlash();
 			// FIXME: Currently, device-os does not reliably distinguish the `overridden` value for different protection modes.
 			// As a workaround, we use `null` to uniquely indicate the distinction.
 			return { protected: allSegmentsProtected, overridden: null };
