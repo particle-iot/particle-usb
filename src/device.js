@@ -975,7 +975,9 @@ class Device extends DeviceBase {
 					});
 				}
 			});
-			return { protected: allSegmentsProtected };
+			// FIXME: Currently, device-os does not reliably distinguish the `overridden` value for different protection modes.
+			// As a workaround, we use `null` to uniquely indicate the distinction.
+			return { protected: allSegmentsProtected, overridden: null };
 		}
 
 		const rep = await this.sendProtobufRequest('GetProtectedStateRequest');
