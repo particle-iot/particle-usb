@@ -218,13 +218,9 @@ class Dfu {
 		await this._pollUntil((state) => state === DfuDeviceState.dfuMANIFEST);
 	}
 
-	async getMemoryMap() {
-		for (const i of this._allInterfaces) {
-			const ifaceName = await this._getStringDescriptor(i.iInterface);
-			const memInfo = this._parseMemoryDescriptor(ifaceName);
-			this._memoryMap.push(memInfo);
-		}
-		return this._memoryMap;
+	async getSegmentForInternalFlash() {
+		await this.setAltSetting(0);
+		return this._memoryInfo;
 	}
 
 	/**
