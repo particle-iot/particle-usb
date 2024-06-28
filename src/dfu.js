@@ -155,7 +155,6 @@ class Dfu {
 		this._alternate = DEFAULT_ALTERNATE;
 		this._claimed = false;
 		this._memoryInfo = null;
-		this._memoryMap = [];
 		this._transferSize = DEFAULT_TRANSFER_SIZE;
 		this._allInterfaces = [];
 	}

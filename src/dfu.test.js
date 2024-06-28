@@ -340,7 +340,7 @@ describe('dfu', () => {
 
 
 	describe('_doUploadImpl', () => {
-		it('should perform upload with progress', async () => {
+		it('performs upload with progress', async () => {
 			const maxSize = 40960;
 			const firstBlock = 0;
 			const logger = {
@@ -365,7 +365,7 @@ describe('dfu', () => {
 	});
 
 	describe('getProtectionState', () => {
-		it('should return that all segments are protected', async () => {
+		it('returns that all segments are protected', async () => {
 			const dfu = new Dfu();
 			sinon.stub(dfu, 'setAltSetting').resolves();
 			const internalFlashDesc = {
@@ -412,7 +412,7 @@ describe('dfu', () => {
 			expect(res.protected).to.eql(true);
 		});
 
-		it('should return that all segments are not protected', async () => {
+		it('returns that all segments are not protected', async () => {
 			const dfu = new Dfu();
 			sinon.stub(dfu, 'setAltSetting').resolves();
 			const internalFlashDesc = {
