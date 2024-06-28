@@ -155,6 +155,7 @@ class Dfu {
 		this._alternate = DEFAULT_ALTERNATE;
 		this._claimed = false;
 		this._memoryInfo = null;
+		this._memoryMap = [];
 		this._transferSize = DEFAULT_TRANSFER_SIZE;
 		this._allInterfaces = [];
 	}
@@ -215,6 +216,15 @@ class Dfu {
 		data[0] = DfuseCommand.DFUSE_COMMAND_ENTER_SAFE_MODE;
 		await this._sendDnloadRequest(data, 0 /* wValue */);
 		await this._pollUntil((state) => state === DfuDeviceState.dfuMANIFEST);
+	}
+
+	async getMemoryMap() {
+		for (const i of this._allInterfaces) {
+			const ifaceName = await this._getStringDescriptor(i.iInterface);
+			const memInfo = this._parseMemoryDescriptor(ifaceName);
+			this._memoryMap.push(memInfo);
+		}
+		return this._memoryMap;
 	}
 
 	/**

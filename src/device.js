@@ -963,6 +963,21 @@ class Device extends DeviceBase {
 	 * @returns {GetProtectionStateResult}
 	 */
 	async getProtectionState() {
+		if (this.isInDfuMode) {
+			let allSegmentsProtected = true;
+			const memMap = await this._dfu.getMemoryMap();
+			memMap.forEach(m => {
+				if (m.name === 'Internal Flash') {
+					m.segments.forEach(s => {
+						if (!(s.erasable === true && s.writable === false && s.readable === false)) {
+							allSegmentsProtected = false;
+						}
+					});
+				}
+			});
+			return { protected: allSegmentsProtected };
+		}
+
 		const rep = await this.sendProtobufRequest('GetProtectedStateRequest');
 		const result = { protected: rep.state };
 		if (rep.overridden) {

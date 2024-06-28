@@ -21,11 +21,6 @@ const DfuDevice = (base) => class extends base {
 		const buffer = await this._dfu.doUpload({ startAddr, maxSize: size, progress });
 		return buffer;
 	}
-
-	async getSegment(altSetting) {
-		const seg = await this._dfu.getSegment(altSetting);
-		return seg;
-	}
 };
 
 module.exports = {
