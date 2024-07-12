@@ -30,6 +30,14 @@ describe('Device', () => {
 		expect(result).to.eql(exampleSerialNumber);
 	});
 
+	it('provides getDeviceId()', async () => {
+		const exampleDeviceId = '0123456789abcdef';
+		sinon.stub(device, 'sendProtobufRequest').resolves({ id: exampleDeviceId });
+		const result = await device.getDeviceId();
+		expect(device.sendProtobufRequest).to.have.property('callCount', 1);
+		expect(result).to.eql(exampleDeviceId);
+	});
+
 	it('provides enterListeningMode()', async () => {
 		sinon.stub(device, 'sendProtobufRequest');
 		device.sendProtobufRequest.onCall(0).resolves({});
