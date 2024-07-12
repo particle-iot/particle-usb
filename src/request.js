@@ -2,6 +2,11 @@ const { definitions: proto } = require('@particle/device-os-protobuf');
 
 // Mapping of request types to Protobuf messages
 const Request = {
+	GET_DEVICE_ID: {
+		id: 20,
+		request: proto.GetDeviceIdRequest,
+		reply: proto.GetDeviceIdReply
+	},
 	GET_SERIAL_NUMBER: {
 		id: 21,
 		request: proto.GetSerialNumberRequest,

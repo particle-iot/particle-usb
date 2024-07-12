@@ -184,6 +184,26 @@ class Device extends DeviceBase {
 	}
 
 	/**
+	 * Get the device's id.
+	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 0.9.0)
+	 * - Gen 2 (since Device OS 1.5.0)
+	 *
+	 * @param {Object} [options] Options.
+	 * @param {Number} [options.timeout] Timeout (milliseconds).
+	 * @return {Promise<String>}
+	 */
+	async getDeviceId({ timeout = globalOptions.requestTimeout } = {}) {
+		const r = await this.sendProtobufRequest(
+			'GetDeviceIdRequest',
+			null,
+			{ timeout }
+		);
+		return r.id;
+	}
+
+	/**
 	 * Perform the system reset.
 	 *
 	 * Note: The only safe operation that can be performed on the device instance after the device
