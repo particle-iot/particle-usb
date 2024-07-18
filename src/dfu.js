@@ -219,7 +219,7 @@ class Dfu {
 	}
 
 	/**
-	 * Enter safe mode.
+	 * Re-enable device protection.
 	 *
 	 * @returns {Promise}
 	 */
