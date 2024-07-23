@@ -925,6 +925,13 @@ class Device extends DeviceBase {
 	 * @returns {Promise<UnprotectDeviceResult>}
 	 */
 	async unprotectDevice({ action, serverNonce, serverSignature, serverPublicKeyFingerprint }) {
+		if (this.isInDfuMode) {
+			if (action !== 'reset') {
+				throw new StateError('Cannot perform operation when device is in DFU mode');
+			}
+			await this._dfu.clearSecurityModeOverride();
+			return;
+		}
 		let req;
 		switch (action) {
 			case 'prepare': {
