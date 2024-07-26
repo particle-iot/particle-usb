@@ -367,7 +367,7 @@ describe('dfu', () => {
 	describe('getProtectionState', () => {
 		it ('detects an Open Device from string desc for Device-OS >= 6.1.2', async () => {
 			const dfu = new Dfu();
-			sinon.stub(dfu, '_getStringDescriptor').resolves("sm=o");
+			sinon.stub(dfu, '_getStringDescriptor').resolves('sm=o');
 
 			const res = await dfu.getProtectionState();
 			expect(res.protected).to.eql(false);
@@ -376,7 +376,7 @@ describe('dfu', () => {
 
 		it ('detects a Protected Device from string desc for Device-OS >= 6.1.2', async () => {
 			const dfu = new Dfu();
-			sinon.stub(dfu, '_getStringDescriptor').resolves("sm=p");
+			sinon.stub(dfu, '_getStringDescriptor').resolves('sm=p');
 
 			const res = await dfu.getProtectionState();
 			expect(res.protected).to.eql(true);
@@ -384,7 +384,7 @@ describe('dfu', () => {
 
 		it ('detects a Protected Device in Service Mode from string desc for Device-OS >= 6.1.2', async () => {
 			const dfu = new Dfu();
-			sinon.stub(dfu, '_getStringDescriptor').resolves("sm=s");
+			sinon.stub(dfu, '_getStringDescriptor').resolves('sm=s');
 
 			const res = await dfu.getProtectionState();
 			expect(res.protected).to.eql(false);

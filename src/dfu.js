@@ -238,7 +238,7 @@ class Dfu {
 	async getProtectionState() {
 		try {
 			const res = await this._getStringDescriptor(0xfa);
-			const state = res.split(';').find(kv => kv.startsWith('sm='))?.split('=')[1]?.trim().charAt(0);
+			const state = res.split(';').find(kv => kv.startsWith('sm=')).split('=')[1].trim().charAt(0);
 			switch (state) {
 				case 'o': return { protected: false, overridden: false };
 				case 'p': return { protected: true };
@@ -246,15 +246,14 @@ class Dfu {
 				default: throw new Error('Unknown device state');
 			}
 		} catch (error) {
-			console.warn('Failed to get protection state', error);
 			// Fallback for devices with Device-OS < 6.1.2
 			await this.setAltSetting(0); // setting 0 is for Internal Flash
-	
-			const allSegmentsProtected = this._memoryInfo.segments.every(s => 
+
+			const allSegmentsProtected = this._memoryInfo.segments.every(s =>
 				s.erasable === true && s.writable === false && s.readable === false
 			);
-	
-			// Use `null` for `overridden` to indicate older Device-OS version
+
+			// Use `null` for `overridden` since we cannot distinguish between Open and Service Mode
 			return { protected: allSegmentsProtected, overridden: null };
 		}
 	}
