@@ -238,7 +238,7 @@ class Dfu {
 	async getProtectionState() {
 		try {
 			const res = await this._getStringDescriptor(0xfe);
-			const state = res.split(';').find(kv => kv.startsWith('s='))?.split('=')[1];
+			const state = res.split(';').find(kv => kv.startsWith('sm='))?.split('=')[1];
 	
 			switch (state) {
 				case 'o': return { protected: false, overridden: false };

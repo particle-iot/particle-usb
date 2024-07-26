@@ -365,8 +365,35 @@ describe('dfu', () => {
 	});
 
 	describe('getProtectionState', () => {
+		it ('detects an Open Device from string desc for Device-OS >= 6.1.2', async () => {
+			const dfu = new Dfu();
+			sinon.stub(dfu, '_getStringDescriptor').resolves("sm=o");
+
+			const res = await dfu.getProtectionState();
+			expect(res.protected).to.eql(false);
+			expect(res.overridden).to.eql(false);
+		});
+
+		it ('detects a Protected Device from string desc for Device-OS >= 6.1.2', async () => {
+			const dfu = new Dfu();
+			sinon.stub(dfu, '_getStringDescriptor').resolves("sm=p");
+
+			const res = await dfu.getProtectionState();
+			expect(res.protected).to.eql(true);
+		});
+
+		it ('detects a Protected Device in Service Mode from string desc for Device-OS >= 6.1.2', async () => {
+			const dfu = new Dfu();
+			sinon.stub(dfu, '_getStringDescriptor').resolves("sm=s");
+
+			const res = await dfu.getProtectionState();
+			expect(res.protected).to.eql(false);
+			expect(res.overridden).to.eql(true);
+		});
+
 		it('returns that all segments are protected', async () => {
 			const dfu = new Dfu();
+			sinon.stub(dfu, '_getStringDescriptor').rejects('random error');
 			sinon.stub(dfu, 'setAltSetting').resolves();
 			const internalFlashDesc = {
 				'name': 'Internal Flash',
@@ -409,11 +436,13 @@ describe('dfu', () => {
 
 			const res = await dfu.getProtectionState();
 
+			expect(dfu.setAltSetting).to.have.been.calledOnce;
 			expect(res.protected).to.eql(true);
 		});
 
 		it('returns that all segments are not protected', async () => {
 			const dfu = new Dfu();
+			sinon.stub(dfu, '_getStringDescriptor').rejects('random error');
 			sinon.stub(dfu, 'setAltSetting').resolves();
 			const internalFlashDesc = {
 				'name': 'Internal Flash',
@@ -456,6 +485,7 @@ describe('dfu', () => {
 
 			const res = await dfu.getProtectionState();
 
+			expect(dfu.setAltSetting).to.have.been.calledOnce;
 			expect(res.protected).to.eql(false);
 		});
 	});
