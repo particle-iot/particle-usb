@@ -236,18 +236,26 @@ class Dfu {
 	 * @return {Promise} Object with property 'protected'
 	 */
 	async getProtectionState() {
-		// setting 0 is for Internal Flash
-		await this.setAltSetting(0);
-
-		let allSegmentsProtected = true;
-		this._memoryInfo.segments.forEach(s => {
-			if (!(s.erasable === true && s.writable === false && s.readable === false)) {
-				allSegmentsProtected = false;
+		try {
+			const res = await this._getStringDescriptor(0xfa);
+			const state = res.split(';').find(kv => kv.startsWith('sm=')).split('=')[1].trim().charAt(0);
+			switch (state) {
+				case 'o': return { protected: false, overridden: false };
+				case 'p': return { protected: true };
+				case 's': return { protected: false, overridden: true };
+				default: throw new Error('Unknown device state');
 			}
-		});
-		// FIXME: Currently, device-os does not reliably distinguish the `overridden` value for different protection modes.
-		// As a workaround, we use `null` to uniquely indicate the distinction.
-		return { protected: allSegmentsProtected, overridden: null };
+		} catch (error) {
+			// Fallback for devices with Device-OS < 6.1.2
+			await this.setAltSetting(0); // setting 0 is for Internal Flash
+
+			const allSegmentsProtected = this._memoryInfo.segments.every(s =>
+				s.erasable === true && s.writable === false && s.readable === false
+			);
+
+			// Use `null` for `overridden` since we cannot distinguish between Open and Service Mode
+			return { protected: allSegmentsProtected, overridden: null };
+		}
 	}
 
 	/**
