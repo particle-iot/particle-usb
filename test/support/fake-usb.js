@@ -9,8 +9,8 @@ const USB_DEVICES = PLATFORMS.reduce((arr, platform) => {
 		arr.push({
 			type: platform.name,
 			platformId: platform.id,
-			vendorId: platform.usb.vendorId,
-			productId: platform.usb.productId,
+			vendorId: platform?.usb?.vendorId,
+			productId: platform?.usb?.productId,
 			dfu: false
 		});
 	}
@@ -18,8 +18,8 @@ const USB_DEVICES = PLATFORMS.reduce((arr, platform) => {
 		arr.push({
 			type: platform.name,
 			platformId: platform.id,
-			vendorId: platform.dfu.vendorId,
-			productId: platform.dfu.productId,
+			vendorId: platform?.dfu?.vendorId,
+			productId: platform?.dfu?.productId,
 			dfu: true
 		});
 	}
