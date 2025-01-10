@@ -742,10 +742,10 @@ async function getDevices({ types = [], includeDfu = true } = {}) {
 	const filters = [];
 	PLATFORMS.forEach((platform) => {
 		if (types.length === 0 || types.includes(platform.name)) {
-			if (platform.usb.vendorId) {
+			if (platform && platform.usb && platform.usb.vendorId) {
 				filters.push(platform.usb);
 			}
-			if (includeDfu && platform.dfu.vendorId) {
+			if (includeDfu && platform && platform.dfu && platform.dfu.vendorId) {
 				filters.push(platform.dfu);
 			}
 		}
@@ -765,10 +765,10 @@ async function openDeviceById(id, options = null) {
 	const log = globalOptions.log;
 	const filters = [];
 	PLATFORMS.forEach((platform) => {
-		if (platform.usb.vendorId) {
+		if (platform && platform.usb && platform.usb.vendorId) {
 			filters.push(Object.assign({ serialNumber: id }, platform.usb));
 		}
-		if (platform.dfu.vendorId) {
+		if (platform && platform.dfu && platform.dfu.vendorId) {
 			filters.push(Object.assign({ serialNumber: id }, platform.dfu));
 		}
 	});
