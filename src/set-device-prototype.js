@@ -7,6 +7,7 @@ const { CloudDevice } = require('./cloud-device');
 const { Gen3Device } = require('./gen3-device');
 const { NetworkDevice } = require('./network-device');
 const { DfuDevice } = require('./dfu-device');
+const { LinuxDevice } = require('./linux-device');
 
 /**
  * This constant has a structure like this:
@@ -17,21 +18,26 @@ const { DfuDevice } = require('./dfu-device');
 // }
  */
 const DEVICE_CLASSES = PLATFORMS.reduce((classes, platform) => {
-	let klass = class extends NetworkDevice(Device) {};
-	if (platform.generation === 3) {
-		klass = class extends Gen3Device(klass) {};
-	}
-	if (platform.features.includes('cellular')) {
-		klass = class extends CellularDevice(klass) {};
-	}
-	if (platform.features.includes('wifi')) {
-		if (platform.generation === 2 || platform.generation === 1) {
-			klass = class extends WifiDeviceLegacy(klass) {};
-		} else {
-			klass = class extends WifiDevice(klass) {};
+	let klass;
+	if (platform.features.includes('linux')) {
+		klass = LinuxDevice;
+	} else {
+		klass = class extends NetworkDevice(Device) {};
+		if (platform.generation === 3) {
+			klass = class extends Gen3Device(klass) {};
 		}
+		if (platform.features.includes('cellular')) {
+			klass = class extends CellularDevice(klass) {};
+		}
+		if (platform.features.includes('wifi')) {
+			if (platform.generation === 2 || platform.generation === 1) {
+				klass = class extends WifiDeviceLegacy(klass) {};
+			} else {
+				klass = class extends WifiDevice(klass) {};
+			}
+		}
+		klass = class extends CloudDevice(klass) {};
 	}
-	klass = class extends CloudDevice(klass) {};
 
 	classes[platform.name] = klass;
 

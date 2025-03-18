@@ -5,9 +5,6 @@ const PLATFORMS = [];
 for (let p of Object.values(deviceConstants)) {
 	p = clone(p);
 	if (p.usb) {
-		if (p.usb.quirks && p.usb.quirks.controlRequestsNotSupported) {
-			continue;
-		}
 		p.usb = parseUsbInfo(p.usb);
 	}
 	if (p.dfu) {
