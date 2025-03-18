@@ -1,6 +1,6 @@
 const deviceConstants = require('@particle/device-constants');
 
-const PLATFORMS = []
+const PLATFORMS = [];
 
 for (let p of Object.values(deviceConstants)) {
 	p = clone(p);
