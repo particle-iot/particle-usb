@@ -191,7 +191,7 @@ describe('Browser Usage', () => {
 		const height = 768;
 		const width = 1024;
 		const options = {
-			args: [`--window-size=${width},${height}`],
+			args: [`--window-size=${width},${height}`, '--no-sandbox'],
 			defaultViewport: { width, height }
 		};
 
