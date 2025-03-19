@@ -9,6 +9,7 @@ const { Result } = require('./result');
 const { DeviceError, NotFoundError, NotAllowedError, StateError, TimeoutError, MemoryError, ProtocolError, UsbError, InternalError, RequestError, DeviceProtectionError, UnsupportedDfuseCommandError } = require('./error');
 const { config } = require('./config');
 const { setDevicePrototype } = require('./set-device-prototype');
+const { EdlDevice } = require('./edl-device');
 
 /**
  * Enumerate Particle USB devices attached to the host.
@@ -45,6 +46,15 @@ function openNativeUsbDevice(nativeUsbDevice, options) {
 	return openUsbNativeUsbDevice(nativeUsbDevice, options).then(dev => setDevicePrototype(dev));
 }
 
+/**
+ * Get devices in Qualcomm EDL mode.
+ *
+ * @return {Promise<Array<EdlDevice>>}
+ */
+function getEdlDevices() {
+	return EdlDevice.getEdlDevices();
+}
+
 module.exports = {
 	PollingPolicy,
 	FirmwareModule,
@@ -73,5 +83,6 @@ module.exports = {
 	getDevices,
 	openDeviceById,
 	openNativeUsbDevice,
+	getEdlDevices,
 	config
 };

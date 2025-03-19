@@ -660,6 +660,10 @@ class Device {
 		return this._opts.productId;
 	}
 
+	get productName() {
+		return this._opts.productName;
+	}
+
 	get serialNumber() {
 		return this._opts.serialNumber;
 	}

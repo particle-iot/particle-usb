@@ -36,22 +36,29 @@ class UsbDevice {
 		if (!this._dev.particle) {
 			this._dev.particle = {
 				isOpen: false,
-				serialNumber: null
+				serialNumber: null,
+				productName: null
 			};
 		}
 		this._quirks = {};
 	}
 
-	open() {
+	async open() {
+		try {
+			this._dev.open();
+		} catch (err) {
+			throw wrapUsbError(err, 'Unable to open USB device');
+		}
+		// Get serial number string
+		const descr = this._dev.deviceDescriptor;
+		this._dev.particle.serialNumber = await this._getStringDescriptor(descr.iSerialNumber, 'serial number');
+		this._dev.particle.productName = await this._getStringDescriptor(descr.iProduct, 'product name');
+		this._dev.particle.isOpen = true;
+	}
+
+	_getStringDescriptor(index, description) {
 		return new Promise((resolve, reject) => {
-			try {
-				this._dev.open();
-			} catch (err) {
-				return reject(wrapUsbError(err, 'Unable to open USB device'));
-			}
-			// Get serial number string
-			const descr = this._dev.deviceDescriptor;
-			this._dev.getStringDescriptor(descr.iSerialNumber, (err, serialNum) => {
+			this._dev.getStringDescriptor(index, (err, value) => {
 				if (err) {
 					try {
 						this._dev.close();
@@ -59,11 +66,9 @@ class UsbDevice {
 						this._log.error(`Unable to close device: ${err.message}`);
 						// Ignore error
 					}
-					return reject(wrapUsbError(err, 'Unable to get serial number descriptor'));
+					return reject(wrapUsbError(err, `Unable to get ${description}`));
 				}
-				this._dev.particle.serialNumber = serialNum;
-				this._dev.particle.isOpen = true;
-				resolve();
+				return resolve(value);
 			});
 		});
 	}
@@ -167,6 +172,18 @@ class UsbDevice {
 		});
 	}
 
+	getProductDescription() {
+		return new Promise((resolve, reject) => {
+			const descr = this._dev.deviceDescriptor;
+			this._dev.getStringDescriptor(descr.iProduct, (err, productDescription) => {
+				if (err) {
+					return reject(wrapUsbError(err, 'Unable to get product description'));
+				}
+				resolve(productDescription);
+			});
+		});
+	}
+
 	get vendorId() {
 		return this._dev.deviceDescriptor.idVendor;
 	}
@@ -177,6 +194,10 @@ class UsbDevice {
 
 	get serialNumber() {
 		return this._dev.particle.serialNumber;
+	}
+
+	get productName() {
+		return this._dev.particle.productName;
 	}
 
 	get isOpen() {
