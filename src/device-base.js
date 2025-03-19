@@ -817,5 +817,6 @@ module.exports = {
 	DeviceBase,
 	getDevices,
 	openDeviceById,
-	openNativeUsbDevice
+	openNativeUsbDevice,
+	platformForUsbIds // For testing
 };

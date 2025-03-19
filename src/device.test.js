@@ -7,6 +7,7 @@ const { sinon, expect } = require('../test/support');
 const { UsbDevice } = require('./usb-device-node');
 const { PLATFORMS } = require('./platforms');
 const { Device } = require('./device');
+const { platformForUsbIds } = require('./device-base');
 const DeviceOSProtobuf = require('@particle/device-os-protobuf');
 const { Result } = require('./result');
 const { RequestError, StateError } = require('./error');
@@ -16,7 +17,7 @@ describe('Device', () => {
 	let usbDevice, p2Platform, device;
 	beforeEach(async () => {
 		usbDevice = new UsbDevice({});
-		p2Platform = PLATFORMS.find(element => element.name === 'p2');
+		p2Platform = platformForUsbIds(0x2b04, 0xc020); // P2
 		device = new Device(usbDevice, p2Platform);
 	});
 	afterEach(() => {
@@ -112,7 +113,6 @@ describe('Device', () => {
 		];
 
 		sinon.stub(device, 'sendProtobufRequest').resolves({ modulesDeprecated: moduleInfo });
-		sinon.stub(device, 'isInDfuMode').value(false);
 		const result = await device.getFirmwareModuleInfo();
 		expect(device.sendProtobufRequest).to.have.property('callCount', 1);
 		expect(result).to.eql(expectedModuleInfo);
@@ -128,6 +128,7 @@ describe('Device', () => {
 		];
 
 		sinon.stub(device, 'sendProtobufRequest').resolves({ modulesDeprecated: moduleInfo });
+		sinon.stub(device, 'isInDfuMode').value(true);
 		await expect(device.getFirmwareModuleInfo()).to.be.eventually.rejectedWith(StateError, 'Cannot get information when the device is in DFU mode');
 	});
 
@@ -218,7 +219,6 @@ describe('Device', () => {
 			}
 		];
 		sinon.stub(device, 'sendProtobufRequest').resolves({ modules: modulesInfo });
-		sinon.stub(device, 'isInDfuMode').value(false);
 
 		const result = await device.getFirmwareModuleInfo();
 
@@ -255,7 +255,6 @@ describe('Device', () => {
 			]
 		};
 		sinon.stub(device, 'sendProtobufRequest').resolves(expectedAssetInfo);
-		sinon.stub(device, 'isInDfuMode').value(false);
 
 		const result = await device.getAssetInfo();
 
@@ -301,7 +300,8 @@ describe('Device', () => {
 		let device;
 
 		beforeEach(() => {
-			device = new Device();
+			const platform = platformForUsbIds(0x2b04, 0xc020); // P2
+			device = new Device(null /* dev */, platform);
 		});
 
 		describe('sendProtobufRequest', () => {
