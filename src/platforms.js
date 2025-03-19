@@ -3,6 +3,9 @@ const deviceConstants = require('@particle/device-constants');
 const PLATFORMS = [];
 
 for (let p of Object.values(deviceConstants)) {
+	if (!p.usb && !p.dfu) {
+		continue;
+	}
 	p = clone(p);
 	if (p.usb) {
 		p.usb = parseUsbInfo(p.usb);

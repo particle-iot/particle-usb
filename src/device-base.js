@@ -1,7 +1,7 @@
 const { getUsbDevices, UsbDevice, MAX_CONTROL_TRANSFER_DATA_SIZE } = require('./usb-device-node');
 const proto = require('./usb-protocol');
 const { PLATFORMS } = require('./platforms');
-const { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, assert } = require('./error');
+const { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, NotAllowedError, assert } = require('./error');
 const { globalOptions } = require('./config');
 const { Dfu } = require('./dfu');
 
@@ -103,6 +103,9 @@ class DeviceBase extends EventEmitter {
 		this._fwVer = null; // Firmware version
 		this._id = null; // Device ID
 		this._dfu = null; // DFU class implementation
+		// Whether the device supports all the expected USB control requests. A device without such support
+		// can only be opened/closed but we still want it to be discoverable as a Particle device
+		this._supported = !this._info.quirks.controlRequestsNotSupported;
 	}
 
 	/**
@@ -134,16 +137,18 @@ class DeviceBase extends EventEmitter {
 			this._id = this._dev.serialNumber.replace(/[^\x20-\x7e]/g, '').toLowerCase();
 			this._log.trace(`Device ID: ${this._id}`);
 
-			// Get firmware version
-			return this._getFirmwareVersion().then(ver => {
-				this._fwVer = ver;
-				this._log.trace(`Firmware version: ${this._fwVer}`);
-			}).catch(err => {
-				// Pre-0.6.0 firmwares and devices in DFU mode don't support the firmware version request
-				if (!this._info.dfu) {
-					this._log.trace(`Unable to get firmware version: ${err.message}`);
-				}
-			});
+			if (this._supported) {
+				// Get firmware version
+				return this._getFirmwareVersion().then(ver => {
+					this._fwVer = ver;
+					this._log.trace(`Firmware version: ${this._fwVer}`);
+				}).catch(err => {
+					// Pre-0.6.0 firmwares and devices in DFU mode don't support the firmware version request
+					if (!this._info.dfu) {
+						this._log.trace(`Unable to get firmware version: ${err.message}`);
+					}
+				});
+			}
 		}).then(() => {
 			if (this._info.dfu) {
 				this._dfu = new Dfu(this._dev, this._log);
@@ -237,6 +242,9 @@ class DeviceBase extends EventEmitter {
 			}
 			if (type < 0 || type > proto.MAX_REQUEST_TYPE) {
 				throw new RangeError('Invalid request type');
+			}
+			if (!this._supported) {
+				throw new NotAllowedError('Control requests are not supported');
 			}
 			const dataIsStr = (typeof data === 'string');
 			if (dataIsStr) {
@@ -371,17 +379,19 @@ class DeviceBase extends EventEmitter {
 			this._log.trace('Closing device');
 			this._state = DeviceState.CLOSING;
 		}
-		if (this._resetAllRequests()) {
-			return;
-		}
-		if (this._resetNextRequest()) {
-			return;
-		}
-		if (this._checkNextRequest()) {
-			return;
-		}
-		if (this._sendNextRequest()) {
-			return;
+		if (this._supported) {
+			if (this._resetAllRequests()) {
+				return;
+			}
+			if (this._resetNextRequest()) {
+				return;
+			}
+			if (this._checkNextRequest()) {
+				return;
+			}
+			if (this._sendNextRequest()) {
+				return;
+			}
 		}
 		if (this._state === DeviceState.CLOSING && this._activeReqs === 0) {
 			this._close();
