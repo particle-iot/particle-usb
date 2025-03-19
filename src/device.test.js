@@ -5,7 +5,6 @@
  */
 const { sinon, expect } = require('../test/support');
 const { UsbDevice } = require('./usb-device-node');
-const { PLATFORMS } = require('./platforms');
 const { Device } = require('./device');
 const { platformForUsbIds } = require('./device-base');
 const DeviceOSProtobuf = require('@particle/device-os-protobuf');
@@ -300,8 +299,9 @@ describe('Device', () => {
 		let device;
 
 		beforeEach(() => {
+			const usbDev = new UsbDevice({});
 			const platform = platformForUsbIds(0x2b04, 0xc020); // P2
-			device = new Device(null /* dev */, platform);
+			device = new Device(usbDev, platform);
 		});
 
 		describe('sendProtobufRequest', () => {
