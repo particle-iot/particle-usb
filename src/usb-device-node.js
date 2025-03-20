@@ -36,34 +36,48 @@ class UsbDevice {
 		if (!this._dev.particle) {
 			this._dev.particle = {
 				isOpen: false,
-				serialNumber: null
+				serialNumber: null,
+				productName: null
 			};
 		}
 		this._quirks = {};
 	}
 
-	open() {
-		return new Promise((resolve, reject) => {
-			try {
-				this._dev.open();
-			} catch (err) {
-				return reject(wrapUsbError(err, 'Unable to open USB device'));
-			}
-			// Get serial number string
+	async open() {
+		try {
+			this._dev.open();
+		} catch (err) {
+			throw wrapUsbError(err, 'Unable to open USB device');
+		}
+		// Get serial number and product name
+		let serialNum;
+		let prodName;
+		try {
 			const descr = this._dev.deviceDescriptor;
-			this._dev.getStringDescriptor(descr.iSerialNumber, (err, serialNum) => {
+			serialNum = await this._getStringDescriptor(descr.iSerialNumber);
+			prodName = await this._getStringDescriptor(descr.iProduct);
+		} catch (err) {
+			try {
+				this._dev.close();
+			} catch (err) {
+				this._log.error(`Unable to close device: ${err.message}`);
+				// Ignore error
+			}
+			throw err;
+		}
+		this._dev.particle.serialNumber = serialNum;
+		this._dev.particle.productName = prodName;
+		this._dev.particle.isOpen = true;
+	}
+
+	async _getStringDescriptor(index) {
+		return new Promise((resolve, reject) => {
+			this._dev.getStringDescriptor(index, (err, value) => {
 				if (err) {
-					try {
-						this._dev.close();
-					} catch (err) {
-						this._log.error(`Unable to close device: ${err.message}`);
-						// Ignore error
-					}
-					return reject(wrapUsbError(err, 'Unable to get serial number descriptor'));
+					reject(wrapUsbError(err, `Unable to get string descriptor at index ${index}`));
+					return;
 				}
-				this._dev.particle.serialNumber = serialNum;
-				this._dev.particle.isOpen = true;
-				resolve();
+				resolve(value);
 			});
 		});
 	}
@@ -167,6 +181,18 @@ class UsbDevice {
 		});
 	}
 
+	getProductDescription() {
+		return new Promise((resolve, reject) => {
+			const descr = this._dev.deviceDescriptor;
+			this._dev.getStringDescriptor(descr.iProduct, (err, productDescription) => {
+				if (err) {
+					return reject(wrapUsbError(err, 'Unable to get product description'));
+				}
+				resolve(productDescription);
+			});
+		});
+	}
+
 	get vendorId() {
 		return this._dev.deviceDescriptor.idVendor;
 	}
@@ -177,6 +203,10 @@ class UsbDevice {
 
 	get serialNumber() {
 		return this._dev.particle.serialNumber;
+	}
+
+	get productName() {
+		return this._dev.particle.productName;
 	}
 
 	get isOpen() {

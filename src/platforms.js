@@ -1,15 +1,20 @@
 const deviceConstants = require('@particle/device-constants');
 
-const PLATFORMS = Object.values(clone(deviceConstants)); // TODO: (Julien) .filter((platform) => platform.features.include('usb-requests'));
+const PLATFORMS = [];
 
-PLATFORMS.forEach((platform) => {
-	if (platform.usb) {
-		platform.usb = parseUsbInfo(platform.usb);
+for (let p of Object.values(deviceConstants)) {
+	if (!p.usb && !p.dfu) {
+		continue;
 	}
-	if (platform.dfu) {
-		platform.dfu = parseUsbInfo(platform.dfu);
+	p = clone(p);
+	if (p.usb) {
+		p.usb = parseUsbInfo(p.usb);
 	}
-});
+	if (p.dfu) {
+		p.dfu = parseUsbInfo(p.dfu);
+	}
+	PLATFORMS.push(p);
+}
 
 // Convert the "0x2b04" id strings to 0x2b04 numbers
 function parseUsbInfo({ vendorId, productId, quirks }) {

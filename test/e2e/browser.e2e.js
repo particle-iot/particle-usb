@@ -191,7 +191,8 @@ describe('Browser Usage', () => {
 		const height = 768;
 		const width = 1024;
 		const options = {
-			args: [`--window-size=${width},${height}`],
+			// TODO (Sergey): Disabled sandboxing to make CI happy. Updating puppeteer will likely resolve this
+			args: [`--window-size=${width},${height}`, '--no-sandbox'],
 			defaultViewport: { width, height }
 		};
 

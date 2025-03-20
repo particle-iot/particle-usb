@@ -140,6 +140,10 @@ class UsbDevice {
 		return this._dev.productId;
 	}
 
+	get productName() {
+		return this._dev.productName;
+	}
+
 	get serialNumber() {
 		return this._dev.serialNumber;
 	}
