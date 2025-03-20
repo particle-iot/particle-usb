@@ -49,26 +49,35 @@ class UsbDevice {
 		} catch (err) {
 			throw wrapUsbError(err, 'Unable to open USB device');
 		}
-		// Get serial number string
-		const descr = this._dev.deviceDescriptor;
-		this._dev.particle.serialNumber = await this._getStringDescriptor(descr.iSerialNumber, 'serial number');
-		this._dev.particle.productName = await this._getStringDescriptor(descr.iProduct, 'product name');
+		// Get serial number and product name
+		let serialNum;
+		let prodName;
+		try {
+			const descr = this._dev.deviceDescriptor;
+			serialNum = await this._getStringDescriptor(descr.iSerialNumber);
+			prodName = await this._getStringDescriptor(descr.iProduct);
+		} catch (err) {
+			try {
+				this._dev.close();
+			} catch (err) {
+				this._log.error(`Unable to close device: ${err.message}`);
+				// Ignore error
+			}
+			throw err;
+		}
+		this._dev.particle.serialNumber = serialNum;
+		this._dev.particle.productName = prodName;
 		this._dev.particle.isOpen = true;
 	}
 
-	_getStringDescriptor(index, description) {
+	async _getStringDescriptor(index) {
 		return new Promise((resolve, reject) => {
 			this._dev.getStringDescriptor(index, (err, value) => {
 				if (err) {
-					try {
-						this._dev.close();
-					} catch (err) {
-						this._log.error(`Unable to close device: ${err.message}`);
-						// Ignore error
-					}
-					return reject(wrapUsbError(err, `Unable to get ${description}`));
+					reject(wrapUsbError(err, `Unable to get string descriptor at index ${index}`));
+					return;
 				}
-				return resolve(value);
+				resolve(value);
 			});
 		});
 	}
