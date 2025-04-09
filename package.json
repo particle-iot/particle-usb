@@ -52,7 +52,7 @@
   },
   "devDependencies": {
     "@particle/async-utils": "^4.0.2",
-    "@particle/device-constants": "^3.8.3",
+    "@particle/device-constants": "^3.8.4",
     "buffer": "^6.0.3",
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
