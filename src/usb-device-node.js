@@ -224,6 +224,11 @@ class UsbDevice {
 	set quirks(qs) {
 		this._quirks = qs;
 	}
+
+	get usbVersion() {
+		const version = this._dev.deviceDescriptor.bcdUSB;
+		return { major: version >> 8, minor: (version & 0xff) >> 4 };
+	}
 }
 
 async function getUsbDevices(filters) {
