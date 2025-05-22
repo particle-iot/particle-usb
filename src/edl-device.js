@@ -5,9 +5,10 @@ const VENDOR_ID_QUALCOMM = 0x05c6;
 const PRODUCT_ID_EDL_DEVICE = 0x9008;
 
 class EdlDevice {
-	constructor({ serialNumber }) {
+	constructor({ serialNumber, usbVersion }) {
 		this.serialNumber = serialNumber;
 		this.id = this._computeDeviceId();
+		this.usbVersion = usbVersion;
 	}
 
 	_computeDeviceId() {
@@ -31,7 +32,7 @@ class EdlDevice {
 			try {
 				await dev.open();
 				const serialNumber = dev.productName.replace(/.*_SN:/, '');
-				return new EdlDevice({ serialNumber });
+				return new EdlDevice({ serialNumber, usbVersion: dev.usbVersion });
 			} finally {
 				dev.close();
 			}
