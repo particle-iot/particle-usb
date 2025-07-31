@@ -1,4 +1,4 @@
-const deviceConstants = require('@particle/device-constants');
+const { platforms } = require('@particle/device-constants');
 const proto = require('../../src/usb-protocol');
 const { ProtocolError, UsbError } = require('../../src/error');
 const dfu = require('../../src/dfu');
@@ -735,62 +735,62 @@ function addDevices(options) {
 }
 
 function addPhoton(options) {
-	const opts = Object.assign({}, options, { type: deviceConstants.photon.name, buggyDfu: true });
+	const opts = Object.assign({}, options, { type: platforms.photon.name, buggyDfu: true });
 	return addDevice(opts);
 }
 
 function addP1(options) {
-	const opts = Object.assign({}, options, { type: deviceConstants.p1.name, buggyDfu: true });
+	const opts = Object.assign({}, options, { type: platforms.p1.name, buggyDfu: true });
 	return addDevice(opts);
 }
 
 function addElectron(options) {
-	const opts = Object.assign({}, options, { type: deviceConstants.electron.name, buggyDfu: true });
+	const opts = Object.assign({}, options, { type: platforms.electron.name, buggyDfu: true });
 	return addDevice(opts);
 }
 
 function addArgon(options) {
-	const opts = Object.assign({}, options, { type: deviceConstants.argon.name });
+	const opts = Object.assign({}, options, { type: platforms.argon.name });
 	return addDevice(opts);
 }
 
 function addBoron(options) {
-	const opts = Object.assign({}, options, { type: deviceConstants.boron.name });
+	const opts = Object.assign({}, options, { type: platforms.boron.name });
 	return addDevice(opts);
 }
 
 function addXenon(options) {
-	const opts = Object.assign({}, options, { type: deviceConstants.xenon.name });
+	const opts = Object.assign({}, options, { type: platforms.xenon.name });
 	return addDevice(opts);
 }
 
 function addArgonSom(options) {
-	const opts = Object.assign({}, options, { type: deviceConstants.asom.name });
+	const opts = Object.assign({}, options, { type: platforms.asom.name });
 	return addDevice(opts);
 }
 
 function addBoronSom(options) {
-	const opts = Object.assign({}, options, { type: deviceConstants.bsom.name });
+	const opts = Object.assign({}, options, { type: platforms.bsom.name });
 	return addDevice(opts);
 }
 
 function addB5Som(options) {
-	const opts = Object.assign({}, options, { type: deviceConstants.b5som.name });
+	const opts = Object.assign({}, options, { type: platforms.b5som.name });
 	return addDevice(opts);
 }
 
 function addXenonSom(options) {
-	const opts = Object.assign({}, options, { type: deviceConstants.xsom.name });
+	const opts = Object.assign({}, options, { type: platforms.xsom.name });
 	return addDevice(opts);
 }
 
 function addAssetTracker(options) {
-	const opts = Object.assign({}, options, { type: deviceConstants.tracker.name });
+	const opts = Object.assign({}, options, { type: platforms.tracker.name });
 	return addDevice(opts);
 }
 
 function addP2(options) {
-	const opts = Object.assign({}, options, { type: deviceConstants.p2.name });
+	const opts = Object.assign({}, options, { type: platforms.p2.name });
 	return addDevice(opts);
 }
 

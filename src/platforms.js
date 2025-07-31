@@ -1,8 +1,8 @@
-const deviceConstants = require('@particle/device-constants');
+const { platforms } = require('@particle/device-constants');
 
 const PLATFORMS = [];
 
-for (let p of Object.values(deviceConstants)) {
+for (let p of Object.values(platforms)) {
 	if (!p.usb && !p.dfu) {
 		continue;
 	}
