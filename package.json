@@ -24,7 +24,7 @@
     "npm": "8.x"
   },
   "scripts": {
-    "prepublish": "git submodule update --init && npm run build",
+    "prepare": "git submodule update --init && npm run build",
     "version": "npm run docs && git add docs",
     "test": "mocha test test/integration './src/**/*.test.js'",
     "test:ci": "npm run lint && npm test && npm run coverage && npm run test:e2e:ci",
