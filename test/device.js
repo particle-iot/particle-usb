@@ -1,3 +1,4 @@
+'use strict';
 const { fakeUsb, expect } = require('./support');
 const proxyquire = require('proxyquire');
 

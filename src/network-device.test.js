@@ -1,3 +1,4 @@
+'use strict';
 const { setDevicePrototype } = require('./set-device-prototype');
 const { fakeUsb, sinon, expect } = require('../test/support');
 const proxyquire = require('proxyquire');

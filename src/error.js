@@ -1,3 +1,4 @@
+'use strict';
 /**
  * Generic device error. This is a base class for all errors reported by the library.
  */

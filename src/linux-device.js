@@ -1,3 +1,4 @@
+'use strict';
 const { DeviceBase } = require('./device-base');
 const { DeviceMode } = require('./device');
 

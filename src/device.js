@@ -1,3 +1,4 @@
+'use strict';
 const { DeviceBase, openDeviceById } = require('./device-base');
 const { Request } = require('./request');
 const { Result, errorForRequest } = require('./result');
@@ -286,7 +287,7 @@ class Device extends DeviceBase {
 					try {
 						await s.open({ includeDfu: true });
 						isInDfuMode = s.device.isInDfuMode;
-					} catch (error) {
+					} catch (_err) {
 						// device is reconnecting, ignore
 					}
 					await s.close();
@@ -334,7 +335,7 @@ class Device extends DeviceBase {
 			await this.sendProtobufRequest('StartListeningModeRequest', {}, { timeout });
 
 			// Wait until the device enters the listening mode
-			while (true) { // eslint-disable-line no-constant-condition
+			while (true) {
 				// GetDeviceModeRequest may not be supported by the device even if start listening mode does work, hence try/catch
 				try {
 					const getDeviceModeReply = await this.sendProtobufRequest('GetDeviceModeRequest', {}, { timeout });

@@ -1,5 +1,5 @@
 /* global ParticleUsb */
-
+'use strict';
 const path = require('path');
 const http = require('http');
 const { URL } = require('url');
@@ -163,6 +163,7 @@ describe('Browser Usage', () => {
 				res.writeHead(200, { 'Content-Type': requestedAsset.type });
 				res.end(requestedAsset.data);
 			} else {
+				// eslint-disable-next-line no-console
 				console.log(`:::: Unable to serve: ${req.url} - file not found`);
 				res.writeHead(404, { 'Content-Type': 'text/html' });
 				res.end('404: File not found');
@@ -176,6 +177,7 @@ describe('Browser Usage', () => {
 		const page = await browser.newPage();
 
 		page.on('console', msg => {
+			// eslint-disable-next-line no-console
 			console.log(':::: BROWSER LOG:', msg.text());
 		});
 

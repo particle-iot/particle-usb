@@ -1,3 +1,4 @@
+'use strict';
 const { getDevices, openDeviceById, openNativeUsbDevice } = require('../../src/particle-usb');
 const { MAX_CONTROL_TRANSFER_DATA_SIZE } = require('../../src/usb-device-node');
 

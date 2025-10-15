@@ -1,3 +1,4 @@
+'use strict';
 const DfuDevice = (base) => class extends base {
 	/**
 	 * Flashes the firmware over DFU interface.

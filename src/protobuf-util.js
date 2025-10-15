@@ -1,3 +1,4 @@
+'use strict';
 /**
  * Get an object that maps values from a Protobuf enum value to a string value and vice versa,
  * using the provided mapping.

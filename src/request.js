@@ -1,3 +1,4 @@
+'use strict';
 const { definitions: proto } = require('@particle/device-os-protobuf');
 
 // Mapping of request types to Protobuf messages

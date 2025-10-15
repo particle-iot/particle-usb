@@ -1,3 +1,4 @@
+'use strict';
 const { expect, sinon } = require('../test/support');
 const { DfuDeviceState } = require('../src/dfu');
 const { Dfu } = require('./dfu');

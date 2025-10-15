@@ -1,3 +1,4 @@
+'use strict';
 const { getUsbDevices } = require('./usb-device-node');
 const { PlatformId, linux } = require('@particle/device-constants');
 

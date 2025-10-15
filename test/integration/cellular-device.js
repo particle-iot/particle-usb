@@ -1,3 +1,4 @@
+'use strict';
 const { getDevices } = require('../../src/particle-usb');
 
 const { expect, integrationTest } = require('../support');

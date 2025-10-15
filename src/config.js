@@ -1,3 +1,4 @@
+'use strict';
 // Global configuration
 const globalOptions = {
 	// Request timeout

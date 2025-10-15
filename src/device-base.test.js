@@ -1,3 +1,4 @@
+'use strict';
 const { fakeUsb, sinon, expect, assert, nextTick } = require('../test/support');
 const proxyquire = require('proxyquire');
 
@@ -97,7 +98,6 @@ describe('device-base', () => {
 			expect(nonDFUDevices[0].usbDevice).to.equal(photon2);
 		});
 
-		// eslint-disable-next-line max-statements
 		it('can filter detected devices by type', async () => {
 			const photon = fakeUsb.addPhoton();
 			const p1 = fakeUsb.addP1();

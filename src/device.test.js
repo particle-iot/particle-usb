@@ -1,3 +1,4 @@
+'use strict';
 /**
  * We deliberately don't use fakeUSB in these tests because it mocks out src/device.js
  * which is the object under test in this file. Instead, we take a different mocking

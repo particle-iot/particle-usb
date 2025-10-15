@@ -1,3 +1,4 @@
+'use strict';
 const { UsbError, NotAllowedError, UsbStallError } = require('./error');
 const { globalOptions } = require('./config');
 
