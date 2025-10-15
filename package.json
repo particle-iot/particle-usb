@@ -20,8 +20,8 @@
     "Andrey Tolstoy <avtolstoy@gmail.com>"
   ],
   "engines": {
-    "node": ">=12",
-    "npm": "8.x"
+    "node": ">=22",
+    "npm": ">=10"
   },
   "scripts": {
     "prepare": "git submodule update --init && npm run build",
