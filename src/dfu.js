@@ -17,7 +17,7 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-
+'use strict';
 const { DeviceError, UsbStallError, DeviceProtectionError, UnsupportedDfuseCommandError } = require('./error');
 
 /**
@@ -245,7 +245,7 @@ class Dfu {
 				case 's': return { protected: false, overridden: true };
 				default: throw new Error('Unknown device state');
 			}
-		} catch (error) {
+		} catch (_err) {
 			// Fallback for devices with Device-OS < 6.1.2
 			await this.setAltSetting(0); // setting 0 is for Internal Flash
 
@@ -401,7 +401,7 @@ class Dfu {
 				// into dfuIDLE
 				await this._clearStatus();
 			}
-		} catch (err) {
+		} catch (_err) {
 			// DFU_GETSTATUS or DFU_CLRSTATUS failed, we are most likely in dfuERROR state, clear it
 			await this._clearStatus();
 		}
@@ -491,7 +491,7 @@ class Dfu {
 				if (description && description.length) {
 					stat.description = description;
 				}
-			} catch (e) {
+			} catch (_err) {
 				// ignore
 			}
 		}

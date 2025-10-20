@@ -1,3 +1,4 @@
+'use strict';
 const { sinon, expect } = require('../test/support');
 const { setDevicePrototype } = require('./set-device-prototype');
 

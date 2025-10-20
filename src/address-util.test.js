@@ -1,3 +1,4 @@
+'use strict';
 const addressUtil = require('./address-util');
 const { expect } = require('../test/support');
 

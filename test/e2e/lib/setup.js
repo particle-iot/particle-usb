@@ -1,3 +1,4 @@
+'use strict';
 const fs = require('fs-extra');
 const execa = require('execa');
 const {
@@ -12,6 +13,7 @@ const {
 
 
 exports.mochaGlobalSetup = async () => {
+	// eslint-disable-next-line no-console
 	console.log([
 		'::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::',
 		':::: Particle USB | E2E Tests ::::::::::::::::::::::::::::::::::::::',

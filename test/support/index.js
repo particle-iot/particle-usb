@@ -1,3 +1,4 @@
+'use strict';
 const fakeUsb = require('./fake-usb');
 const { config } = require('../../src/config');
 
@@ -25,12 +26,14 @@ class Logger {
 	}
 
 	error(...args) {
+		// eslint-disable-next-line no-console
 		console.log(...args);
 	}
 }
 
 function integrationTest(test, check) {
 	if (!process.env.RUN_INTEGRATION_TESTS) {
+		// eslint-disable-next-line no-console
 		console.log('    This test is skipped by default, define RUN_INTEGRATION_TESTS to run it');
 		// https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
 		test.test.parent.pending = true;

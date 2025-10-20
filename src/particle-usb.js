@@ -1,3 +1,4 @@
+'use strict';
 const { getDevices: getUsbDevices, openDeviceById: openUsbDeviceById, openNativeUsbDevice: openUsbNativeUsbDevice } = require('./device-base');
 const { PollingPolicy } = require('./device-base');
 const { FirmwareModule, FirmwareModuleDisplayNames } = require('./device');

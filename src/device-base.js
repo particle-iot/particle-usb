@@ -1,3 +1,4 @@
+'use strict';
 const { getUsbDevices, UsbDevice, MAX_CONTROL_TRANSFER_DATA_SIZE } = require('./usb-device-node');
 const proto = require('./usb-protocol');
 const { PLATFORMS } = require('./platforms');

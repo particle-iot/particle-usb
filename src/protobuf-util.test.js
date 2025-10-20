@@ -1,3 +1,4 @@
+'use strict';
 const { expect } = require('../test/support');
 const { extractBits, fromProtobufEnum } = require('./protobuf-util');
 const { cloudDefinitions: protoCloud } = require('@particle/device-os-protobuf');

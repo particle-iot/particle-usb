@@ -1,3 +1,4 @@
+'use strict';
 const { Request } = require('./request');
 const { fromProtobufEnum } = require('./protobuf-util');
 const { convertBufferToMacAddress } = require('./address-util.js');

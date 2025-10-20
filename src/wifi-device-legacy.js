@@ -5,7 +5,7 @@
  */
 
 // TODO: Remove the legacy behavior!
-
+'use strict';
 const { Request } = require('./request');
 const { fromProtobufEnum, fromProtobufMessage, toProtobufMessage } = require('./protobuf-util');
 const { definitions: proto } = require('@particle/device-os-protobuf');

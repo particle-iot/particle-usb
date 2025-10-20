@@ -1,3 +1,4 @@
+'use strict';
 const { /*sinon*/ expect } = require('../test/support');
 const particleUSB = require('./particle-usb');
 describe('Public interface of npm module', () => {

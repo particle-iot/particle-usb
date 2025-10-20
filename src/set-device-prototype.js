@@ -1,3 +1,5 @@
+/* eslint new-cap: 'off' */
+'use strict';
 const { PLATFORMS } = require('./platforms');
 const { Device } = require('./device');
 const { WifiDevice } = require('./wifi-device');

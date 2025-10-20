@@ -1,3 +1,4 @@
+'use strict';
 const { ProtocolError } = require('./error');
 
 // Service request types

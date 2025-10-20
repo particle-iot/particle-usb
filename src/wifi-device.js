@@ -1,3 +1,4 @@
+'use strict';
 const DeviceOSProtobuf = require('@particle/device-os-protobuf');
 const { definitions: proto } = require('@particle/device-os-protobuf');
 const { fromProtobufEnum } = require('./protobuf-util');

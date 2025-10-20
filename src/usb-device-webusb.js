@@ -1,3 +1,4 @@
+'use strict';
 const { UsbError, UsbStallError } = require('./error');
 
 // Maximum size of a control transfer's data stage

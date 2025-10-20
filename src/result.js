@@ -1,3 +1,4 @@
+'use strict';
 const { RequestError, DeviceProtectionError } = require('./error');
 // Result codes as defined by the firmware's system_error_t enum
 const RESULT_CODES = [
