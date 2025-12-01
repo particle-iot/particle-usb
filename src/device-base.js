@@ -125,7 +125,7 @@ class DeviceBase extends EventEmitter {
 		options = Object.assign({
 			concurrentRequests: null // The maximum number of concurrent requests is limited by the device
 		}, options);
-		if (this._state !== DeviceState.CLOSED) {
+		if (this._state === DeviceState.OPEN) {
 			return Promise.reject(new StateError('Device is already open'));
 		}
 		// Open USB device
@@ -373,7 +373,9 @@ class DeviceBase extends EventEmitter {
 	}
 
 	_process() {
-		if (this._state === DeviceState.CLOSED || this._state === DeviceState.OPENING || this._busy) {
+		if (this._state === DeviceState.CLOSED
+               || (this._state === DeviceState.OPENING && !this._wantClose)
+               || this._busy) {
 			return;
 		}
 		if (this._wantClose && this._state !== DeviceState.CLOSING) {
