@@ -332,7 +332,8 @@ class Device extends DeviceBase {
 	 */
 	async enterListeningMode({ timeout = globalOptions.requestTimeout } = {}) {
 		return this.timeout(timeout, async (s) => {
-			await this.sendProtobufRequest('StartListeningModeRequest', {}, { timeout });
+			const startListeningModeReply = await this.sendProtobufRequest('StartListeningModeRequest', {}, { timeout });
+			console.log('TODO: [enterListeningMode] consider this startListeningModeReply', startListeningModeReply);
 
 			// Wait until the device enters the listening mode
 			while (true) {
@@ -1020,16 +1021,19 @@ class Device extends DeviceBase {
 			opts
 		);
 
+		console.log('TODO: [sendProtobufRequest before decoding protobuf] see reply:', rep);
 		if (rep.result !== Result.OK) {
 			throw errorForRequest(rep.result);
 		}
 
 		if (rep.data) {
 			// Parse the response message
-			return DeviceOSProtobuf.decode(
+			const decodedProtobuf = DeviceOSProtobuf.decode(
 				protobufDefinition.replyMessage,
 				rep.data
 			);
+			console.log('TODO: [sendProtobufRequest after decoding] see decodedProtobuf', decodedProtobuf);
+			return decodedProtobuf
 		} else {
 			// Create a message with default-initialized properties
 			return protobufDefinition.replyMessage.create();
