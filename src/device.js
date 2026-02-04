@@ -1004,6 +1004,68 @@ class Device extends DeviceBase {
 	}
 
 	/**
+	 * @typedef EnvValue
+	 * @type {Object}
+	 * @property {String} value Variable value.
+	 * @property {Boolean} isApp If `true`, this is an application variable.
+	 */
+
+	/**
+	 * @typedef GetEnvResult
+	 * @type {Object}
+	 * @property {Object.<string, EnvValue>} env Environment variables.
+	 * @property {Object} [snapshot] Snapshot info.
+	 * @property {String} snapshot.hash Snapshot hash.
+	 */
+
+	/**
+	 * Get all defined environment variables.
+	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 6.4.0)
+	 * - Gen 4 (since Device OS 6.4.0)
+	 *
+	 * @returns {Promise<GetEnvResult>}
+	 */
+	async getEnv() {
+		const result = {
+			env: {}
+		};
+		const resp = await this.sendProtobufRequest('GetEnvRequest');
+		for (const { name, value, isApp } of resp.vars) {
+			result.env[name] = { value, isApp };
+		}
+		if (resp.snapshotHash) {
+			result.snapshot = {
+				hash: resp.snapshotHash.toString('hex')
+			};
+		}
+		return result;
+	}
+
+	/**
+	 * @typedef ClearEnvResult
+	 * @type {Object}
+	 * @property {Boolean} needReset If `true`, a system reset is needed to apply the changes.
+	 */
+
+	/**
+	 * Clear all defined environment variables.
+	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 6.4.0)
+	 * - Gen 4 (since Device OS 6.4.0)
+	 *
+	 * @returns {Promise<ClearEnvResult>}
+	 */
+	async clearEnv() {
+		const resp = await this.sendProtobufRequest('ClearEnvRequest');
+		return {
+			needReset: resp.needReset
+		};
+	}
+
+	/**
 	 * Sends a protobuf encoded request to Device and decodes response. Use higher level methods like getSerialNumber() than this if possible.
 	 * @param {String} protobufMessageName - The protobuf message name, see DeviceOSProtobuf.getDefinitions() for valid values.
 	 * @param {Object} protobufMessageData data that will be encoded into the protobuf request before sending to device
