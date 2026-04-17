@@ -47,6 +47,22 @@ const CellularDevice = base => class extends base {
 	}
 
 	/**
+	 * Send a command APDU to the UICC and receive a response.
+	 *
+	 * Supported platforms:
+	 * - Gen 3 (since Device OS 6.4.1)
+	 * - Gen 4 (since Device OS 6.4.1)
+	 *
+	 * @param {Buffer} cmd Command APDU.
+	 * @param {Object} [opts] Options (see `sendControlRequest()`).
+	 * @returns {Promise<Buffer>} Response APDU.
+	 */
+	async sendApdu(cmd, opts) {
+		const { data } = await this.sendProtobufRequest('cellular.ApduRequest', { data: cmd }, opts);
+		return data;
+	}
+
+	/**
 	 * Set to `true` if this is a cellular device.
 	 */
 	get isCellularDevice() {
