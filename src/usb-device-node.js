@@ -294,8 +294,14 @@ async function getUsbDevices(filters) {
 	return devs;
 }
 
+async function getUsbDeviceById(/* id */) {
+	// use getUsbDevices instead
+	return null;
+}
+
 module.exports = {
 	MAX_CONTROL_TRANSFER_DATA_SIZE,
 	UsbDevice,
-	getUsbDevices
+	getUsbDevices,
+	getUsbDeviceById
 };

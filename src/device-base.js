@@ -1,5 +1,5 @@
 'use strict';
-const { getUsbDevices, UsbDevice, MAX_CONTROL_TRANSFER_DATA_SIZE } = require('./usb-device-node');
+const { getUsbDevices, getUsbDeviceById, UsbDevice, MAX_CONTROL_TRANSFER_DATA_SIZE } = require('./usb-device-node');
 const proto = require('./usb-protocol');
 const { PLATFORMS } = require('./platforms');
 const { DeviceError, NotFoundError, StateError, TimeoutError, MemoryError, ProtocolError, NotAllowedError, assert } = require('./error');
@@ -776,23 +776,26 @@ async function getDevices({ types = [], includeDfu = true } = {}) {
 
 async function openDeviceById(id, options = null) {
 	const log = globalOptions.log;
-	const filters = [];
-	PLATFORMS.forEach((platform) => {
-		if (platform && platform.usb && platform.usb.vendorId) {
-			filters.push(Object.assign({ serialNumber: id }, platform.usb));
+	let dev = await getUsbDeviceById(id);
+	if (!dev) {
+		const filters = [];
+		PLATFORMS.forEach((platform) => {
+			if (platform && platform.usb && platform.usb.vendorId) {
+				filters.push(Object.assign({ serialNumber: id }, platform.usb));
+			}
+			if (platform && platform.dfu && platform.dfu.vendorId) {
+				filters.push(Object.assign({ serialNumber: id }, platform.dfu));
+			}
+		});
+		const devs = await getUsbDevices(filters);
+		if (devs.length === 0) {
+			throw new NotFoundError('Device is not found');
 		}
-		if (platform && platform.dfu && platform.dfu.vendorId) {
-			filters.push(Object.assign({ serialNumber: id }, platform.dfu));
+		if (devs.length !== 1) {
+			log.warn(`Found multiple devices with the same ID: ${id}`); // lol
 		}
-	});
-	const devs = await getUsbDevices(filters);
-	if (devs.length === 0) {
-		throw new NotFoundError('Device is not found');
+		dev = devs[0];
 	}
-	if (devs.length !== 1) {
-		log.warn(`Found multiple devices with the same ID: ${id}`); // lol
-	}
-	let dev = devs[0];
 	const platform = platformForUsbIds(dev.vendorId, dev.productId);
 	assert(platform);
 	dev = new DeviceBase(dev, platform);

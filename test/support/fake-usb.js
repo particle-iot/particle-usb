@@ -795,6 +795,11 @@ function addP2(options) {
 	return addDevice(opts);
 }
 
+async function getUsbDeviceById(/* id */) {
+	// use getUsbDevices instead
+	return null;
+}
+
 function removeDevice(dev) {
 	if (devices.delete(dev.objectId)) {
 		dev.detach();
@@ -813,6 +818,7 @@ module.exports = {
 	DfuClass,
 	Device,
 	getUsbDevices,
+	getUsbDeviceById,
 	addDevice,
 	addDevices,
 	addPhoton,
