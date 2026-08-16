@@ -299,9 +299,15 @@ async function getUsbDeviceById(/* id */) {
 	return null;
 }
 
+async function requestUsbDevice(/* filters */) {
+	// Requesting a permission is a browser-only concept, use getUsbDevices instead
+	throw new NotAllowedError('requestDevice() is only supported in the browser');
+}
+
 module.exports = {
 	MAX_CONTROL_TRANSFER_DATA_SIZE,
 	UsbDevice,
 	getUsbDevices,
-	getUsbDeviceById
+	getUsbDeviceById,
+	requestUsbDevice
 };
