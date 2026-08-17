@@ -774,30 +774,6 @@ async function getDevices({ types = [], includeDfu = true } = {}) {
 	});
 }
 
-async function requestDevice({ types = [], includeDfu = true } = {}) {
-	types = types.map(type => type.toLowerCase());
-	const filters = [];
-	PLATFORMS.forEach((platform) => {
-		if (types.length === 0 || types.includes(platform.name)) {
-			if (platform && platform.usb && platform.usb.vendorId) {
-				filters.push(platform.usb);
-			}
-			if (includeDfu && platform && platform.dfu && platform.dfu.vendorId) {
-				filters.push(platform.dfu);
-			}
-		}
-	});
-
-	if (filters.length === 0) {
-		// Requesting with no filters would let the user pick any USB device attached to the host
-		throw new RangeError('No supported device types matched the requested types');
-	}
-	const dev = await requestUsbDevice(filters);
-	const platform = platformForUsbIds(dev.vendorId, dev.productId);
-	assert(platform);
-	return new DeviceBase(dev, platform);
-}
-
 async function openDeviceById(id, options = null) {
 	const log = globalOptions.log;
 	let dev = await getUsbDeviceById(id);
@@ -840,6 +816,30 @@ async function openNativeUsbDevice(nativeUsbDevice, options = null) {
 	await dev.open(options);
 
 	return dev;
+}
+
+async function requestDevice({ types = [], includeDfu = true } = {}) {
+	types = types.map(type => type.toLowerCase());
+	const filters = [];
+	PLATFORMS.forEach((platform) => {
+		if (types.length === 0 || types.includes(platform.name)) {
+			if (platform && platform.usb && platform.usb.vendorId) {
+				filters.push(platform.usb);
+			}
+			if (includeDfu && platform && platform.dfu && platform.dfu.vendorId) {
+				filters.push(platform.dfu);
+			}
+		}
+	});
+
+	if (filters.length === 0) {
+		// Requesting with no filters would let the user pick any USB device attached to the host
+		throw new RangeError('No supported device types matched the requested types');
+	}
+	const dev = await requestUsbDevice(filters);
+	const platform = platformForUsbIds(dev.vendorId, dev.productId);
+	assert(platform);
+	return new DeviceBase(dev, platform);
 }
 
 module.exports = {
