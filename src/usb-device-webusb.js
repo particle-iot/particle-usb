@@ -179,14 +179,35 @@ async function getUsbDevices(filters) {
 	}
 	let devs = [];
 	try {
-		// Get the list of known devices and filter them according to the provided options
+		// Fow now, always ask the user to grant access to the device, even if we already have a
+		// permission to access it. The permissions API for USB is not yet implemented in Chrome,
+		// and calling requestDevice() after getDevices() causes a SecurityError.
+		// TODO: Implement a separate API to request a permission from the user
+		let newDev = null;
 		devs = await navigator.usb.getDevices();
+		try {
+			newDev = await navigator.usb.requestDevice({ filters });
+		} catch (e) {
+			// Ignore NotFoundError which means that the user has cancelled the request
+			if (e.name !== 'NotFoundError') {
+				throw e;
+			}
+		}
+
+
 		if (filters.length > 0) {
 			devs = devs.filter(dev => filters.some(f => ((!f.vendorId || dev.vendorId === f.vendorId) &&
 					(!f.productId || dev.productId === f.productId) &&
 					(!f.serialNumber || dev.serialNumber === f.serialNumber))));
 		}
-		// in case devs is empty we might not have permissions so use the request for permission
+		if (newDev) {
+			// Avoid listing the same device twice
+			const hasNewDev = devs.some(dev => dev.vendorId === newDev.vendorId && dev.productId === newDev.productId &&
+					dev.serialNumber === newDev.serialNumber);
+			if (!hasNewDev) {
+				devs.push(newDev);
+			}
+		}
 	} catch (err) {
 		throw new UsbError('Unable to enumerate USB devices', { cause: err });
 	}
