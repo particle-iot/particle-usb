@@ -179,9 +179,8 @@ async function getUsbDevices(filters) {
 	}
 	let devs = [];
 	try {
-		// Fow now, always ask the user to grant access to the device, even if we already have a
-		// permission to access it. The permissions API for USB is not yet implemented in Chrome,
-		// and calling requestDevice() after getDevices() causes a SecurityError.
+		// For now it will always prompt the user unless we pass a serialNumber filter
+		// if we pass a serialNumber filter and the devices.legth is 0 then we will prompt it
 		// TODO: Implement a separate API to request a permission from the user
 		devs = await navigator.usb.getDevices();
 		let newDev = null;
@@ -190,7 +189,10 @@ async function getUsbDevices(filters) {
 					(!f.productId || dev.productId === f.productId) &&
 					(!f.serialNumber || dev.serialNumber === f.serialNumber))));
 		}
-		if (!filters.some(f => f.serialNumber) || devs.length === 0) {
+
+		const filterById = filters.some(f => f.serialNumber);
+		const alreadyPermitted = (filterById && devs.length > 0);
+		if (!alreadyPermitted) {
 			try {
 				newDev = await navigator.usb.requestDevice({ filters });
 			} catch (e) {
