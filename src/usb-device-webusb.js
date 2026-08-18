@@ -227,24 +227,10 @@ async function requestUsbDevice(filters){
 	}
 }
 
-async function getUsbDeviceById(id) {
-	let devs = [];
-	try {
-		devs = await navigator.usb.getDevices();
-	} catch (err) {
-		throw new UsbError('Unable to enumerate USB devices', { cause: err });
-	}
-	const dev = devs.find(d => d.serialNumber === id);
-	if (!dev) {
-		return null;
-	}
-	return new UsbDevice(dev);
-}
 
 module.exports = {
 	MAX_CONTROL_TRANSFER_DATA_SIZE,
 	UsbDevice,
 	getUsbDevices,
-	getUsbDeviceById,
 	requestUsbDevice
 };
