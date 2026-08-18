@@ -183,22 +183,22 @@ async function getUsbDevices(filters) {
 		// permission to access it. The permissions API for USB is not yet implemented in Chrome,
 		// and calling requestDevice() after getDevices() causes a SecurityError.
 		// TODO: Implement a separate API to request a permission from the user
-		let newDev = null;
 		devs = await navigator.usb.getDevices();
-		try {
-			newDev = await navigator.usb.requestDevice({ filters });
-		} catch (e) {
-			// Ignore NotFoundError which means that the user has cancelled the request
-			if (e.name !== 'NotFoundError') {
-				throw e;
-			}
-		}
-
-
+		let newDev = null;
 		if (filters.length > 0) {
 			devs = devs.filter(dev => filters.some(f => ((!f.vendorId || dev.vendorId === f.vendorId) &&
 					(!f.productId || dev.productId === f.productId) &&
 					(!f.serialNumber || dev.serialNumber === f.serialNumber))));
+		}
+		if (!filters.some(f => f.serialNumber) || devs.length === 0) {
+			try {
+				newDev = await navigator.usb.requestDevice({ filters });
+			} catch (e) {
+				// Ignore NotFoundError which means that the user has cancelled the request
+				if (e.name !== 'NotFoundError') {
+					throw e;
+				}
+			}
 		}
 		if (newDev) {
 			// Avoid listing the same device twice
