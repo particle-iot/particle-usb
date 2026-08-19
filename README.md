@@ -57,6 +57,47 @@ const device = await usb.openDeviceById('0123456789abcdef01234567');
 await device.reset();
 ```
 
+#### In the browser
+
+Browsers only expose devices the user has explicitly granted access to, which the browser's device
+picker asks for.
+
+`getDevices()` returns the devices already granted, and shows the picker so the user can add one.
+The devices come back unopened:
+
+```js
+button.addEventListener('click', async () => {
+  const devices = await usb.getDevices();
+  if (devices.length === 0) {
+    throw new Error('No devices found');
+  }
+  const device = devices[0];
+  await device.open();
+});
+```
+
+`openDeviceById()` shows the picker only if that device hasn't been granted access yet, and returns
+the device already open:
+
+```js
+button.addEventListener('click', async () => {
+  const device = await usb.openDeviceById('0123456789abcdef01234567');
+  await device.reset();
+});
+```
+
+`requestDevice()` always shows the picker and resolves to the device the user selected, unopened:
+
+```js
+button.addEventListener('click', async () => {
+  const device = await usb.requestDevice(); // Throws a NotFoundError if the user cancels
+  await device.open();
+});
+```
+
+All three must be called from a user gesture, such as a click handler. Outside of one the browser
+refuses to show the picker, so you only get back devices that were already granted access.
+
 The device should be closed when it is no longer needed:
 
 ```js
