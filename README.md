@@ -1,6 +1,6 @@
 # particle-usb
 
-![CI](https://github.com/particle-iot/particle-usb/workflows/CICD/badge.svg?branch=main)
+[![CICD](https://github.com/particle-iot/particle-usb/actions/workflows/ci.yaml/badge.svg)](https://github.com/particle-iot/particle-usb/actions/workflows/ci.yaml)
 
 A library for accessing Particle USB devices.
 
