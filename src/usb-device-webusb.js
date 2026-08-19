@@ -190,8 +190,8 @@ async function getUsbDevices(filters) {
 					(!f.serialNumber || dev.serialNumber === f.serialNumber))));
 		}
 
-		const filterById = filters.some(f => f.serialNumber);
-		const alreadyPermitted = (filterById && devs.length > 0);
+		const filteredById = filters.some(f => f.serialNumber);
+		const alreadyPermitted = (filteredById && devs.length > 0);
 		if (!alreadyPermitted) {
 			try {
 				newDev = await navigator.usb.requestDevice({ filters });
