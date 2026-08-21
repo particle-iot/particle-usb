@@ -294,8 +294,14 @@ async function getUsbDevices(filters) {
 	return devs;
 }
 
+async function requestUsbDevice(/* filters */) {
+	// Requesting a permission is a browser-only concept, use getUsbDevices instead
+	throw new NotAllowedError('requestDevice() is only supported in the browser');
+}
+
 module.exports = {
 	MAX_CONTROL_TRANSFER_DATA_SIZE,
 	UsbDevice,
-	getUsbDevices
+	getUsbDevices,
+	requestUsbDevice
 };

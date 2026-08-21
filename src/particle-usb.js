@@ -1,5 +1,5 @@
 'use strict';
-const { getDevices: getUsbDevices, openDeviceById: openUsbDeviceById, openNativeUsbDevice: openUsbNativeUsbDevice } = require('./device-base');
+const { getDevices: getUsbDevices, openDeviceById: openUsbDeviceById, openNativeUsbDevice: openUsbNativeUsbDevice, requestDevice: requestUsbDevice } = require('./device-base');
 const { PollingPolicy } = require('./device-base');
 const { FirmwareModule, FirmwareModuleDisplayNames } = require('./device');
 const { NetworkStatus } = require('./network-device');
@@ -48,6 +48,21 @@ function openNativeUsbDevice(nativeUsbDevice, options) {
 }
 
 /**
+ * Prompt the user to grant access to a Particle USB device. (Web Browser only)
+ * NOTE: This method must be called from a user gesture (click) in other case the browser will reject the call
+ * @param {Object} [options] Options.
+ * @param {Array<String>} [options.types] Device types (photon, boron, tracker, etc). By default,
+ *        the user can pick a device of any platform supported by the library.
+ * @param {Boolean} [options.includeDfu=true] Whether to include devices in DFU mode.
+ * @return {Promise<Device>} The device the user has selected.
+ * @throws {NotFoundError} The user dismissed the prompt without selecting a device.
+ * @throws {NotAllowedError} Called outside of a browser environment.
+ */
+function requestDevice(options) {
+	return requestUsbDevice(options).then(dev => setDevicePrototype(dev));
+}
+
+/**
  * Get devices in Qualcomm EDL mode.
  *
  * @return {Promise<Array<EdlDevice>>}
@@ -85,5 +100,6 @@ module.exports = {
 	openDeviceById,
 	openNativeUsbDevice,
 	getEdlDevices,
+	requestDevice,
 	config
 };

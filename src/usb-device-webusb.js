@@ -1,5 +1,5 @@
 'use strict';
-const { UsbError, UsbStallError } = require('./error');
+const { UsbError, UsbStallError, NotFoundError } = require('./error');
 
 // Maximum size of a control transfer's data stage
 const MAX_CONTROL_TRANSFER_DATA_SIZE = 4096;
@@ -179,25 +179,28 @@ async function getUsbDevices(filters) {
 	}
 	let devs = [];
 	try {
-		// Fow now, always ask the user to grant access to the device, even if we already have a
-		// permission to access it. The permissions API for USB is not yet implemented in Chrome,
-		// and calling requestDevice() after getDevices() causes a SecurityError.
+		// For now it will always prompt the user unless we pass a serialNumber filter
+		// if we pass a serialNumber filter and the devices.legth is 0 then we will prompt it
 		// TODO: Implement a separate API to request a permission from the user
-		let newDev = null;
-		try {
-			newDev = await navigator.usb.requestDevice({ filters });
-		} catch (e) {
-			// Ignore NotFoundError which means that the user has cancelled the request
-			if (e.name !== 'NotFoundError') {
-				throw e;
-			}
-		}
-		// Get the list of known devices and filter them according to the provided options
 		devs = await navigator.usb.getDevices();
+		let newDev = null;
 		if (filters.length > 0) {
 			devs = devs.filter(dev => filters.some(f => ((!f.vendorId || dev.vendorId === f.vendorId) &&
 					(!f.productId || dev.productId === f.productId) &&
 					(!f.serialNumber || dev.serialNumber === f.serialNumber))));
+		}
+
+		const filteredById = filters.some(f => f.serialNumber);
+		const alreadyPermitted = (filteredById && devs.length > 0);
+		if (!alreadyPermitted) {
+			try {
+				newDev = await navigator.usb.requestDevice({ filters });
+			} catch (e) {
+				// Ignore NotFoundError which means that the user has cancelled the request
+				if (e.name !== 'NotFoundError') {
+					throw e;
+				}
+			}
 		}
 		if (newDev) {
 			// Avoid listing the same device twice
@@ -214,8 +217,22 @@ async function getUsbDevices(filters) {
 	return devs;
 }
 
+async function requestUsbDevice(filters){
+	try {
+		const dev = await navigator.usb.requestDevice({ filters });
+		return new UsbDevice(dev);
+	} catch (err) {
+		if (err.name === 'NotFoundError') {
+			throw new NotFoundError('No device selected', { cause: err });
+		}
+		throw new UsbError('Unable to request a USB device', { cause: err });
+	}
+}
+
+
 module.exports = {
 	MAX_CONTROL_TRANSFER_DATA_SIZE,
 	UsbDevice,
-	getUsbDevices
+	getUsbDevices,
+	requestUsbDevice
 };
