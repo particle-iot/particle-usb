@@ -815,16 +815,17 @@ async function openNativeUsbDevice(nativeUsbDevice, options = null) {
 	return dev;
 }
 
-async function requestDevice({ types = [], includeDfu = true } = {}) {
+async function requestDevice({ types = [], includeDfu = true, id } = {}) {
 	types = types.map(type => type.toLowerCase());
 	const filters = [];
+	const addFilter = (usbIds) => filters.push(id ? Object.assign({ serialNumber: id }, usbIds) : usbIds);
 	PLATFORMS.forEach((platform) => {
 		if (types.length === 0 || types.includes(platform.name)) {
 			if (platform && platform.usb && platform.usb.vendorId) {
-				filters.push(platform.usb);
+				addFilter(platform.usb);
 			}
 			if (includeDfu && platform && platform.dfu && platform.dfu.vendorId) {
-				filters.push(platform.dfu);
+				addFilter(platform.dfu);
 			}
 		}
 	});

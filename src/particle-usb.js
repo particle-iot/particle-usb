@@ -54,6 +54,8 @@ function openNativeUsbDevice(nativeUsbDevice, options) {
  * @param {Array<String>} [options.types] Device types (photon, boron, tracker, etc). By default,
  *        the user can pick a device of any platform supported by the library.
  * @param {Boolean} [options.includeDfu=true] Whether to include devices in DFU mode.
+ * @param {String} [options.id] Device ID. If specified, the picker only lists the device with that ID,
+ *        in whichever mode it is currently in. By default, the user can pick any matching device.
  * @return {Promise<Device>} The device the user has selected.
  * @throws {NotFoundError} The user dismissed the prompt without selecting a device.
  * @throws {NotAllowedError} Called outside of a browser environment.

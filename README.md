@@ -95,6 +95,17 @@ button.addEventListener('click', async () => {
 });
 ```
 
+Pass an `id` to scope the picker to a single device. The picker lists that device in whichever mode it
+is currently in, and updates live as it enumerates, which is useful to grant access to a device that is
+about to enter DFU mode (the browser keeps a separate grant for the DFU mode of a device):
+
+```js
+button.addEventListener('click', async () => {
+  const device = await usb.requestDevice({ id: '0123456789abcdef01234567' });
+  await device.open();
+});
+```
+
 All three must be called from a user gesture, such as a click handler. Outside of one the browser
 refuses to show the picker, so you only get back devices that were already granted access.
 
