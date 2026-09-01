@@ -76,14 +76,13 @@ button.addEventListener('click', async () => {
 });
 ```
 
-`openDeviceById()` shows the picker only if that device hasn't been granted access yet, and returns
-the device already open:
+`openDeviceById()` never shows the picker. It only looks at the devices already granted, and returns
+the device already open, or throws a `NotFoundError` when that device has not been granted access or
+is not attached. Because it never prompts, it does not need a user gesture:
 
 ```js
-button.addEventListener('click', async () => {
-  const device = await usb.openDeviceById('0123456789abcdef01234567');
-  await device.reset();
-});
+const device = await usb.openDeviceById('0123456789abcdef01234567');
+await device.reset();
 ```
 
 `requestDevice()` always shows the picker and resolves to the device the user selected, unopened:
@@ -106,8 +105,8 @@ button.addEventListener('click', async () => {
 });
 ```
 
-All three must be called from a user gesture, such as a click handler. Outside of one the browser
-refuses to show the picker, so you only get back devices that were already granted access.
+`getDevices()` and `requestDevice()` show the picker, so they must be called from a user gesture, such
+as a click handler. Outside of one the browser refuses to show the picker.
 
 The device should be closed when it is no longer needed:
 

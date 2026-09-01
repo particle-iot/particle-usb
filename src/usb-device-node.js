@@ -233,15 +233,12 @@ class UsbDevice {
 }
 
 async function getUsbDevices(filters) {
-	// Validate the filtering options
 	if (filters) {
 		filters = filters.map(f => {
 			if (f.productId && !f.vendorId) {
 				throw new RangeError('Vendor ID is missing');
 			}
 			if (f.serialNumber) {
-				// Filtering by serial number works in a case-insensitive manner. This is not necessarily
-				// true for other backends
 				f = Object.assign({}, f);
 				f.serialNumber = f.serialNumber.toLowerCase();
 			}
@@ -257,7 +254,6 @@ async function getUsbDevices(filters) {
 		throw wrapUsbError(err, 'Unable to enumerate USB devices');
 	}
 	if (filters.length > 0) {
-		// Filter the list of devices
 		const filtDevs = [];
 		for (const dev of devs) {
 			let serialNum = null;

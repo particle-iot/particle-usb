@@ -785,7 +785,7 @@ async function openDeviceById(id, options = null) {
 			filters.push(Object.assign({ serialNumber: id }, platform.dfu));
 		}
 	});
-	const devs = await getUsbDevices(filters);
+	const devs = await getUsbDevices(filters, { prompt: false });
 	if (devs.length === 0) {
 		throw new NotFoundError('Device is not found');
 	}

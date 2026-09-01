@@ -6,10 +6,14 @@ const { getDevices, openDeviceById, openNativeUsbDevice, PollingPolicy } = proxy
 	'./usb-device-node': fakeUsb
 });
 // requestDevice() is browser-only, so the node implementation always throws. Stub it out to inspect
-// the filters the library passes down to WebUSB.
+// the filters the library passes down to WebUSB, and to assert when it is not called at all.
 const requestUsbDeviceStub = sinon.stub();
-const { requestDevice } = proxyquire('../src/device-base', {
-	'./usb-device-node': Object.assign({}, fakeUsb, { requestUsbDevice: requestUsbDeviceStub })
+const getUsbDevicesSpy = sinon.spy(fakeUsb.getUsbDevices);
+const { requestDevice, openDeviceById: openDeviceByIdSpied } = proxyquire('../src/device-base', {
+	'./usb-device-node': Object.assign({}, fakeUsb, {
+		requestUsbDevice: requestUsbDeviceStub,
+		getUsbDevices: getUsbDevicesSpy
+	})
 });
 const usbImpl = require('./usb-device-node');
 const proto = require('./usb-protocol');
@@ -191,6 +195,27 @@ describe('device-base', () => {
 			const dev = openDeviceById('111111111111111111111111');
 			await expect(dev).to.be.rejectedWith(error.NotFoundError);
 			expect(open).to.have.not.been.called;
+		});
+
+		it('enumerates only the devices the user has already permitted, without prompting', async () => {
+			requestUsbDeviceStub.resetHistory();
+			getUsbDevicesSpy.resetHistory();
+			const photon = fakeUsb.addPhoton({ id: '111111111111111111111111' });
+			const dev = await openDeviceByIdSpied('111111111111111111111111');
+			expect(dev.usbDevice).to.equal(photon);
+			expect(getUsbDevicesSpy).to.have.been.calledOnce;
+			expect(getUsbDevicesSpy.firstCall.args[1]).to.deep.equal({ prompt: false });
+			expect(requestUsbDeviceStub).to.have.not.been.called;
+		});
+
+		it('fails with a NotFoundError instead of prompting when the device is not permitted', async () => {
+			requestUsbDeviceStub.resetHistory();
+			// No devices are attached, which is indistinguishable from none being permitted
+			await expect(openDeviceByIdSpied('111111111111111111111111')).to.be.rejectedWith(error.NotFoundError);
+			// Another device is permitted and attached, but not the one being opened
+			fakeUsb.addPhoton({ id: '222222222222222222222222' });
+			await expect(openDeviceByIdSpied('111111111111111111111111')).to.be.rejectedWith(error.NotFoundError);
+			expect(requestUsbDeviceStub).to.have.not.been.called;
 		});
 
 		it('matches serial numbers in a case-insensitive manner', async () => {

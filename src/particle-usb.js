@@ -28,9 +28,13 @@ function getDevices(options) {
 /**
  * Open a Particle USB device with the specified ID.
  *
+ * In the browser, this only considers the devices the user has already granted access to. It never
+ * shows the device picker, so it doesn't need to be called from a user gesture.
+ *
  * @param {String} id Device ID.
  * @param {Object} [options] Options (see {@link DeviceBase#open}).
  * @return {Promise<Device>}
+ * @throws {NotFoundError} The device is not attached, or access to it has not been granted.
  */
 function openDeviceById(id, options) {
 	return openUsbDeviceById(id, options).then(dev => setDevicePrototype(dev));
