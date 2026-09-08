@@ -28,9 +28,13 @@ function getDevices(options) {
 /**
  * Open a Particle USB device with the specified ID.
  *
+ * In the browser, this only considers the devices the user has already granted access to. It never
+ * shows the device picker, so it doesn't need to be called from a user gesture.
+ *
  * @param {String} id Device ID.
  * @param {Object} [options] Options (see {@link DeviceBase#open}).
  * @return {Promise<Device>}
+ * @throws {NotFoundError} The device is not attached, or access to it has not been granted.
  */
 function openDeviceById(id, options) {
 	return openUsbDeviceById(id, options).then(dev => setDevicePrototype(dev));
@@ -54,6 +58,8 @@ function openNativeUsbDevice(nativeUsbDevice, options) {
  * @param {Array<String>} [options.types] Device types (photon, boron, tracker, etc). By default,
  *        the user can pick a device of any platform supported by the library.
  * @param {Boolean} [options.includeDfu=true] Whether to include devices in DFU mode.
+ * @param {String} [options.id] Device ID. If specified, the picker only lists the device with that ID,
+ *        in whichever mode it is currently in. By default, the user can pick any matching device.
  * @return {Promise<Device>} The device the user has selected.
  * @throws {NotFoundError} The user dismissed the prompt without selecting a device.
  * @throws {NotAllowedError} Called outside of a browser environment.

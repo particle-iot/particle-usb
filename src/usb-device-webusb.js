@@ -166,35 +166,33 @@ class UsbDevice {
 	}
 }
 
-async function getUsbDevices(filters) {
-	if (filters) {
-		// Validate filtering options
-		filters.forEach(f => {
-			if (f.productId && !f.vendorId) {
-				throw new RangeError('Vendor ID is missing');
-			}
-		});
-	} else {
-		filters = [];
+function validateFilters(filters) {
+	if (!filters) {
+		return [];
 	}
+	// Validate filtering options
+	filters.forEach(f => {
+		if (f.productId && !f.vendorId) {
+			throw new RangeError('Vendor ID is missing');
+		}
+	});
+	return filters;
+}
+
+function matchesFilters(dev, filters) {
+	return filters.length === 0 || filters.some(f => ((!f.vendorId || dev.vendorId === f.vendorId) &&
+			(!f.productId || dev.productId === f.productId) &&
+			(!f.serialNumber || dev.serialNumber === f.serialNumber)));
+}
+
+// Set prompt to false to enumerate only the devices the user has already granted access to
+async function getUsbDevices(filters, { prompt = true } = {}) {
+	filters = validateFilters(filters);
 	let devs = [];
 	try {
-		// For now it will always prompt the user unless we pass a serialNumber filter
-		// if we pass a serialNumber filter and the devices.legth is 0 then we will prompt it
-		// TODO: Implement a separate API to request a permission from the user
-		devs = await navigator.usb.getDevices();
-		let newDev = null;
-		if (filters.length > 0) {
-			devs = devs.filter(dev => filters.some(f => ((!f.vendorId || dev.vendorId === f.vendorId) &&
-					(!f.productId || dev.productId === f.productId) &&
-					(!f.serialNumber || dev.serialNumber === f.serialNumber))));
-		}
-
-		const filteredById = filters.some(f => f.serialNumber);
-		const alreadyPermitted = (filteredById && devs.length > 0);
-		if (!alreadyPermitted) {
+		if (prompt) {
 			try {
-				newDev = await navigator.usb.requestDevice({ filters });
+				await navigator.usb.requestDevice({ filters });
 			} catch (e) {
 				// Ignore NotFoundError which means that the user has cancelled the request
 				if (e.name !== 'NotFoundError') {
@@ -202,19 +200,12 @@ async function getUsbDevices(filters) {
 				}
 			}
 		}
-		if (newDev) {
-			// Avoid listing the same device twice
-			const hasNewDev = devs.some(dev => dev.vendorId === newDev.vendorId && dev.productId === newDev.productId &&
-					dev.serialNumber === newDev.serialNumber);
-			if (!hasNewDev) {
-				devs.push(newDev);
-			}
-		}
+		devs = await navigator.usb.getDevices();
+		devs = devs.filter(dev => matchesFilters(dev, filters));
 	} catch (err) {
 		throw new UsbError('Unable to enumerate USB devices', { cause: err });
 	}
-	devs = devs.map(dev => new UsbDevice(dev));
-	return devs;
+	return devs.map(dev => new UsbDevice(dev));
 }
 
 async function requestUsbDevice(filters){
