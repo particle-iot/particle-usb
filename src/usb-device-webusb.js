@@ -190,27 +190,18 @@ async function getUsbDevices(filters, { prompt = true } = {}) {
 	filters = validateFilters(filters);
 	let devs = [];
 	try {
-		devs = await navigator.usb.getDevices();
-		devs = devs.filter(dev => matchesFilters(dev, filters));
 		if (prompt) {
-			let newDev = null;
 			try {
-				newDev = await navigator.usb.requestDevice({ filters });
+				await navigator.usb.requestDevice({ filters });
 			} catch (e) {
 				// Ignore NotFoundError which means that the user has cancelled the request
 				if (e.name !== 'NotFoundError') {
 					throw e;
 				}
 			}
-			if (newDev) {
-				// Avoid listing the same device twice
-				const hasNewDev = devs.some(dev => dev.vendorId === newDev.vendorId && dev.productId === newDev.productId &&
-						dev.serialNumber === newDev.serialNumber);
-				if (!hasNewDev) {
-					devs.push(newDev);
-				}
-			}
 		}
+		devs = await navigator.usb.getDevices();
+		devs = devs.filter(dev => matchesFilters(dev, filters));
 	} catch (err) {
 		throw new UsbError('Unable to enumerate USB devices', { cause: err });
 	}

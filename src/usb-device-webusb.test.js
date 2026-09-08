@@ -90,8 +90,9 @@ describe('usb-device-webusb', () => {
 		});
 
 		it('includes the device the user selected', async () => {
-			usb.getDevices.resolves([PHOTON]);
 			usb.requestDevice.resolves(ARGON);
+			// Selecting a device in the prompt adds it to the permitted devices
+			usb.getDevices.resolves([PHOTON, ARGON]);
 			const devs = await getUsbDevices([{ vendorId: PHOTON.vendorId }]);
 			expect(devs.map(d => d.internalObject)).to.deep.equal([PHOTON, ARGON]);
 		});
